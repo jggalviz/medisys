@@ -4,21 +4,20 @@ import type { Metadata } from "next"
 import { createClient } from "@/lib/supabase/server"
 import { BookingWizard } from "@/components/booking/BookingWizard"
 
-type ReservarPageProps = {
+type ClinicPageProps = {
   params: Promise<{ clinicSlug: string }>
 }
 
 /**
- * Página pública de reserva Multi-Tenant.
- * Cada clínica tiene su URL personalizada: /[clinicSlug]/reservar
- * (ej. https://medisys.com.ve/santa-ines/reservar).
+ * Página pública Multi-Tenant de la clínica.
+ * URL directa de reserva: /[clinicSlug] (ej. https://medisys.com.ve/santa-ines).
  *
  * Carga la info pública del tenant (nombre, logo, datos_pago_movil) y
  * despliega el BookingWizard (Paciente → Médico → Fecha/hora → Pago).
  */
 export async function generateMetadata({
   params,
-}: ReservarPageProps): Promise<Metadata> {
+}: ClinicPageProps): Promise<Metadata> {
   const { clinicSlug } = await params
   const supabase = await createClient()
 
@@ -47,7 +46,7 @@ export async function generateMetadata({
   }
 }
 
-export default async function ReservarPage({ params }: ReservarPageProps) {
+export default async function ClinicPage({ params }: ClinicPageProps) {
   const { clinicSlug } = await params
   const supabase = await createClient()
 
