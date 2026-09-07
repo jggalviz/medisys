@@ -44,8 +44,19 @@ export type NewPatientInput = {
 
 /* ---------------- Paso 2 · Doctor ---------------- */
 
+/**
+ * Horario semanal compacto de un médico (para la ficha del Paso 2).
+ * Solo los campos que la UI necesita para mostrar días y rangos de hora.
+ */
+export type DoctorSchedule = Pick<
+  import("./database").Schedule,
+  "dia_semana" | "hora_inicio" | "hora_fin"
+>
+
 export type DoctorWithTenant = Doctor & {
   tenant: { slug: string } | null
+  /** Horarios activos del doctor (tabla `schedules`), ya normalizados. */
+  schedules: DoctorSchedule[]
 }
 
 /* ---------------- Paso 3 · Fecha y hora ---------------- */

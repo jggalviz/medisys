@@ -2,18 +2,30 @@
 
 /**
  * Paso 2 del wizard: selección de especialidad y médico del tenant.
- * Trae los doctores activos vía Server Action y permite filtrar por
- * especialidad con chips; cada tarjeta muestra foto, badges y precio.
+ *
+ * Flujo:
+ *  1. El paciente elige la ESPECIALIDAD (Cardiología, Pediatría…).
+ *  2. Se despliegan los médicos de esa especialidad con su ficha:
+ *     nombre, foto/avatar y horarios semanales disponibles (`schedules`).
+ *  3. Al tocar un médico se guarda la selección y se habilita
+ *     «Continuar» hacia el Paso 3 (Fecha y hora).
  */
 import { useEffect, useMemo, useState } from "react"
-import { BadgeCheck, ChevronRight, LoaderCircle, Stethoscope, X } from "lucide-react"
+import {
+  ArrowLeft,
+  BadgeCheck,
+  ChevronRight,
+  Clock3,
+  LoaderCircle,
+  Stethoscope,
+} from "lucide-react"
 
 import type { Doctor } from "@/types/database"
+import type { DoctorSchedule, DoctorWithTenant } from "@/types/booking"
 import { getDoctorsByTenant } from "@/app/actions/booking"
 import { doctorNombre, formatMonto, iniciales } from "@/lib/format"
 import { Button } from "@/components/ui/button"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
-import { Badge } from "@/components/ui/badge"
 import { Skeleton } from "@/components/ui/skeleton"
 import { cn } from "@/lib/utils"
 
@@ -23,11 +35,38 @@ type Props = {
   onContinue: (doctor: Doctor) => void
 }
 
+/* ------------------------------------------------------------------ */
+/* Helpers de horarios                                                 */
+/* ------------------------------------------------------------------ */
+
+/** 0=Domingo … 6=Sábado (mismo índice que JS `getDay()`). */
+const DIAS_CORTOS = ["Dom", "Lun", "Mar", "Mié", "Jue", "Vie", "Sáb"] as const
+
+/** "08:30" → "8:30 am". */
+function formatHora12(hora: string): string {
+  const [horaRaw, minutoRaw] = hora.split(":").map(Number)
+  const periodo = horaRaw >= 12 ? "pm" : "am"
+  const hora12 = horaRaw % 12 === 0 ? 12 : horaRaw % 12
+  return `${hora12}:${String(minutoRaw ?? 0).padStart(2, "0")} ${periodo}`
+}
+
+/** Resumen corto de una fila de `schedules`: "Lun 8:00 am – 12:00 pm". */
+function horarioResumen(horario: DoctorSchedule): string | null {
+  if (horario.dia_semana < 0 || horario.dia_semana > 6) return null
+  return `${DIAS_CORTOS[horario.dia_semana]} ${formatHora12(
+    horario.hora_inicio
+  )}–${formatHora12(horario.hora_fin)}`
+}
+
+/* ------------------------------------------------------------------ */
+/* Avatar y ficha del médico                                           */
+/* ------------------------------------------------------------------ */
+
 function DoctorAvatar({
   doctor,
   className,
 }: {
-  doctor: Doctor
+  doctor: DoctorWithTenant
   className?: string
 }) {
   const [broken, setBroken] = useState(false)
@@ -37,7 +76,7 @@ function DoctorAvatar({
     return (
       <span
         className={cn(
-          "flex items-center justify-center rounded-full bg-muted font-bold text-muted-foreground",
+          "flex shrink-0 items-center justify-center rounded-full bg-muted font-bold text-muted-foreground",
           className
         )}
         aria-hidden
@@ -64,11 +103,13 @@ function DoctorCard({
   selected,
   onSelect,
 }: {
-  doctor: Doctor
+  doctor: DoctorWithTenant
   selected: boolean
   onSelect: () => void
 }) {
-  const badges = [doctor.especialidad, ...doctor.especialidades]
+  const horarios = doctor.schedules
+    .map(horarioResumen)
+    .filter((item): item is string => item !== null)
 
   return (
     <button
@@ -84,7 +125,7 @@ function DoctorCard({
       )}
     >
       <span className="flex items-center gap-3">
-        <DoctorAvatar doctor={doctor} className="size-14 shrink-0" />
+        <DoctorAvatar doctor={doctor} className="size-14" />
         <span className="flex min-w-0 flex-1 flex-col gap-0.5">
           <span className="flex items-center gap-1.5 font-semibold">
             {doctorNombre(doctor)}
@@ -93,9 +134,11 @@ function DoctorCard({
           <span className="text-xs font-medium text-primary">
             {doctor.especialidad}
           </span>
-          <span className="text-xs text-muted-foreground">
-            Consulta {formatMonto(doctor.precio_consulta)}
-          </span>
+          {doctor.precio_consulta > 0 && (
+            <span className="text-xs text-muted-foreground">
+              Consulta {formatMonto(doctor.precio_consulta)}
+            </span>
+          )}
         </span>
         <ChevronRight
           className={cn(
@@ -105,13 +148,26 @@ function DoctorCard({
         />
       </span>
 
-      {badges.length > 1 && (
-        <span className="flex flex-wrap gap-1.5">
-          {badges.slice(1).map((badge) => (
-            <Badge key={badge} variant="secondary">
-              {badge}
-            </Badge>
-          ))}
+      {horarios.length > 0 ? (
+        <span className="flex flex-col gap-1.5 border-t border-dashed pt-2.5">
+          <span className="flex items-center gap-1 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+            <Clock3 className="size-3.5" aria-hidden="true" />
+            Horarios disponibles
+          </span>
+          <span className="flex flex-wrap gap-1.5">
+            {horarios.map((item, index) => (
+              <span
+                key={`${doctor.id}-${index}`}
+                className="rounded-full bg-muted px-2.5 py-1 text-xs font-medium text-muted-foreground"
+              >
+                {item}
+              </span>
+            ))}
+          </span>
+        </span>
+      ) : (
+        <span className="border-t border-dashed pt-2.5 text-xs text-muted-foreground">
+          Horarios por definir con la clínica.
         </span>
       )}
     </button>
@@ -121,7 +177,7 @@ function DoctorCard({
 type DoctorsLoadState =
   | { status: "loading" }
   | { status: "error"; message: string }
-  | { status: "ok"; doctors: Doctor[] }
+  | { status: "ok"; doctors: DoctorWithTenant[] }
 
 export function StepDoctorSelect({
   clinicSlug,
@@ -130,8 +186,12 @@ export function StepDoctorSelect({
 }: Props) {
   const [attempt, setAttempt] = useState(0)
   const [load, setLoad] = useState<DoctorsLoadState>({ status: "loading" })
-  const [selected, setSelected] = useState<Doctor | null>(selectedDoctor ?? null)
-  const [especialidad, setEspecialidad] = useState<string>("todas")
+  const [selected, setSelected] = useState<Doctor | null>(
+    selectedDoctor ?? null
+  )
+  const [activeEsp, setActiveEsp] = useState<string | null>(
+    selectedDoctor?.especialidad ?? null
+  )
 
   useEffect(() => {
     let active = true
@@ -152,24 +212,45 @@ export function StepDoctorSelect({
 
   const loading = load.status === "loading"
   const loadError = load.status === "error" ? load.message : null
-  const doctors = useMemo(() => (load.status === "ok" ? load.doctors : []), [load])
+  const doctors = useMemo(
+    () => (load.status === "ok" ? load.doctors : []),
+    [load]
+  )
 
-  const especialidades = useMemo(() => {
-    return Array.from(
-      new Set(
-        doctors.flatMap((doctor) => [doctor.especialidad, ...doctor.especialidades])
-      )
-    ).sort((a, b) => a.localeCompare(b, "es"))
+  /** Médicos agrupados por su campo `especialidad`. */
+  const grupos = useMemo(() => {
+    const porEspecialidad = new Map<string, DoctorWithTenant[]>()
+    for (const doctor of doctors) {
+      const lista = porEspecialidad.get(doctor.especialidad) ?? []
+      lista.push(doctor)
+      porEspecialidad.set(doctor.especialidad, lista)
+    }
+
+    return Array.from(porEspecialidad.entries())
+      .map(([especialidad, items]) => ({
+        especialidad,
+        items: [...items].sort((a, b) =>
+          doctorNombre(a).localeCompare(doctorNombre(b), "es")
+        ),
+      }))
+      .sort((a, b) => a.especialidad.localeCompare(b.especialidad, "es"))
   }, [doctors])
 
-  const filtered = useMemo(() => {
-    if (especialidad === "todas") return doctors
-    return doctors.filter(
-      (doctor) =>
-        doctor.especialidad === especialidad ||
-        doctor.especialidades.includes(especialidad)
+  const activeGroup =
+    grupos.find((grupo) => grupo.especialidad === activeEsp) ?? null
+  const listaDeEspecialidades = !activeGroup
+
+  /** Cambia la especialidad activa; limpia la selección si ya no coincide. */
+  function elegirEspecialidad(especialidad: string) {
+    if (especialidad === activeEsp) return
+    setActiveEsp(especialidad)
+    setSelected((prev) =>
+      prev && prev.especialidad === especialidad ? prev : null
     )
-  }, [doctors, especialidad])
+  }
+
+  const pluralMedicos = (cantidad: number) =>
+    `${cantidad} ${cantidad === 1 ? "médico" : "médicos"}`
 
   if (loading) {
     return (
@@ -178,12 +259,15 @@ export function StepDoctorSelect({
           <h2 className="text-xl font-semibold tracking-tight">
             Elige al especialista
           </h2>
-          <p className="mt-1 text-sm text-muted-foreground">Consultando médicos disponibles…</p>
+          <p className="mt-1 flex items-center gap-1.5 text-sm text-muted-foreground">
+            <LoaderCircle className="size-3.5 animate-spin" aria-hidden="true" />
+            Consultando médicos disponibles…
+          </p>
         </header>
         <div className="flex flex-col gap-3" aria-busy="true">
-          <Skeleton className="h-[110px] w-full" />
-          <Skeleton className="h-[110px] w-full" />
-          <Skeleton className="h-[110px] w-full" />
+          <Skeleton className="h-20 w-full" />
+          <Skeleton className="h-20 w-full" />
+          <Skeleton className="h-20 w-full" />
         </div>
       </div>
     )
@@ -214,83 +298,98 @@ export function StepDoctorSelect({
     )
   }
 
-  return (
+    return (
     <div className="flex flex-col gap-5">
       <header>
         <h2 className="text-xl font-semibold tracking-tight">
           Elige al especialista
         </h2>
         <p className="mt-1 text-sm text-muted-foreground">
-          Filtra por especialidad y toca la tarjeta del médico.
+          {listaDeEspecialidades
+            ? "Primero elige la especialidad y luego verás sus médicos y horarios."
+            : `Estos son los especialistas en ${activeGroup!.especialidad}.`}
         </p>
       </header>
 
-      {especialidades.length > 0 && (
-        <div
-          className="-mx-4 flex gap-2 overflow-x-auto px-4 pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
-          role="tablist"
-          aria-label="Filtrar por especialidad"
+      {listaDeEspecialidades ? (
+        /* ---------- Vista 1: lista de especialidades ---------- */
+        <section
+          className="flex flex-col gap-2"
+          aria-label="Especialidades disponibles"
         >
-          <button
-            type="button"
-            role="tab"
-            aria-selected={especialidad === "todas"}
-            onClick={() => setEspecialidad("todas")}
-            className={cn(
-              "flex h-9 shrink-0 items-center gap-1 rounded-full border px-4 text-sm font-medium transition-colors",
-              especialidad === "todas"
-                ? "border-primary bg-primary text-primary-foreground"
-                : "border-border bg-background hover:bg-muted/50"
-            )}
-          >
-            <Stethoscope className="size-4" />
-            Todos
-          </button>
-          {especialidades.map((esp) => (
-            <button
-              key={esp}
-              type="button"
-              role="tab"
-              aria-selected={especialidad === esp}
-              onClick={() => setEspecialidad(esp)}
-              className={cn(
-                "flex h-9 shrink-0 items-center gap-1 rounded-full border px-4 text-sm font-medium transition-colors",
-                especialidad === esp
-                  ? "border-primary bg-primary text-primary-foreground"
-                  : "border-border bg-background hover:bg-muted/50"
-              )}
-            >
-              {esp}
-              {especialidad === esp && (
-                <X
-                  className="size-3.5 opacity-70"
-                  aria-label={`Quitar filtro ${esp}`}
-                  onClick={(event) => {
-                    event.stopPropagation()
-                    setEspecialidad("todas")
-                  }}
-                />
-              )}
-            </button>
-          ))}
-        </div>
-      )}
-
-      {filtered.length === 0 ? (
-        <Alert>
-          <AlertTitle>Sin médicos disponibles</AlertTitle>
-          <AlertDescription>
-            No encontramos especialistas para esta clínica en este momento.
-          </AlertDescription>
-        </Alert>
+          {grupos.length === 0 ? (
+            <Alert>
+              <AlertTitle>Sin médicos disponibles</AlertTitle>
+              <AlertDescription>
+                No encontramos especialistas para esta clínica en este momento.
+              </AlertDescription>
+            </Alert>
+          ) : (
+            <>
+              <p className="text-xs text-muted-foreground">
+                {grupos.length}{" "}
+                {grupos.length === 1 ? "especialidad" : "especialidades"}{" "}
+                disponibles
+              </p>
+              {grupos.map((grupo) => {
+                const tieneSeleccion =
+                  selected?.especialidad === grupo.especialidad
+                return (
+                  <button
+                    key={grupo.especialidad}
+                    type="button"
+                    onClick={() => elegirEspecialidad(grupo.especialidad)}
+                    aria-pressed={activeEsp === grupo.especialidad}
+                    className={cn(
+                      "flex w-full items-center gap-3 rounded-2xl border bg-card p-3.5 text-left transition-all",
+                      "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring active:scale-[0.99]",
+                      tieneSeleccion
+                        ? "border-primary bg-primary/5 ring-2 ring-primary/30"
+                        : "border-border hover:bg-muted/40"
+                    )}
+                  >
+                    <span className="flex size-11 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
+                      <Stethoscope className="size-5" aria-hidden="true" />
+                    </span>
+                    <span className="flex min-w-0 flex-1 flex-col gap-0.5">
+                      <span className="font-semibold">{grupo.especialidad}</span>
+                      <span className="text-xs text-muted-foreground">
+                        {pluralMedicos(grupo.items.length)}
+                        {tieneSeleccion
+                          ? ` · ${doctorNombre(selected!)}`
+                          : " disponibles"}
+                      </span>
+                    </span>
+                    <ChevronRight className="size-5 shrink-0 text-muted-foreground/50" />
+                  </button>
+                )
+              })}
+            </>
+          )}
+        </section>
       ) : (
-        <section className="flex flex-col gap-2" aria-label="Resultados de médicos">
+        /* ---------- Vista 2: médicos de la especialidad ---------- */
+        <section
+          className="flex flex-col gap-2"
+          aria-label={`Médicos de ${activeGroup!.especialidad}`}
+        >
+          <Button
+            type="button"
+            variant="ghost"
+            onClick={() => setActiveEsp(null)}
+            className="-mx-2 w-fit gap-1.5 px-2 text-sm text-muted-foreground"
+          >
+            <ArrowLeft className="size-4" aria-hidden="true" />
+            Cambiar especialidad
+          </Button>
+
           <p className="text-xs text-muted-foreground">
-            {filtered.length} médico{filtered.length === 1 ? "" : "s"} disponible
-            {filtered.length === 1 ? "" : "s"}
+            {pluralMedicos(activeGroup!.items.length)} · toca la tarjeta para
+            seleccionar
           </p>
+
           <div className="flex flex-col gap-2">
-            {filtered.map((doctor) => (
+            {activeGroup!.items.map((doctor) => (
               <DoctorCard
                 key={doctor.id}
                 doctor={doctor}
@@ -302,6 +401,7 @@ export function StepDoctorSelect({
         </section>
       )}
 
+      {/* Pie fijo: avanza al Paso 3 (Fecha y hora) */}
       <div className="sticky bottom-0 -mx-4 border-t bg-background/95 px-4 pb-[max(env(safe-area-inset-bottom),1rem)] pt-3 backdrop-blur">
         <Button
           type="button"
@@ -309,20 +409,23 @@ export function StepDoctorSelect({
           onClick={() => selected && onContinue(selected)}
           className="h-12 w-full gap-2 rounded-xl text-base"
         >
-          {selected ? `Continuar con ${doctorNombre(selected)}` : "Selecciona un médico"}
+          {selected
+            ? `Continuar con ${doctorNombre(selected)}`
+            : "Selecciona un médico"}
           {selected ? (
             <ChevronRight className="size-4" />
           ) : (
-            <LoaderCircle className="size-4 opacity-40" />
+            <LoaderCircle className="size-4 opacity-40" aria-hidden="true" />
           )}
         </Button>
         {!selected && (
           <p className="mt-2 text-center text-xs text-muted-foreground">
-            Toca un médico para continuar
+            {listaDeEspecialidades
+              ? "Primero elige la especialidad de tu consulta"
+              : "Toca la tarjeta de un médico para continuar"}
           </p>
         )}
       </div>
     </div>
   )
 }
-

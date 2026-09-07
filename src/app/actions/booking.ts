@@ -21,6 +21,7 @@ import type {
   ActionResult,
   AvailableSlot,
   AvailableSlotsResult,
+  DoctorSchedule,
   DoctorWithTenant,
   NewPatientInput,
   PatientOptions,
@@ -237,8 +238,62 @@ export async function createPatientForBooking(
 /* ------------------------------------------------------------------ */
 
 /**
- * Médicos activos de la clínica. Se devuelve también el slug del tenant
- * para que el cliente pueda validar que no cambió de URL durante el flujo.
+ * Normaliza una fila cruda de `doctors` al tipo `Doctor`, tolerando que el
+ * esquema real use la columna `nombre` (nombre completo) en lugar de separar
+ * `nombres`/`apellidos`, y columnas opcionales ausentes (`especialidades`,
+ * `precio_consulta`).
+ */
+function normalizeDoctorRow(row: Record<string, unknown>): Doctor {
+  const text = (value: unknown) => (typeof value === "string" ? value.trim() : "")
+
+  let nombres = text(row.nombres)
+  let apellidos = text(row.apellidos)
+
+  // Fallback: si la clínica guarda "María Rivas" en la columna `nombre`.
+  if (!nombres && !apellidos) {
+    const partes = text(row.nombre).split(/\s+/).filter(Boolean)
+    nombres = partes.shift() ?? ""
+    apellidos = partes.join(" ")
+  }
+
+  const precio = Number(row.precio_consulta)
+  const especialidades = Array.isArray(row.especialidades)
+    ? (row.especialidades as unknown[]).filter(
+        (item): item is string => typeof item === "string"
+      )
+    : []
+
+  return {
+    id: String(row.id ?? ""),
+    tenant_id: String(row.tenant_id ?? ""),
+    nombres,
+    apellidos,
+    especialidad: text(row.especialidad) || "General",
+    especialidades,
+    foto_url: text(row.foto_url) || null,
+    precio_consulta: Number.isFinite(precio) ? precio : 0,
+    activo: row.activo !== false,
+    created_at: text(row.created_at),
+  }
+}
+
+/** Normaliza una fila de `schedules` al DTO compacto del Paso 2. */
+function normalizeScheduleRow(row: Record<string, unknown>): DoctorSchedule | null {
+  const text = (value: unknown) => (typeof value === "string" ? value.trim() : "")
+  const dia = Number(row.dia_semana)
+  const inicio = text(row.hora_inicio)
+  const fin = text(row.hora_fin)
+
+  if (!Number.isInteger(dia) || dia < 0 || dia > 6) return null
+  if (!/^\d{2}:\d{2}$/.test(inicio) || !/^\d{2}:\d{2}$/.test(fin)) return null
+
+  return { dia_semana: dia, hora_inicio: inicio, hora_fin: fin }
+}
+
+/**
+ * Médicos activos de la clínica, agrupables por especialidad y con sus
+ * horarios semanales (`schedules`) ya resueltos para la ficha del Paso 2.
+ * Devuelve también el slug del tenant para validar la URL del flujo.
  */
 export async function getDoctorsByTenant(
   clinicSlug: string
@@ -253,15 +308,51 @@ export async function getDoctorsByTenant(
       .select("*")
       .eq("tenant_id", tenantRes.data.id)
       .eq("activo", true)
-      .order("especialidad", { ascending: true })
-      .order("apellidos", { ascending: true })
 
     if (error) return err("SERVER_ERROR", error.message)
 
+    const doctors = ((data ?? []) as unknown[]).map((row) =>
+      normalizeDoctorRow(row as Record<string, unknown>)
+    )
+    const doctorIds = doctors.map((doctor) => doctor.id)
+
+    // Horarios de todos los médicos del tenant en una sola consulta.
+    const schedulesByDoctor = new Map<string, DoctorSchedule[]>()
+    if (doctorIds.length > 0) {
+      const { data: scheduleRows, error: scheduleError } = await supabase
+        .from("schedules")
+        .select("*")
+        .in("doctor_id", doctorIds)
+
+      if (scheduleError) return err("SERVER_ERROR", scheduleError.message)
+
+      for (const raw of (scheduleRows ?? []) as unknown[]) {
+        const schedule = normalizeScheduleRow(raw as Record<string, unknown>)
+        if (!schedule) continue
+
+        const doctorId = String((raw as Record<string, unknown>).doctor_id ?? "")
+        const lista = schedulesByDoctor.get(doctorId) ?? []
+        lista.push(schedule)
+        schedulesByDoctor.set(doctorId, lista)
+      }
+    }
+
+    doctors.sort(
+      (a, b) =>
+        a.especialidad.localeCompare(b.especialidad, "es") ||
+        [a.apellidos, a.nombres].filter(Boolean).join(" ").localeCompare(
+          [b.apellidos, b.nombres].filter(Boolean).join(" "),
+          "es"
+        )
+    )
+
     return ok(
-      ((data ?? []) as Doctor[]).map((doctor) => ({
+      doctors.map((doctor) => ({
         ...doctor,
         tenant: { slug: tenantRes.data.slug },
+        schedules: (schedulesByDoctor.get(doctor.id) ?? []).sort(
+          (a, b) => a.dia_semana - b.dia_semana || a.hora_inicio.localeCompare(b.hora_inicio)
+        ),
       }))
     )
   } catch (cause) {
