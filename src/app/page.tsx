@@ -54,8 +54,15 @@ const WHATSAPP_URL = `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent
   "Hola Medisys 👋, vi la landing y quiero activar la plataforma en mi consultorio o clínica."
 )}`
 
-/** Ruta de la demo activa (Clínica Santa Inés). */
-const DEMO_ROUTE = "/santa-ines"
+/**
+ * Ruta de la demo activa.
+ * La clínica de demostración se llama "Clínica DEMO" y su slug en Supabase
+ * debe ser `clinica-demo`. Si el tenant todavía existe como `santa-ines`,
+ * renómbralo en la base de datos:
+ *   UPDATE tenants SET slug = 'clinica-demo', nombre = 'Clínica DEMO'
+ *   WHERE slug = 'santa-ines';
+ */
+const DEMO_ROUTE = "/clinica-demo"
 
 /** Empresa desarrolladora (footer). */
 const COMPANY_NAME = "Vortex Logic Microsystems"
@@ -256,7 +263,7 @@ function HeroSection() {
               <span className="absolute inline-flex size-full animate-ping rounded-full bg-emerald-400 opacity-75" />
               <span className="relative inline-flex size-2 rounded-full bg-emerald-500" />
             </span>
-            Demo en vivo: Clínica Santa Inés
+            Demo en vivo: Clínica DEMO
             <ArrowRight
               className="size-3.5 transition-transform group-hover:translate-x-0.5"
               aria-hidden="true"
@@ -347,7 +354,7 @@ function HeroVisual() {
             </span>
             <span className="flex min-w-0 flex-col leading-tight">
               <span className="truncate text-sm font-bold text-zinc-900">
-                Centro Médico Santa Inés
+                Clínica DEMO
               </span>
               <span className="text-xs text-zinc-500">
                 Reserva #2841 · vista del paciente
@@ -841,7 +848,7 @@ function SiteFooter() {
               vortex.com.ve
             </a>
             <Link href={DEMO_ROUTE} className="transition-colors hover:text-zinc-200">
-              Demo de Santa Inés
+              Clínica DEMO
             </Link>
             <a
               href={WHATSAPP_URL}

@@ -9,7 +9,7 @@ type AdminPageProps = {
 
 /**
  * Vista de administración / recepción del tenant (work in progress).
- * URL futura: /[clinicSlug]/admin (ej. https://medisys.com.ve/santa-ines/admin).
+ * URL futura: /[clinicSlug]/admin (ej. https://medisys.com.ve/clinica-demo/admin).
  *
  * En la siguiente fase se conectará con la autenticación del personal,
  * la agenda del día, confirmación de pagos y gestión de reservas.

@@ -10,7 +10,7 @@ type ClinicPageProps = {
 
 /**
  * Página pública Multi-Tenant de la clínica.
- * URL directa de reserva: /[clinicSlug] (ej. https://medisys.com.ve/santa-ines).
+ * URL directa de reserva: /[clinicSlug] (ej. https://medisys.com.ve/clinica-demo).
  *
  * Carga la info pública del tenant (nombre, logo, datos_pago_movil) y
  * despliega el BookingWizard (Paciente → Médico → Fecha/hora → Pago).
