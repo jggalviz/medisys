@@ -214,11 +214,16 @@ export type Appointment = {
   id: string
   tenant_id: string
   doctor_id: string
-  patient_id: string
+  /** Puede ser null si el cupo se reserva sin perfil (invitado). */
+  patient_id: string | null
   /** ISO 8601 con offset (fecha_hora en hora local del tenant), p. ej. '2026-09-02T08:00:00-04:00'. */
   fecha_hora: string
   estado: AppointmentStatus
   lock_expira_en: string | null
+  /** Turno elegido ('manana' | 'tarde'). Columna opcional según migración. */
+  turno?: "manana" | "tarde" | null
+  /** Hora referencial del turno ('08:00' o '13:00'). Columna opcional según migración. */
+  hora?: string | null
   referencia_pago: string | null
   /** Opcional según migración: teléfono desde el que el paciente hizo el Pago Móvil. */
   telefono_emisor?: string | null
@@ -241,6 +246,7 @@ export type AppointmentInsert = Omit<
 > & {
   id?: string
   created_at?: string
+  patient_id?: string | null
   estado?: AppointmentStatus
   lock_expira_en?: string | null
   referencia_pago?: string | null

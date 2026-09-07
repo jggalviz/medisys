@@ -27,6 +27,7 @@ import type {
   NewPatientInput,
   PatientOptions,
   PaymentMethodInput,
+  TurnoSeleccionado,
 } from "@/types/booking"
 import { createClient } from "@/lib/supabase/server"
 import {
@@ -480,77 +481,100 @@ export async function getAvailableSlots(
   }
 }
 
-/**
- * Bloquea un cupo creando la cita en estado 'pendiente' con
- * `lock_expira_en = ahora + 15 min`. Mientras el lock esté vigente,
- * el cupo desaparece de `getAvailableSlots` para los demás pacientes.
- *
- * @param patientId id del paciente que se atenderá (tabla `profiles`)
- * @param doctorId  especialista seleccionado
- * @param dateTime  fecha+hora local sin zona: 'YYYY-MM-DDTHH:mm'
- */
-export async function lockAppointmentSlot(
-  patientId: string,
-  doctorId: string,
-  dateTime: string
-): Promise<ActionResult<Appointment>> {
-  try {
-    const idx = dateTime.indexOf("T")
-    const date = idx > 0 ? dateTime.slice(0, idx) : ""
-    const time = idx > 0 ? dateTime.slice(idx + 1) : ""
+/** Hora referencial con la que se guarda cada turno en `fecha_hora`/`hora`. */
+const HORA_REF_TURNO: Record<TurnoSeleccionado, string> = {
+  manana: "08:00",
+  tarde: "13:00",
+}
 
-    if (!isValidDateISO(date) || !isValidTime(time)) {
-      return err("INVALID_INPUT", "El cupo seleccionado no es válido.")
+/**
+ * Bloquea un turno creando la cita en estado 'pendiente' con
+ * `lock_expira_en = ahora + 15 min`.
+ *
+ * El paciente (`patientId`) es opcional: si viene vacío la reserva se crea
+ * sin perfil (patient_id = null) y no debe romper la FK. Además se guarda el
+ * turno elegido ('manana' | 'tarde') y su hora referencial (08:00 / 13:00)
+ * en `fecha_hora`; si las columnas `turno`/`hora` no existen en el esquema
+ * (PGRST204), se reintenta con el payload mínimo.
+ */
+export async function lockAppointmentSlot(input: {
+  patientId?: string | null
+  doctorId: string
+  /** Fecha del turno 'YYYY-MM-DD'. */
+  date: string
+  turno: TurnoSeleccionado
+}): Promise<ActionResult<Appointment>> {
+  try {
+    const { patientId, doctorId, date, turno } = input
+
+    if (!isValidDateISO(date)) {
+      return err("INVALID_INPUT", "La fecha seleccionada no es válida.")
+    }
+    const horaReferencial = HORA_REF_TURNO[turno]
+    if (!horaReferencial) {
+      return err("INVALID_INPUT", "Selecciona un turno válido (mañana o tarde).")
     }
 
     const supabase = await createClient()
     const doctorRes = await findActiveDoctor(supabase, doctorId)
     if (!doctorRes.ok) return doctorRes
 
-    const { data: paciente, error: pacienteError } = await supabase
-      .from("profiles")
-      .select("id")
-      .eq("id", patientId)
-      .maybeSingle()
+    // El paciente es opcional: si viene, verificamos que exista para no
+    // romper la Foreign Key; si es null/undefined, se guarda sin perfil.
+    if (patientId != null) {
+      const { data: paciente, error: pacienteError } = await supabase
+        .from("profiles")
+        .select("id")
+        .eq("id", patientId)
+        .maybeSingle()
 
-    if (pacienteError) return err("SERVER_ERROR", pacienteError.message)
-    if (!paciente) return err("NOT_FOUND", "El paciente seleccionado no existe.")
-
-    // 1) Recalcular disponibilidad: si el cupo ya no aparece es porque
-    //    otro usuario lo bloqueó/reservó entre la carga y la confirmación.
-    const disponiblesRes = await getAvailableSlots(doctorId, date)
-    if (!disponiblesRes.ok) return disponiblesRes
-    const disponible = disponiblesRes.data.slots.some((s) => s.hora === time)
-    if (!disponible) {
-      return err(
-        "SLOT_UNAVAILABLE",
-        "Lo sentimos, esa hora acaba de ser bloqueada por otra persona. Elige otro cupo."
-      )
+      if (pacienteError) return err("SERVER_ERROR", pacienteError.message)
+      if (!paciente) return err("NOT_FOUND", "El paciente seleccionado no existe.")
     }
 
-    const fechaHora = combineToISO(date, time)
+    const fechaHora = combineToISO(date, horaReferencial)
     const expiresAtMs = Date.now() + LOCK_DURATION_MINUTES * 60_000
+    const lockExpiraEn = new Date(expiresAtMs).toISOString()
 
-    // 2) Crear la cita 'pendiente' con su lock.
-    const { data: appointment, error } = await supabase
+    const payloadBase = {
+      tenant_id: doctorRes.data.tenant_id,
+      doctor_id: doctorId,
+      patient_id: patientId ?? null,
+      fecha_hora: fechaHora,
+      estado: "pendiente" as Appointment["estado"],
+      lock_expira_en: lockExpiraEn,
+    }
+
+    // 1er intento incluyendo `turno` y `hora` (columnas del nuevo modelo).
+    let { data: appointment, error } = await supabase
       .from("appointments")
-      .insert({
-        tenant_id: doctorRes.data.tenant_id,
-        doctor_id: doctorId,
-        patient_id: patientId,
-        fecha_hora: fechaHora,
-        estado: "pendiente",
-        lock_expira_en: new Date(expiresAtMs).toISOString(),
-      })
+      .insert({ ...payloadBase, turno, hora: horaReferencial })
       .select()
       .single()
+
+    // Esquema sin migrar (sin columnas turno/hora): payload mínimo.
+    if (error?.code === "PGRST204") {
+      const resultado = await supabase
+        .from("appointments")
+        .insert(payloadBase)
+        .select()
+        .single()
+      appointment = resultado.data
+      error = resultado.error
+    }
 
     // 23505 = unique_violation (índice único parcial recomendado).
     if (error) {
       if (error.code === "23505") {
-        return err("SLOT_UNAVAILABLE", "Esa hora fue reservada por otra persona.")
+        return err(
+          "SLOT_UNAVAILABLE",
+          "Este turno ya tiene una reserva activa para esa fecha. Prueba con el otro turno."
+        )
       }
       return err("SERVER_ERROR", error.message)
+    }
+    if (!appointment) {
+      return err("SERVER_ERROR", "No se pudo crear la reserva del turno.")
     }
 
     return ok(appointment)

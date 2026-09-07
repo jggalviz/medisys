@@ -59,7 +59,10 @@ export type DoctorWithTenant = Doctor & {
   schedules: DoctorSchedule[]
 }
 
-/* ---------------- Paso 3 · Fecha y hora ---------------- */
+/* ---------------- Paso 3 · Fecha y turno ---------------- */
+
+/** Turno disponible en el Paso 3 (atención por orden de llegada). */
+export type TurnoSeleccionado = "manana" | "tarde"
 
 /** Cupo disponible generado a partir de la tabla `schedules`. */
 export type AvailableSlot = {

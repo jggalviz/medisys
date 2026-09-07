@@ -1,16 +1,14 @@
 "use client"
 
 /**
- * Paso 3 del wizard: calendario intermedio + bloques de horas disponibles.
+ * Paso 3 del wizard: calendario + elección de TURNO (mañana o tarde).
  *
- * - Calendario mensual Mobile-First (sólo hacia adelante).
- * - Al elegir fecha llama a `getAvailableSlots(doctorId, fecha)` (Server
- *   Action) y pinta chips de horas; si una hora fue tomada por otro, la
- *   alerta visual avisa y se refresca la disponibilidad.
- * - El botón "Bloquear y pagar" crea la cita 'pendiente' con lock de
- *   15 minutos a través de `lockAppointmentSlot`.
+ * - La atención es por orden de llegada dentro del turno, por eso ya no se
+ *   elige una hora exacta: solo el turno.
+ * - Al confirmar se bloquea la cita 15 minutos (`lockAppointmentSlot`) y se
+ *   guarda la hora referencial del turno (08:00 mañana / 13:00 tarde).
  */
-import { useEffect, useMemo, useState, useTransition } from "react"
+import { useMemo, useState, useTransition } from "react"
 import {
   CalendarDays,
   ChevronLeft,
@@ -19,18 +17,16 @@ import {
   Clock,
   LoaderCircle,
   Lock,
-  RefreshCw,
 } from "lucide-react"
 
 import type { Doctor, Profile } from "@/types/database"
-import type { AvailableSlot, LockCreated } from "@/types/booking"
-import { getAvailableSlots, lockAppointmentSlot } from "@/app/actions/booking"
+import type { LockCreated, TurnoSeleccionado } from "@/types/booking"
+import { lockAppointmentSlot } from "@/app/actions/booking"
 import { toISODate } from "@/lib/date"
 import { doctorNombre } from "@/lib/format"
 import { Button } from "@/components/ui/button"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { Badge } from "@/components/ui/badge"
-import { Skeleton } from "@/components/ui/skeleton"
 import { Separator } from "@/components/ui/separator"
 import { cn } from "@/lib/utils"
 
@@ -72,13 +68,27 @@ function buildMonthDays(year: number, monthIdx: number): DayCell[] {
   return cells
 }
 
-function horaAmPm(hora: string): string {
-  return new Intl.DateTimeFormat("es-VE", {
-    hour: "numeric",
-    minute: "2-digit",
-    hour12: true,
-  }).format(new Date(`2000-01-01T${hora}:00`))
+type TurnoOption = {
+  id: TurnoSeleccionado
+  icono: string
+  titulo: string
+  rango: string
 }
+
+const TURNOS: readonly TurnoOption[] = [
+  {
+    id: "manana",
+    icono: "🌅",
+    titulo: "Turno Mañana",
+    rango: "8:00 AM – 12:00 PM",
+  },
+  {
+    id: "tarde",
+    icono: "🌇",
+    titulo: "Turno Tarde",
+    rango: "1:00 PM – 5:00 PM",
+  },
+]
 
 export function StepDateTimeSelect({ doctor, patient, notice, onLocked }: Props) {
   const today = new Date()
@@ -87,14 +97,9 @@ export function StepDateTimeSelect({ doctor, patient, notice, onLocked }: Props)
   const [year, setYear] = useState(today.getFullYear())
   const [monthIdx, setMonthIdx] = useState(today.getMonth())
   const [selectedDate, setSelectedDate] = useState<string | null>(null)
-  const [chosenTime, setChosenTime] = useState<string | null>(null)
-  const [slotsState, setSlotsState] = useState<
-    | { status: "idle" }
-    | { status: "loading" }
-    | { status: "error"; message: string }
-    | { status: "ok"; slots: AvailableSlot[] }
-  >({ status: "idle" })
-  const [attempt, setAttempt] = useState(0)
+  const [selectedTurno, setSelectedTurno] = useState<TurnoSeleccionado | null>(
+    null
+  )
   const [lockError, setLockError] = useState<string | null>(null)
   const [isLocking, startLocking] = useTransition()
 
@@ -102,30 +107,6 @@ export function StepDateTimeSelect({ doctor, patient, notice, onLocked }: Props)
 
   const isCurrentMonth =
     year === today.getFullYear() && monthIdx === today.getMonth()
-
-  const slotsLoading = slotsState.status === "loading"
-  const slotsError = slotsState.status === "error" ? slotsState.message : null
-  const slots = slotsState.status === "ok" ? slotsState.slots : []
-
-  // Carga los cupos del día seleccionado vía Server Action
-  // (el setState ocurre dentro del callback asíncrono).
-  useEffect(() => {
-    if (!selectedDate) return
-    let active = true
-
-    getAvailableSlots(doctor.id, selectedDate).then((result) => {
-      if (!active) return
-      if (result.ok) {
-        setSlotsState({ status: "ok", slots: result.data.slots })
-      } else {
-        setSlotsState({ status: "error", message: result.message })
-      }
-    })
-
-    return () => {
-      active = false
-    }
-  }, [doctor.id, selectedDate, attempt])
 
   function changeMonth(delta: number) {
     let nextMonth = monthIdx + delta
@@ -143,37 +124,36 @@ export function StepDateTimeSelect({ doctor, patient, notice, onLocked }: Props)
 
   function selectDay(day: string) {
     setSelectedDate(day)
-    setChosenTime(null)
+    setSelectedTurno(null)
     setLockError(null)
-    setSlotsState({ status: "loading" })
   }
 
   function handleLock() {
-    if (!selectedDate || !chosenTime || isLocking) return
+    if (!selectedDate || !selectedTurno || isLocking) return
     setLockError(null)
 
     startLocking(async () => {
-      const result = await lockAppointmentSlot(
-        patient.id,
-        doctor.id,
-        `${selectedDate}T${chosenTime}`
-      )
+      const result = await lockAppointmentSlot({
+        patientId: patient.id,
+        doctorId: doctor.id,
+        date: selectedDate,
+        turno: selectedTurno,
+      })
 
       if (result.ok) {
         const expiresAt = Date.parse(result.data.lock_expira_en ?? "")
         onLocked({
           appointment: result.data,
-          expiresAt: Number.isNaN(expiresAt) ? Date.now() + 15 * 60_000 : expiresAt,
+          expiresAt: Number.isNaN(expiresAt)
+            ? Date.now() + 15 * 60_000
+            : expiresAt,
         })
         return
       }
 
       setLockError(result.message)
       if (result.code === "SLOT_UNAVAILABLE") {
-        // La hora se tomó entre la carga y la confirmación: recargar cupos.
-        setChosenTime(null)
-        setSlotsState({ status: "loading" })
-        setAttempt((n) => n + 1)
+        setSelectedTurno(null)
       }
     })
   }
@@ -186,18 +166,24 @@ export function StepDateTimeSelect({ doctor, patient, notice, onLocked }: Props)
       }).format(new Date(`${selectedDate}T12:00:00`))
     : null
 
-  return (
+  const turnoSeleccionado =
+    TURNOS.find((turno) => turno.id === selectedTurno) ?? null
+
+    return (
     <div className="flex flex-col gap-5">
       <header className="flex flex-col gap-3">
         <p className="text-sm text-muted-foreground">
-          Paciente: <span className="font-medium text-foreground">{`${patient.nombres} ${patient.apellidos}`}</span>{" "}
+          Paciente:{" "}
+          <span className="font-medium text-foreground">
+            {`${patient.nombres} ${patient.apellidos}`}
+          </span>{" "}
           · {doctorNombre(doctor)}
         </p>
         <h2 className="text-xl font-semibold tracking-tight">
-          ¿Cuándo te atiendes?
+          ¿Cuándo y en qué turno te atiendes?
         </h2>
         <p className="mt-1 text-sm text-muted-foreground">
-          Toca un día del calendario y luego elige la hora disponible.
+          Elige el día y luego el turno (mañana o tarde).
         </p>
       </header>
 
@@ -228,7 +214,7 @@ export function StepDateTimeSelect({ doctor, patient, notice, onLocked }: Props)
       {lockError && (
         <Alert variant="destructive">
           <CircleAlert className="size-4" />
-          <AlertTitle>No pudimos bloquear esa hora</AlertTitle>
+          <AlertTitle>No pudimos bloquear el turno</AlertTitle>
           <AlertDescription>{lockError}</AlertDescription>
         </Alert>
       )}
@@ -291,7 +277,9 @@ export function StepDateTimeSelect({ doctor, patient, notice, onLocked }: Props)
                   disabled
                     ? "cursor-not-allowed text-muted-foreground/30"
                     : "hover:bg-muted",
-                  isSelected && !disabled && "bg-primary text-primary-foreground hover:bg-primary"
+                  isSelected &&
+                    !disabled &&
+                    "bg-primary text-primary-foreground hover:bg-primary"
                 )}
               >
                 {cell.day}
@@ -301,85 +289,73 @@ export function StepDateTimeSelect({ doctor, patient, notice, onLocked }: Props)
         </div>
       </section>
 
-      {selectedDate && (
+            {selectedDate && (
         <section className="flex flex-col gap-3" aria-live="polite">
           <div className="flex items-center justify-between">
             <h3 className="flex items-center gap-2 text-base font-semibold">
               <Clock className="size-4 text-primary" />
-              {selectedLabel ? selectedLabel.charAt(0).toUpperCase() + selectedLabel.slice(1) : ""}
+              {selectedLabel
+                ? selectedLabel.charAt(0).toUpperCase() + selectedLabel.slice(1)
+                : ""}
             </h3>
-            {slotsError && (
-              <button
-                type="button"
-                onClick={() => {
-                  setSlotsState({ status: "loading" })
-                  setAttempt((n) => n + 1)
-                }}
-                className="flex items-center gap-1 text-xs font-medium text-primary"
-              >
-                <RefreshCw className="size-3.5" /> Reintentar
-              </button>
-            )}
           </div>
 
-          {slotsLoading ? (
-            <div className="grid grid-cols-3 gap-2" aria-busy="true">
-              <Skeleton className="h-11 w-full rounded-xl" />
-              <Skeleton className="h-11 w-full rounded-xl" />
-              <Skeleton className="h-11 w-full rounded-xl" />
-              <Skeleton className="h-11 w-full rounded-xl" />
-              <Skeleton className="h-11 w-full rounded-xl" />
-            </div>
-          ) : slotsError ? (
-            <Alert variant="destructive">
-              <CircleAlert className="size-4" />
-              <AlertTitle>No pudimos cargar las horas</AlertTitle>
-              <AlertDescription>{slotsError}</AlertDescription>
-            </Alert>
-          ) : slots.length === 0 ? (
-            <Alert>
-              <CalendarDays className="size-4" />
-              <AlertTitle>Sin disponibilidad ese día</AlertTitle>
-              <AlertDescription>
-                El especialista no tiene cupos para esta fecha. Prueba con otro día.
-              </AlertDescription>
-            </Alert>
-          ) : (
-            <div className="grid grid-cols-3 gap-2">
-              {slots.map((slot) => {
-                const isSelected = chosenTime === slot.hora
-                return (
-                  <button
-                    key={slot.iso}
-                    type="button"
-                    onClick={() => {
-                      setChosenTime(slot.hora)
-                      setLockError(null)
-                    }}
-                    aria-pressed={isSelected}
-                    className={cn(
-                      "flex h-11 items-center justify-center rounded-xl border text-sm font-medium transition-all",
-                      "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring active:scale-[0.97]",
-                      isSelected
-                        ? "border-primary bg-primary text-primary-foreground shadow-sm"
-                        : "border-border bg-card hover:bg-muted/60"
-                    )}
-                  >
-                    {horaAmPm(slot.hora)}
-                  </button>
-                )
-              })}
-            </div>
-          )}
+          <p className="text-sm text-muted-foreground">
+            Elige el turno que prefieras. La atención dentro del turno es por
+            orden de llegada.
+          </p>
+
+          <div
+            role="radiogroup"
+            aria-label="Turnos disponibles"
+            className="grid gap-2 sm:grid-cols-2"
+          >
+            {TURNOS.map((turno) => {
+              const isSelected = selectedTurno === turno.id
+              return (
+                <button
+                  key={turno.id}
+                  type="button"
+                  role="radio"
+                  aria-checked={isSelected}
+                  onClick={() => {
+                    setSelectedTurno(turno.id)
+                    setLockError(null)
+                  }}
+                  className={cn(
+                    "flex w-full flex-col items-start gap-1.5 rounded-2xl border bg-card p-4 text-left transition-all",
+                    "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring active:scale-[0.99]",
+                    isSelected
+                      ? "border-primary bg-primary/5 ring-2 ring-primary/30"
+                      : "border-border hover:bg-muted/40"
+                  )}
+                >
+                  <span className="text-2xl leading-none" aria-hidden="true">
+                    {turno.icono}
+                  </span>
+                  <span className="font-semibold">{turno.titulo}</span>
+                  <span className="text-sm font-medium text-muted-foreground">
+                    {turno.rango}
+                  </span>
+                </button>
+              )
+            })}
+          </div>
+
+          <p className="text-xs text-muted-foreground">
+            Atención por orden de llegada durante el turno seleccionado.
+          </p>
         </section>
       )}
 
       <div className="sticky bottom-0 -mx-4 border-t bg-background/95 px-4 pb-[max(env(safe-area-inset-bottom),1rem)] pt-3 backdrop-blur">
         <div className="mb-2 flex items-center justify-between text-sm">
           <span className="text-muted-foreground">
-            {selectedDate && chosenTime
-              ? `${selectedLabel} a las ${horaAmPm(chosenTime)}`
-              : "Selecciona fecha y hora"}
+            {selectedDate && turnoSeleccionado
+              ? `${turnoSeleccionado.titulo} · ${
+                  selectedLabel ? selectedLabel.charAt(0).toUpperCase() + selectedLabel.slice(1) : ""
+                }`
+              : "Selecciona fecha y turno"}
           </span>
           <Badge variant="outline" className="gap-1.5">
             <Lock className="size-3" /> Bloqueo 15 min
@@ -387,18 +363,19 @@ export function StepDateTimeSelect({ doctor, patient, notice, onLocked }: Props)
         </div>
         <Button
           type="button"
-          disabled={!selectedDate || !chosenTime || isLocking}
+          disabled={!selectedDate || !selectedTurno || isLocking}
           onClick={handleLock}
           className="h-12 w-full gap-2 rounded-xl text-base"
         >
           {isLocking && <LoaderCircle className="size-4 animate-spin" />}
-          {isLocking ? "Verificando disponibilidad…" : "Bloquear hora y continuar al pago"}
-          {!isLocking && <Lock className="size-4" />}
+          {isLocking
+            ? "Bloqueando turno…"
+            : "Bloquear turno y continuar al pago 🔒"}
         </Button>
         <Separator className="mt-3" />
         <p className="mt-2 flex items-center justify-center gap-1.5 text-center text-[11px] text-muted-foreground">
           <Lock className="size-3" />
-          La hora queda apartada por 15 minutos mientras completas el pago.
+          Tu turno queda apartado por 15 minutos mientras completas el pago.
         </p>
       </div>
     </div>
