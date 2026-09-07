@@ -120,6 +120,7 @@ function QuickPatientForm({
   const [apellidos, setApellidos] = useState("")
   const [cedula, setCedula] = useState("")
   const [telefono, setTelefono] = useState("")
+  const [email, setEmail] = useState("")
   const [parentesco, setParentesco] = useState("")
   const [fechaNacimiento, setFechaNacimiento] = useState("")
   const [esMenor, setEsMenor] = useState(false)
@@ -139,6 +140,8 @@ function QuickPatientForm({
         apellidos,
         cedula: cedula.trim() || null,
         telefono: telefono.trim() || null,
+        // Opcional: vacío se guarda como null (equivalente a .email().optional().or(z.literal(''))).
+        email: email.trim() || null,
         fecha_nacimiento: esMenor && fechaNacimiento ? fechaNacimiento : null,
         es_menor: esMenor,
         parentesco: parentesco.trim() || null,
@@ -204,6 +207,19 @@ function QuickPatientForm({
             placeholder="0412-123.45.67"
             value={telefono}
             onChange={(e) => setTelefono(e.target.value)}
+          />
+        </div>
+        <div className="col-span-2 flex flex-col gap-1.5">
+          <Label htmlFor="paciente-email">Correo electrónico (Opcional)</Label>
+          <Input
+            id="paciente-email"
+            name="email"
+            type="email"
+            inputMode="email"
+            autoComplete="email"
+            placeholder="paciente@correo.com"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
           />
         </div>
         <div className="col-span-2 flex flex-col gap-1.5 sm:col-span-1">
