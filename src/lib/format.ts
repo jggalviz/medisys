@@ -21,7 +21,7 @@ export function perfilNombre(profile: Profile): string {
 }
 
 /**
- * Nombre legible de un médico, tolerante a `apellidos` nulos/vacíos y con
+ * Nombre legible de un especialista, tolerante a `apellidos` nulos/vacíos y con
  * fallback a la columna `nombre` (nombre completo) cuando exista.
  * Ej.: "María Rivas" · "Dra. Laura Rincón".
  */
@@ -30,7 +30,7 @@ export function doctorNombre(
 ): string {
   const separado = [doctor.nombres, doctor.apellidos].filter(Boolean).join(" ").trim()
   if (separado) return separado
-  return doctor.nombre?.trim() || "Médico"
+  return doctor.nombre?.trim() || "Especialista"
 }
 
 /** Precio formateado en VES/Bs. p. ej. "Bs.S 25,00". */

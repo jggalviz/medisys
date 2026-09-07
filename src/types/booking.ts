@@ -45,7 +45,7 @@ export type NewPatientInput = {
 /* ---------------- Paso 2 · Doctor ---------------- */
 
 /**
- * Horario semanal compacto de un médico (para la ficha del Paso 2).
+ * Horario semanal compacto de un especialista (para la ficha del Paso 2).
  * Solo los campos que la UI necesita para mostrar días y rangos de hora.
  */
 export type DoctorSchedule = Pick<

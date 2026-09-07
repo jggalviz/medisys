@@ -1,13 +1,13 @@
 "use client"
 
 /**
- * Paso 2 del wizard: selección de especialidad y médico del tenant.
+ * Paso 2 del wizard: selección de especialidad y especialista del tenant.
  *
  * Flujo:
  *  1. El paciente elige la ESPECIALIDAD (Cardiología, Pediatría…).
- *  2. Se despliegan los médicos de esa especialidad con su ficha:
+ *  2. Se despliegan los especialistas de esa especialidad con su ficha:
  *     nombre, foto/avatar y horarios semanales disponibles (`schedules`).
- *  3. Al tocar un médico se guarda la selección y se habilita
+ *  3. Al tocar un especialista se guarda la selección y se habilita
  *     «Continuar» hacia el Paso 3 (Fecha y hora).
  */
 import { useEffect, useMemo, useState } from "react"
@@ -59,7 +59,7 @@ function horarioResumen(horario: DoctorSchedule): string | null {
 }
 
 /* ------------------------------------------------------------------ */
-/* Avatar y ficha del médico                                           */
+/* Avatar y ficha del especialista                                      */
 /* ------------------------------------------------------------------ */
 
 function DoctorAvatar({
@@ -217,7 +217,7 @@ export function StepDoctorSelect({
     [load]
   )
 
-  /** Médicos agrupados por su campo `especialidad`. */
+  /** Especialistas agrupados por su campo `especialidad`. */
   const grupos = useMemo(() => {
     const porEspecialidad = new Map<string, DoctorWithTenant[]>()
     for (const doctor of doctors) {
@@ -249,8 +249,8 @@ export function StepDoctorSelect({
     )
   }
 
-  const pluralMedicos = (cantidad: number) =>
-    `${cantidad} ${cantidad === 1 ? "médico" : "médicos"}`
+  const pluralEspecialistas = (cantidad: number) =>
+    `${cantidad} ${cantidad === 1 ? "especialista" : "especialistas"}`
 
   if (loading) {
     return (
@@ -261,7 +261,7 @@ export function StepDoctorSelect({
           </h2>
           <p className="mt-1 flex items-center gap-1.5 text-sm text-muted-foreground">
             <LoaderCircle className="size-3.5 animate-spin" aria-hidden="true" />
-            Consultando médicos disponibles…
+            Consultando especialistas disponibles…
           </p>
         </header>
         <div className="flex flex-col gap-3" aria-busy="true">
@@ -282,7 +282,7 @@ export function StepDoctorSelect({
           </h2>
         </header>
         <Alert variant="destructive">
-          <AlertTitle>No pudimos cargar los médicos</AlertTitle>
+          <AlertTitle>No pudimos cargar los especialistas</AlertTitle>
           <AlertDescription>{loadError}</AlertDescription>
         </Alert>
         <Button
@@ -306,7 +306,7 @@ export function StepDoctorSelect({
         </h2>
         <p className="mt-1 text-sm text-muted-foreground">
           {listaDeEspecialidades
-            ? "Primero elige la especialidad y luego verás sus médicos y horarios."
+            ? "Primero elige la especialidad y luego verás sus especialistas y horarios disponibles."
             : `Estos son los especialistas en ${activeGroup!.especialidad}.`}
         </p>
       </header>
@@ -319,7 +319,7 @@ export function StepDoctorSelect({
         >
           {grupos.length === 0 ? (
             <Alert>
-              <AlertTitle>Sin médicos disponibles</AlertTitle>
+              <AlertTitle>Sin especialistas disponibles</AlertTitle>
               <AlertDescription>
                 No encontramos especialistas para esta clínica en este momento.
               </AlertDescription>
@@ -354,7 +354,7 @@ export function StepDoctorSelect({
                     <span className="flex min-w-0 flex-1 flex-col gap-0.5">
                       <span className="font-semibold">{grupo.especialidad}</span>
                       <span className="text-xs text-muted-foreground">
-                        {pluralMedicos(grupo.items.length)}
+                        {pluralEspecialistas(grupo.items.length)}
                         {tieneSeleccion
                           ? ` · ${doctorNombre(selected!)}`
                           : " disponibles"}
@@ -368,10 +368,10 @@ export function StepDoctorSelect({
           )}
         </section>
       ) : (
-        /* ---------- Vista 2: médicos de la especialidad ---------- */
+        /* ---------- Vista 2: especialistas de la especialidad ---------- */
         <section
           className="flex flex-col gap-2"
-          aria-label={`Médicos de ${activeGroup!.especialidad}`}
+          aria-label={`Especialistas de ${activeGroup!.especialidad}`}
         >
           <Button
             type="button"
@@ -384,7 +384,7 @@ export function StepDoctorSelect({
           </Button>
 
           <p className="text-xs text-muted-foreground">
-            {pluralMedicos(activeGroup!.items.length)} · toca la tarjeta para
+            {pluralEspecialistas(activeGroup!.items.length)} · toca la tarjeta para
             seleccionar
           </p>
 
@@ -411,7 +411,7 @@ export function StepDoctorSelect({
         >
           {selected
             ? `Continuar con ${doctorNombre(selected)}`
-            : "Selecciona un médico"}
+            : "Selecciona un especialista"}
           {selected ? (
             <ChevronRight className="size-4" />
           ) : (
@@ -422,7 +422,7 @@ export function StepDoctorSelect({
           <p className="mt-2 text-center text-xs text-muted-foreground">
             {listaDeEspecialidades
               ? "Primero elige la especialidad de tu consulta"
-              : "Toca la tarjeta de un médico para continuar"}
+              : "Toca la tarjeta de un especialista para continuar"}
           </p>
         )}
       </div>

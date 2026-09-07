@@ -6,7 +6,7 @@
  * Toda la lógica de negocio sensible corre en el servidor con el
  * cliente Supabase `@/lib/supabase/server` (sesión vía cookies).
  *
- *  - `getDoctorsByTenant`      especialidades/médicos públicos del tenant
+ *  - `getDoctorsByTenant`      especialidades/especialistas públicos del tenant
  *  - `getAvailableSlots`       cupos del día a partir de `schedules`
  *  - `lockAppointmentSlot`     crea cita 'pendiente' con lock de 15 min
  *  - `confirmBookingPayment`   adjunta referencia + comprobante de pago
@@ -87,7 +87,7 @@ async function findActiveDoctor(
     .maybeSingle()
 
   if (error) return err("SERVER_ERROR", error.message)
-  if (!data) return err("NOT_FOUND", "El médico no existe o no está activo.")
+  if (!data) return err("NOT_FOUND", "El especialista no existe o no está activo.")
   return ok(data)
 }
 
@@ -234,7 +234,7 @@ export async function createPatientForBooking(
 }
 
 /* ------------------------------------------------------------------ */
-/* Paso 2 · Médicos del tenant                                         */
+/* Paso 2 · Especialistas del tenant                                      */
 /* ------------------------------------------------------------------ */
 
 /**
@@ -291,7 +291,7 @@ function normalizeScheduleRow(row: Record<string, unknown>): DoctorSchedule | nu
 }
 
 /**
- * Médicos activos de la clínica, agrupables por especialidad y con sus
+ * Especialistas activos de la clínica, agrupables por especialidad y con sus
  * horarios semanales (`schedules`) ya resueltos para la ficha del Paso 2.
  * Devuelve también el slug del tenant para validar la URL del flujo.
  */
@@ -316,7 +316,7 @@ export async function getDoctorsByTenant(
     )
     const doctorIds = doctors.map((doctor) => doctor.id)
 
-    // Horarios de todos los médicos del tenant en una sola consulta.
+    // Horarios de todos los especialistas del tenant en una sola consulta.
     const schedulesByDoctor = new Map<string, DoctorSchedule[]>()
     if (doctorIds.length > 0) {
       const { data: scheduleRows, error: scheduleError } = await supabase
@@ -446,7 +446,7 @@ export async function getAvailableSlots(
  * el cupo desaparece de `getAvailableSlots` para los demás pacientes.
  *
  * @param patientId id del paciente que se atenderá (tabla `profiles`)
- * @param doctorId  médico seleccionado
+ * @param doctorId  especialista seleccionado
  * @param dateTime  fecha+hora local sin zona: 'YYYY-MM-DDTHH:mm'
  */
 export async function lockAppointmentSlot(

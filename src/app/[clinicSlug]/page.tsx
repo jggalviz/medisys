@@ -13,7 +13,7 @@ type ClinicPageProps = {
  * URL directa de reserva: /[clinicSlug] (ej. https://medisys.com.ve/clinica-demo).
  *
  * Carga la info pública del tenant (nombre, logo, datos_pago_movil) y
- * despliega el BookingWizard (Paciente → Médico → Fecha/hora → Pago).
+ * despliega el BookingWizard (Paciente → Especialidad → Fecha/hora → Pago).
  */
 export async function generateMetadata({
   params,
@@ -37,7 +37,7 @@ export async function generateMetadata({
 
   return {
     title: `Reservar cita en ${tenant.nombre} | Medisys`,
-    description: `Agenda tu cita médica en ${tenant.nombre}. Elige médico, día y hora y paga con Pago Móvil desde tu teléfono.`,
+    description: `Agenda tu cita médica en ${tenant.nombre}. Elige especialista, día y hora y paga con Pago Móvil desde tu teléfono.`,
     openGraph: {
       title: `Reservar cita en ${tenant.nombre} | Medisys`,
       description: "Agenda y paga tu cita médica en minutos.",

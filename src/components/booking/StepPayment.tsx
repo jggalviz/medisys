@@ -3,7 +3,7 @@
 /**
  * Paso 4 del wizard: pago de la reserva.
  *
- * - Resumen (paciente, médico, fecha/hora y monto).
+ * - Resumen (paciente, especialista, fecha/hora y monto).
  * - Cuentas de cobro del tenant: Pago Móvil / Zelle (`datos_pago_movil`).
  * - Número de referencia + comprobante subido a Supabase Storage
  *   (bucket 'comprobantes') y confirmación vía Server Action.
@@ -59,7 +59,7 @@ function formatoRestante(ms: number): string {
   return `${String(min).padStart(2, "0")}:${String(sec).padStart(2, "0")}`
 }
 
-/** Fila resumen de la reserva (paciente / médico / fecha). */
+/** Fila resumen de la reserva (paciente / especialista / fecha). */
 function SummaryRow({
   label,
   value,
@@ -266,7 +266,7 @@ export function StepPayment({
           <BadgeCheck className="size-4 text-primary" /> Resumen
         </h3>
         <SummaryRow label="Paciente" value={perfilNombre(patient)} />
-        <SummaryRow label="Médico" value={doctorNombre(doctor)} />
+        <SummaryRow label="Especialista" value={doctorNombre(doctor)} />
         <SummaryRow
           label="Fecha y hora"
           value={`${fechaLegible} · ${appointment.hora}`}

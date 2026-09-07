@@ -325,7 +325,7 @@ export function StepDateTimeSelect({ doctor, patient, notice, onLocked }: Props)
               <CalendarDays className="size-4" />
               <AlertTitle>Sin disponibilidad ese día</AlertTitle>
               <AlertDescription>
-                El médico no tiene cupos para esta fecha. Prueba con otro día.
+                El especialista no tiene cupos para esta fecha. Prueba con otro día.
               </AlertDescription>
             </Alert>
           ) : (

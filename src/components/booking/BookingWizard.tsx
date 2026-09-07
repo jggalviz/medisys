@@ -5,7 +5,7 @@
  * -----------------------------------------------------------
  * Estado global del flujo:
  *   Paso 1 → Paciente      (StepPatientSelect)
- *   Paso 2 → Doctor        (StepDoctorSelect)
+ *   Paso 2 → Especialidad (StepDoctorSelect)
  *   Paso 3 → Fecha y hora  (StepDateTimeSelect · crea el LOCK de 15 min)
  *   Paso 4 → Pago          (StepPayment · comprobante)
  *   Vista  → Éxito         (confirmación tras registrar el pago)
@@ -30,7 +30,7 @@ type Props = {
   tenant: Tenant
 }
 
-const PASOS = ["Paciente", "Médico", "Fecha y hora", "Pago"] as const
+const PASOS = ["Paciente", "Especialidad", "Fecha y hora", "Pago"] as const
 type StepIndex = 1 | 2 | 3 | 4
 
 function formatoRestante(ms: number): string {
@@ -86,7 +86,7 @@ export function BookingWizard({ tenant }: Props) {
     if (step === 1) return
 
     if (step === 4 && lock) {
-      // El usuario decide editar fecha/médico/paciente: liberar el lock.
+      // El usuario decide editar fecha/especialidad/paciente: liberar el lock.
       setLock(null)
       await releaseLockedSlot(lock.appointment.id)
     }
@@ -154,7 +154,7 @@ export function BookingWizard({ tenant }: Props) {
           {doctor && (
             <>
               <dt className="mt-3 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                Médico
+                Especialista
               </dt>
               <dd className="text-sm font-medium">{`${doctor.nombres} ${doctor.apellidos}`}</dd>
             </>

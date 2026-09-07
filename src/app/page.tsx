@@ -96,7 +96,7 @@ const BENEFITS: readonly Benefit[] = [
     chip: "PWA",
     title: "Tus pacientes reservan sin descargar nada",
     description:
-      "Comparte un enlace y el paciente agenda desde el navegador de su teléfono como si fuera una app: elige médico, día, hora y paga en el mismo flujo.",
+      "Comparte un enlace y el paciente agenda desde el navegador de su teléfono como si fuera una app: elige especialista, día, hora y paga en el mismo flujo.",
     iconClassName: "bg-teal-500/10 text-teal-600 ring-teal-500/15",
   },
   {
@@ -132,7 +132,7 @@ const STEPS: readonly StepItem[] = [
     icon: CalendarCheck,
     title: "El paciente reserva solo",
     description:
-      "Entra al enlace de tu clínica, elige el especialista, el médico y el primer horario libre.",
+      "Entra al enlace de tu clínica, elige el especialista y el primer horario libre.",
   },
   {
     icon: Banknote,
@@ -149,7 +149,7 @@ const STEPS: readonly StepItem[] = [
 ]
 
 const PRICING_FEATURES: readonly string[] = [
-  "Médicos ilimitados",
+  "Especialistas ilimitados",
   "Soporte prioritario por WhatsApp y correo",
   "Hosting en la nube con respaldos automáticos",
   "Personalización con la marca de tu clínica",
@@ -370,7 +370,7 @@ function HeroVisual() {
         <dl className="mt-5 space-y-3">
           {[
             { label: "Paciente", value: "María González" },
-            { label: "Médico", value: "Dra. Laura Rincón · Pediatría" },
+            { label: "Especialista", value: "Dra. Laura Rincón · Pediatría" },
             { label: "Cita", value: "Hoy · 10:30 am" },
           ].map((row) => (
             <div
@@ -619,7 +619,7 @@ function PricingSection() {
 
               <p className="mt-5 text-pretty leading-7 text-zinc-600">
                 Un solo plan con todo incluido, pensado para clínicas
-                medianas y consultorios con varios médicos que cobran con
+                medianas y consultorios con varios especialistas que cobran con
                 Pago Móvil.
               </p>
 
