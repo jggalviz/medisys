@@ -76,11 +76,26 @@ export type AvailableSlotsResult = {
 
 /* ---------------- Paso 4 · Pago ---------------- */
 
-export type ConfirmPaymentInput = {
-  appointmentId: string
+/** Datos del pago en línea (Pago Móvil) que confirma el paciente. */
+export type OnlinePaymentInput = {
+  /** Número de referencia de la transferencia (4-8 dígitos). */
   referenciaPago: string
+  /** Teléfono desde el cual realizó el Pago Móvil. */
+  telefonoEmisor: string
+  /** Banco de origen de la transferencia (opcional). */
+  bancoOrigen?: string | null
+  /** URL pública del comprobante subido. */
   comprobanteUrl?: string | null
 }
+
+/**
+ * Forma de pago elegida en el Paso 4:
+ *  - `en_linea`: transfirió con Pago Móvil y adjuntó comprobante.
+ *  - `recepcion`: pagará en caja el día de la cita.
+ */
+export type PaymentMethodInput =
+  | { metodo: "en_linea"; datos: OnlinePaymentInput }
+  | { metodo: "recepcion" }
 
 /** Payload con el que el Step 3 avisa al wizard del lock creado. */
 export type LockCreated = {

@@ -201,6 +201,22 @@ export function StepDateTimeSelect({ doctor, patient, notice, onLocked }: Props)
         </p>
       </header>
 
+      <div
+        role="note"
+        aria-label="Nota importante sobre la recepción"
+        className="flex gap-3 rounded-2xl border border-amber-200 bg-amber-50 p-3.5 text-sm text-amber-900 dark:border-amber-400/30 dark:bg-amber-400/10 dark:text-amber-200"
+      >
+        <span className="shrink-0 text-base leading-5" aria-hidden="true">
+          📌
+        </span>
+        <p className="leading-6">
+          <strong>Nota importante:</strong> La atención es por orden de
+          llegada. Al llegar a la clínica, dirígete a recepción para confirmar
+          tu llegada, validar tu turno y realizar el pago si no lo completaste
+          en línea.
+        </p>
+      </div>
+
       {notice && (
         <Alert variant="warning">
           <Clock className="size-4" />

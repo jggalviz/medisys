@@ -137,11 +137,25 @@ export function BookingWizard({ tenant }: Props) {
         </span>
         <div className="flex flex-col gap-2">
           <h2 className="text-2xl font-bold tracking-tight">¡Casi listo!</h2>
-          <p className="text-muted-foreground">
-            Registramos tu pago con la referencia{" "}
-            <strong className="text-foreground">{done.pago_referencia}</strong>.
-            La clínica validará el comprobante y te confirmará la cita.
-          </p>
+          {done.estado === "pago_en_recepcion" ? (
+            <p className="text-muted-foreground">
+              Apartamos tu cupo. Recuerda llegar con{" "}
+              <strong className="text-foreground">15 minutos de anticipación</strong>{" "}
+              para realizar el pago en recepción.
+            </p>
+          ) : (
+            <p className="text-muted-foreground">
+              {done.referencia_pago ? (
+                <>
+                  Registramos tu pago con la referencia{" "}
+                  <strong className="text-foreground">{done.referencia_pago}</strong>.
+                </>
+              ) : (
+                <>Registramos tu pago en línea.</>
+              )}{" "}
+              La clínica validará el comprobante y te confirmará la cita.
+            </p>
+          )}
         </div>
 
         <dl className="w-full rounded-2xl border bg-card p-4 text-left">

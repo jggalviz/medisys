@@ -9,14 +9,15 @@
  *  - `getDoctorsByTenant`      especialidades/especialistas públicos del tenant
  *  - `getAvailableSlots`       cupos del día a partir de `schedules`
  *  - `lockAppointmentSlot`     crea cita 'pendiente' con lock de 15 min
- *  - `confirmBookingPayment`   adjunta referencia + comprobante de pago
+ *  - `registerAppointmentPayment` registra el método de pago elegido
+ *    (en línea con comprobante o pago en recepción)
  *  - `releaseLockedSlot`       libera el lock al vencer / al retroceder
  *
  * Errores: nunca se lanzan excepciones al cliente; se devuelve
  * `ActionResult<T>` con códigos accionables por la UI.
  */
 import { LOCK_DURATION_MINUTES } from "@/types/database"
-import type { Appointment, Doctor, Profile } from "@/types/database"
+import type { Appointment, AppointmentUpdate, Doctor, Profile } from "@/types/database"
 import type {
   ActionResult,
   AvailableSlot,
@@ -25,6 +26,7 @@ import type {
   DoctorWithTenant,
   NewPatientInput,
   PatientOptions,
+  PaymentMethodInput,
 } from "@/types/booking"
 import { createClient } from "@/lib/supabase/server"
 import {
@@ -34,6 +36,7 @@ import {
   minutesToTime,
   parseDateISO,
   timeToMinutes,
+  toISODate,
 } from "@/lib/date"
 
 type SupabaseClient = Awaited<ReturnType<typeof createClient>>
@@ -93,7 +96,11 @@ async function findActiveDoctor(
 
 /** Minutos de la jornada del día. */
 function ocupadoDeDia(
-  citas: Pick<Appointment, "hora" | "estado" | "lock_expira_en">[],
+  citas: {
+    hora: string
+    estado: Appointment["estado"]
+    lock_expira_en: string | null
+  }[],
   duracionMin: number
 ): { start: number; end: number }[] {
   const ahora = Date.now()
@@ -365,19 +372,37 @@ export async function getDoctorsByTenant(
 /* Paso 3 · Disponibilidad y lock de 15 min                            */
 /* ------------------------------------------------------------------ */
 
+/** Estados de cita que ocupan un cupo y no pueden solaparse. */
+const ESTADOS_BLOQUEANTES: Appointment["estado"][] = [
+  "pendiente",
+  "pendiente_validacion",
+  "pago_en_recepcion",
+  "confirmada",
+  "completada",
+]
+
+/** Duración por defecto de cada cupo (esquema lean sin `duracion_min`). */
+const SLOT_DURATION_MIN = 30
+
+/** Devuelve el ISO 'YYYY-MM-DD' del día siguiente al indicado. */
+function siguienteDiaISO(dateISO: string): string {
+  const date = parseDateISO(dateISO)
+  date.setDate(date.getDate() + 1)
+  return toISODate(date)
+}
+
 /**
  * Calcula los cupos disponibles para un doctor en una fecha concreta.
  *
- * Algoritmo:
- *  1. Lee los `schedules` activos del doctor para el día de la semana.
- *  2. Genera los cupos entre hora_inicio y hora_fin según `duracion_min`.
- *  3. Resta los huecos ya ocupados por citas activas (pendiente con lock
- *     vigente, confirmada o completada) — las canceladas/expiradas liberan.
+ * Algoritmo (esquema lean de `schedules`/`appointments`):
+ *  1. Lee los `schedules` del doctor para el día de la semana
+ *     (`hora_inicio`, `hora_fin`, `dia_semana`).
+ *  2. Genera cupos de 30 minutos entre hora_inicio y hora_fin.
+ *  3. Resta los huecos ocupados consultando `appointments` por rango de
+ *     `fecha_hora` en los estados que bloquean el cupo.
  *
  * Nota de concurrencia: el bloqueo definitivo lo hace `lockAppointmentSlot`
- * (verificación + insert). Para producción se recomienda un índice único
- * parcial en `appointments(doctor_id, fecha_hora)` donde estado no sea
- * 'cancelada' ni 'expirada'; la violación 23505 se traduce a SLOT_UNAVAILABLE.
+ * (verificación + insert). La violación 23505 se traduce a SLOT_UNAVAILABLE.
  */
 export async function getAvailableSlots(
   doctorId: string,
@@ -396,10 +421,9 @@ export async function getAvailableSlots(
 
     const { data: schedules, error: scheduleError } = await supabase
       .from("schedules")
-      .select("hora_inicio, hora_fin, duracion_min")
+      .select("hora_inicio, hora_fin")
       .eq("doctor_id", doctorId)
       .eq("dia_semana", diaSemana)
-      .eq("activo", true)
       .order("hora_inicio", { ascending: true })
 
     if (scheduleError) return err("SERVER_ERROR", scheduleError.message)
@@ -408,29 +432,45 @@ export async function getAvailableSlots(
     for (const schedule of schedules ?? []) {
       const inicio = timeToMinutes(schedule.hora_inicio)
       const fin = timeToMinutes(schedule.hora_fin)
-      const paso = Math.max(schedule.duracion_min, 10)
-      for (let min = inicio; min + paso <= fin; min += paso) {
+      for (let min = inicio; min + SLOT_DURATION_MIN <= fin; min += SLOT_DURATION_MIN) {
         const hora = minutesToTime(min)
         slots.push({ fecha: date, hora, iso: combineToISO(date, hora) })
       }
     }
 
+    // Citas del día (bloqueadas por cupos propios u otras reservas).
+    const inicioDia = combineToISO(date, "00:00")
+    const finDia = combineToISO(siguienteDiaISO(date), "00:00")
+
     const { data: citas, error: citasError } = await supabase
       .from("appointments")
-      .select("hora, estado, lock_expira_en")
+      .select("fecha_hora, estado, lock_expira_en")
       .eq("doctor_id", doctorId)
-      .eq("fecha", date)
-      .in("estado", ["pendiente", "confirmada", "completada", "cancelada", "expirada"])
+      .gte("fecha_hora", inicioDia)
+      .lt("fecha_hora", finDia)
+      .in("estado", ESTADOS_BLOQUEANTES)
 
     if (citasError) return err("SERVER_ERROR", citasError.message)
 
-    const duracion = Math.max(...(schedules ?? []).map((s) => s.duracion_min), 30)
-    const ocupados = ocupadoDeDia((citas ?? []) as never[], duracion)
+    const ocupados = ((citas ?? []) as {
+      fecha_hora: string | null
+      estado: Appointment["estado"]
+      lock_expira_en: string | null
+    }[])
+      .map((cita) => {
+        const local = cita.fecha_hora ?? ""
+        const idx = local.indexOf("T")
+        const hora = idx >= 0 ? local.slice(idx + 1, idx + 6) : ""
+        return { hora, estado: cita.estado, lock_expira_en: cita.lock_expira_en }
+      })
+      .filter((cita) => isValidTime(cita.hora))
+
+    const ocupadosMin = ocupadoDeDia(ocupados, SLOT_DURATION_MIN)
 
     const libres = slots.filter((slot) => {
       const start = timeToMinutes(slot.hora)
-      const window = { start, end: start + duracion }
-      return !ocupados.some((b) => seSolapan(window, b))
+      const window = { start, end: start + SLOT_DURATION_MIN }
+      return !ocupadosMin.some((b) => seSolapan(window, b))
     })
 
     return ok({ fecha: date, slots: libres })
@@ -498,13 +538,9 @@ export async function lockAppointmentSlot(
         tenant_id: doctorRes.data.tenant_id,
         doctor_id: doctorId,
         patient_id: patientId,
-        fecha: date,
-        hora: time,
         fecha_hora: fechaHora,
         estado: "pendiente",
         lock_expira_en: new Date(expiresAtMs).toISOString(),
-        pago_estado: "pendiente",
-        monto: doctorRes.data.precio_consulta,
       })
       .select()
       .single()
@@ -571,36 +607,32 @@ export async function releaseLockedSlot(
 }
 
 /* ------------------------------------------------------------------ */
-/* Paso 4 · Pago (referencia + comprobante)                            */
+/* Paso 4 · Pago (método de pago)                                      */
 /* ------------------------------------------------------------------ */
 
 /**
- * Registra la referencia del Pago Móvil/Zelle y la URL pública del
- * comprobante subido. La cita pasa a `pago_estado = 'en_revision'` y
- * queda esperando la validación del tenant.
+ * Registra la forma de pago elegida en el Paso 4:
+ *
+ *  - `en_linea`:  el paciente transfirió por Pago Móvil, adjuntó el
+ *                 comprobante e indicó referencia y teléfono emisor.
+ *                 Estado → 'pendiente_validacion'.
+ *  - `recepcion`: pagará en caja el día de la cita (efectivo, punto de
+ *                 venta o Pago Móvil en sitio). Estado → 'pago_en_recepcion'.
+ *
+ * Las columnas `telefono_emisor`/`banco_origen` se escriben si existen;
+ * si la tabla aún no está migrada (PGRST204) se reintenta con el payload
+ * mínimo (estado, referencia_pago y comprobante_url).
  */
-export async function confirmBookingPayment(
+export async function registerAppointmentPayment(
   appointmentId: string,
-  referenciaPago: string,
-  comprobanteUrl?: string | null
+  input: PaymentMethodInput
 ): Promise<ActionResult<Appointment>> {
   try {
-    const referencia = referenciaPago?.trim()
-    if (!referencia || referencia.length < 3) {
-      return err(
-        "INVALID_INPUT",
-        "Escribe el número de referencia de 6 dígitos del Pago Móvil o del Zelle."
-      )
-    }
-    if (comprobanteUrl && !comprobanteUrl.startsWith("http")) {
-      return err("INVALID_INPUT", "El comprobante adjunto no es válido.")
-    }
-
     const supabase = await createClient()
 
     const { data: cita, error } = await supabase
       .from("appointments")
-      .select("*")
+      .select("id, estado, lock_expira_en")
       .eq("id", appointmentId)
       .maybeSingle()
 
@@ -608,39 +640,92 @@ export async function confirmBookingPayment(
     if (!cita) return err("NOT_FOUND", "La reserva ya no existe.")
 
     if (cita.estado === "cancelada" || cita.estado === "expirada") {
-      return err("LOCK_EXPIRED", "El bloqueo de 15 minutos venció. Vuelve a elegir tu hora.")
+      return err(
+        "LOCK_EXPIRED",
+        "El bloqueo de 15 minutos venció. Vuelve a elegir tu hora."
+      )
     }
-
-    const lockVencido =
-      cita.estado === "pendiente" &&
-      cita.lock_expira_en !== null &&
-      new Date(cita.lock_expira_en).getTime() <= Date.now()
-
-    if (lockVencido) {
-      return err("LOCK_EXPIRED", "El bloqueo de 15 minutos venció. Vuelve a elegir tu hora.")
-    }
-
-    if (cita.pago_estado === "en_revision" || cita.pago_estado === "pagada") {
+    if (cita.estado !== "pendiente") {
       return err(
         "CONFLICT",
-        "Esta reserva ya tiene un comprobante registrado. Espera la confirmación de la clínica."
+        "Esta reserva ya fue registrada. Espera la confirmación de la clínica."
       )
     }
 
-    const { data: actualizada, error: updateError } = await supabase
-      .from("appointments")
-      .update({
-        pago_referencia: referencia,
-        comprobante_url: comprobanteUrl?.trim() || null,
-        pago_estado: "en_revision",
+    const lockVencido =
+      cita.lock_expira_en !== null &&
+      new Date(cita.lock_expira_en).getTime() <= Date.now()
+    if (lockVencido) {
+      return err(
+        "LOCK_EXPIRED",
+        "El bloqueo de 15 minutos venció. Vuelve a elegir tu hora."
+      )
+    }
+
+    const actualizar = async (payload: AppointmentUpdate) => {
+      const primerIntento = await supabase
+        .from("appointments")
+        .update(payload)
+        .eq("id", appointmentId)
+        .eq("estado", "pendiente")
+        .select()
+        .single()
+
+      // Esquema sin migrar: las columnas extra no existen → payload mínimo.
+      if (primerIntento.error?.code === "PGRST204") {
+        const basico = {
+          estado: payload.estado,
+          referencia_pago: payload.referencia_pago,
+          comprobante_url: payload.comprobante_url,
+        }
+        return supabase
+          .from("appointments")
+          .update(basico)
+          .eq("id", appointmentId)
+          .eq("estado", "pendiente")
+          .select()
+          .single()
+      }
+      return primerIntento
+    }
+
+    if (input.metodo === "recepcion") {
+      const { data: actualizada, error: updateError } = await actualizar({
+        estado: "pago_en_recepcion",
       })
-      .eq("id", appointmentId)
-      .eq("estado", "pendiente")
-      .select()
-      .single()
+      if (updateError) return err("SERVER_ERROR", updateError.message)
+      return ok(actualizada)
+    }
 
+    const referencia = input.datos.referenciaPago?.trim() ?? ""
+    if (!/^\d{4,8}$/.test(referencia)) {
+      return err(
+        "INVALID_INPUT",
+        "Escribe el número de referencia de la transferencia (entre 4 y 8 dígitos)."
+      )
+    }
+
+    const telefono = input.datos.telefonoEmisor?.trim() ?? ""
+    if (telefono.replace(/\D/g, "").length < 7) {
+      return err(
+        "INVALID_INPUT",
+        "Indica el teléfono desde el cual realizaste el Pago Móvil."
+      )
+    }
+
+    const comprobanteUrl = input.datos.comprobanteUrl?.trim() || null
+    if (comprobanteUrl && !comprobanteUrl.startsWith("http")) {
+      return err("INVALID_INPUT", "El comprobante adjunto no es válido.")
+    }
+
+    const { data: actualizada, error: updateError } = await actualizar({
+      estado: "pendiente_validacion",
+      referencia_pago: referencia,
+      comprobante_url: comprobanteUrl,
+      telefono_emisor: telefono,
+      banco_origen: input.datos.bancoOrigen?.trim() || null,
+    })
     if (updateError) return err("SERVER_ERROR", updateError.message)
-
     return ok(actualizada)
   } catch (cause) {
     const e = unknownError(cause)

@@ -22,11 +22,10 @@
  *    hora_inicio time, hora_fin time, duracion_min smallint, activo boolean
  *  appointments
  *    id uuid pk, tenant_id uuid fk, doctor_id uuid fk, patient_id uuid fk,
- *    user_id uuid|null fk auth.users, fecha date, hora time,
- *    fecha_hora timestamptz, estado appointment_status,
- *    lock_expira_en timestamptz|null, pago_referencia text|null,
- *    comprobante_url text|null, pago_estado pago_estado, monto numeric(10,2),
- *    nota text|null, created_at timestamptz
+ *    fecha_hora timestamptz, estado text (ver AppointmentStatus),
+ *    lock_expira_en timestamptz|null, referencia_pago text|null,
+ *    telefono_emisor text|null, banco_origen text|null,
+ *    comprobante_url text|null, created_at timestamptz
  *
  * CONVENCIONES:
  *  - fecha  -> 'YYYY-MM-DD';  hora -> 'HH:mm' (24h);  timestamptz -> ISO 8601.
@@ -61,7 +60,9 @@ export const VE_TIMEZONE = "-04:00"
 /* ------------------------------------------------------------------ */
 
 export type AppointmentStatus =
-  | "pendiente" // esperando pago (lock) o validación del tenant
+  | "pendiente" // cupo bloqueado (lock de 15 min), esperando decisión de pago
+  | "pendiente_validacion" // pagó en línea; la clínica debe validar comprobante/referencia
+  | "pago_en_recepcion" // eligió pagar el día de la cita en recepción
   | "confirmada" // pago validado por la clínica
   | "completada"
   | "cancelada"
@@ -214,19 +215,16 @@ export type Appointment = {
   tenant_id: string
   doctor_id: string
   patient_id: string
-  /** Usuario que creó la reserva (null si fue invitado). */
-  user_id: string | null
-  fecha: string
-  hora: string
-  /** ISO 8601 con offset (fecha_hora en hora local del tenant). */
+  /** ISO 8601 con offset (fecha_hora en hora local del tenant), p. ej. '2026-09-02T08:00:00-04:00'. */
   fecha_hora: string
   estado: AppointmentStatus
   lock_expira_en: string | null
-  pago_referencia: string | null
+  referencia_pago: string | null
+  /** Opcional según migración: teléfono desde el que el paciente hizo el Pago Móvil. */
+  telefono_emisor?: string | null
+  /** Opcional según migración: banco de origen de la transferencia. */
+  banco_origen?: string | null
   comprobante_url: string | null
-  pago_estado: PagoEstado
-  monto: number
-  nota: string | null
   created_at: string
 }
 
@@ -235,22 +233,20 @@ export type AppointmentInsert = Omit<
   | "id"
   | "created_at"
   | "estado"
-  | "user_id"
   | "lock_expira_en"
-  | "pago_referencia"
+  | "referencia_pago"
+  | "telefono_emisor"
+  | "banco_origen"
   | "comprobante_url"
-  | "pago_estado"
-  | "nota"
 > & {
   id?: string
-  user_id?: string | null
+  created_at?: string
   estado?: AppointmentStatus
   lock_expira_en?: string | null
-  pago_referencia?: string | null
+  referencia_pago?: string | null
+  telefono_emisor?: string | null
+  banco_origen?: string | null
   comprobante_url?: string | null
-  pago_estado?: PagoEstado
-  nota?: string | null
-  created_at?: string
 }
 
 export type AppointmentUpdate = Partial<AppointmentInsert>
