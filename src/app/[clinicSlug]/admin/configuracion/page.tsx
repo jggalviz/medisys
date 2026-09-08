@@ -10,7 +10,7 @@ import { getTenantBySlug } from "@/app/actions/tenant"
 import { TenantSettings } from "@/components/admin/configuracion/TenantSettings"
 
 export const metadata: Metadata = {
-  title: "Configuración | Medisys",
+  title: "Configuración de la Clínica | Medisys",
   robots: { index: false },
 }
 
@@ -48,8 +48,8 @@ export default async function ConfiguracionPage({ params }: Props) {
             <ShieldAlert className="mx-auto size-8 text-amber-600" />
             <p className="text-lg font-semibold">Acceso restringido</p>
             <p className="mx-auto max-w-sm text-sm text-muted-foreground">
-              La configuración del tenant está disponible únicamente para el
-              rol <strong>Administrador</strong>. Tu usuario tiene el rol{" "}
+              La configuración de la clínica está disponible únicamente para
+              el rol <strong>Administrador</strong>. Tu usuario tiene el rol{" "}
               {staff.role}.
             </p>
           </div>
@@ -68,7 +68,7 @@ export default async function ConfiguracionPage({ params }: Props) {
           ← Volver al panel
         </Link>
         <h1 className="mt-2 text-2xl font-bold tracking-tight">
-          Configuración del tenant
+          Configuración de la Clínica
         </h1>
         <p className="mt-1 text-sm text-muted-foreground">
           Administra la información y operación de {tenant.nombre}.

@@ -69,7 +69,7 @@ export async function updateTenantSettings(
     if (!tenantId && !clinicSlug) {
       return {
         ok: false,
-        message: "Indica el slug o el identificador del tenant.",
+        message: "Indica el slug o el identificador de la clínica.",
       }
     }
 
@@ -92,13 +92,13 @@ export async function updateTenantSettings(
       if (!tenantId) {
         return {
           ok: false,
-          message: "Indica el identificador del tenant.",
+          message: "Indica el identificador de la clínica.",
         }
       }
       if (!UUID_RE.test(tenantId)) {
         return {
           ok: false,
-          message: "El identificador del tenant no es válido.",
+          message: "El identificador de la clínica no es válido.",
         }
       }
       const resultado = await supabase
