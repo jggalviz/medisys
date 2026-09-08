@@ -168,32 +168,61 @@ export async function updateTenantSettings(
       datos_pago_movil: datosPago,
     }
 
-    const guardar = async (payload: TenantUpdate) =>
-      supabase
+    // Depuración estricta: imprime exactamente lo que llegó del formulario.
+    console.log("[updateTenantSettings] Payload recibido:", input.data)
+
+    const guardar = async (payload: TenantUpdate, intento: number) => {
+      console.log(
+        `[updateTenantSettings] UPDATE intento ${intento} → payload:`,
+        payload
+      )
+      const resultado = await supabase
         .from("tenants")
         .update(payload)
         .eq("id", meta.id)
         .select("*")
         .maybeSingle()
 
-    let resultado = await guardar(payloadCompleto)
-    // Esquema sin migrar (columnas nuevas no existen) → solo campos base.
+      if (resultado.error) {
+        // Error exacto de Supabase/PostgREST antes de devolver al toast.
+        console.error(
+          `[updateTenantSettings] ERROR DE SUPABASE AL ACTUALIZAR (intento ${intento}):`,
+          resultado.error
+        )
+      } else {
+        // Respuesta cruda de PostgreSQL tras el UPDATE (debe traer la fila).
+        console.log(
+          `[updateTenantSettings] Resultado de PostgreSQL tras UPDATE (intento ${intento}):`,
+          resultado.data
+        )
+      }
+      return resultado
+    }
+
+    let resultado = await guardar(payloadCompleto, 1)
+    // Esquema sin migrar (columnas nuevas no existen) → reintento mínimo.
     if (resultado.error?.code === "PGRST204") {
-      resultado = await guardar(payloadMinimo)
+      console.warn(
+        "[updateTenantSettings] Columnas nuevas ausentes (PGRST204) → reintento con payload mínimo."
+      )
+      resultado = await guardar(payloadMinimo, 2)
     }
 
     if (resultado.error) {
+      // El detalle exacto ya se imprimió en consola; propaga prefijo BD.
       return {
         ok: false,
-        message:
-          resultado.error.message ?? "No se pudo guardar la configuración.",
+        message: `Error en BD: ${resultado.error.message}`,
       }
     }
 
-    // `maybeSingle` devuelve `null` cuando la actualización afectó 0 filas.
-    // La fila ya fue validada como existente (meta), por lo que 0 filas aquí
-    // significa que RLS bloqueó la modificación para esta sesión.
+    // Persistencia: `maybeSingle` devuelve null si PostgreSQL afectó 0 filas.
+    // La fila ya existía (meta), así que aquí implica bloqueo por RLS.
     if (!resultado.data) {
+      console.error(
+        "[updateTenantSettings] UPDATE afectó 0 filas (posible bloqueo RLS):",
+        { slug: meta.slug, tenantId: meta.id, payloadRecibido: input.data }
+      )
       return {
         ok: false,
         message:
@@ -201,6 +230,21 @@ export async function updateTenantSettings(
       }
     }
     const tenantActualizado = resultado.data
+
+    // Prueba de persistencia: confirma los valores tal como quedaron en BD.
+    console.log(
+      "[updateTenantSettings] Persistencia verificada → tenant actualizado:",
+      {
+        id: tenantActualizado.id,
+        slug: tenantActualizado.slug,
+        nombre: tenantActualizado.nombre,
+        rif: tenantActualizado.rif,
+        direccion: tenantActualizado.direccion,
+        telefono: tenantActualizado.telefono,
+        pago_movil_enabled: tenantActualizado.pago_movil_enabled,
+        max_slots_per_shift: tenantActualizado.max_slots_per_shift,
+      }
+    )
 
     // Revalida la página Server Component de configuración y la raíz de la
     // clínica para que Next.js no sirva datos en caché desactualizados.
