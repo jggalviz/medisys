@@ -7,7 +7,7 @@
  * capturarla) y se exporta como PDF con `jsPDF`. No requiere ninguna imagen
  * de la clínica: usa branding textual + logo opcional del tenant.
  */
-import { useState } from "react"
+import { useRef, useState } from "react"
 import { LoaderCircle } from "lucide-react"
 
 import type { Appointment, Doctor, Profile, Tenant } from "@/types/database"
@@ -83,6 +83,7 @@ export function ReceiptDownload({
 }: Props) {
   const [generating, setGenerating] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const cardRef = useRef<HTMLDivElement | null>(null)
 
   const costo =
     doctor.precio_consulta > 0 ? formatMonto(doctor.precio_consulta) : null
@@ -100,7 +101,7 @@ export function ReceiptDownload({
     setError(null)
 
     try {
-      const node = document.getElementById("medisys-receipt-card")
+      const node = cardRef.current
       if (!node) throw new Error("No se pudo generar el recibo.")
 
       const [{ default: html2canvas }, { jsPDF }] = await Promise.all([
@@ -108,11 +109,39 @@ export function ReceiptDownload({
         import("jspdf"),
       ])
 
-      const canvas = await html2canvas(node as HTMLElement, {
+      const canvas = await html2canvas(node, {
         backgroundColor: "#ffffff",
         scale: 2,
         useCORS: true,
         logging: false,
+        // Limpia el árbol clonado para que html2canvas NO intente parsear
+        // variables CSS globales de Tailwind v4 (oklch()/lab()).
+        onclone: (documentClone) => {
+          const html = documentClone.documentElement
+          html.removeAttribute("class")
+          html.setAttribute(
+            "style",
+            "background:#ffffff;color:#000000;margin:0;padding:0;"
+          )
+
+          const body = documentClone.body
+          if (body) {
+            body.removeAttribute("class")
+            body.setAttribute(
+              "style",
+              "background:#ffffff;color:#000000;margin:0;padding:0;"
+            )
+          }
+
+          const clonTarjeta = documentClone.getElementById("medisys-receipt-card")
+          if (clonTarjeta) {
+            clonTarjeta.removeAttribute("class")
+            clonTarjeta.setAttribute(
+              "style",
+              "position:relative;left:0;top:0;width:400px;background:#ffffff;color:#000000;font-family:system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;"
+            )
+          }
+        },
       })
 
       const imgData = canvas.toDataURL("image/jpeg", 0.95)
@@ -151,6 +180,7 @@ export function ReceiptDownload({
             {/* Tarjeta visual capturada por html2canvas (fija fuera de pantalla). */}
       <div
         id="medisys-receipt-card"
+        ref={cardRef}
         aria-hidden="true"
         style={{ color: "#18181b", backgroundColor: "#ffffff" }}
         className="pointer-events-none fixed -left-[2000px] top-0 z-[-1] w-[400px]"
