@@ -1,7 +1,7 @@
 import Link from "next/link"
 import type { Metadata } from "next"
 
-import { ArrowLeft, CalendarClock, LayoutDashboard } from "lucide-react"
+import { ArrowLeft, ArrowRight, CalendarClock, LayoutDashboard } from "lucide-react"
 
 type AdminPageProps = {
   params: Promise<{ clinicSlug: string }>
@@ -39,17 +39,40 @@ export default async function AdminPage({ params }: AdminPageProps) {
       </header>
 
       <section
-        className="flex flex-col items-center gap-3 rounded-2xl border border-dashed bg-card p-8 text-center"
-        aria-label="Panel en construcción"
+        className="flex flex-col gap-3"
+        aria-label="Módulos de administración"
       >
-        <CalendarClock className="size-8 text-muted-foreground" />
-        <div className="flex flex-col gap-1">
-          <h2 className="font-semibold">Este panel estará disponible próximamente</h2>
-          <p className="text-sm text-muted-foreground">
-            Agenda del día, confirmación de pagos y gestión de citas para el
-            personal de la clínica.
-          </p>
-        </div>
+        <Link
+          href={`/${clinicSlug}/admin/recepcion`}
+          className="flex items-center gap-3 rounded-2xl border bg-card p-4 text-left transition-colors hover:bg-muted/40"
+        >
+          <span className="flex size-11 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
+            <CalendarClock className="size-5" />
+          </span>
+          <span className="flex min-w-0 flex-1 flex-col gap-0.5">
+            <span className="font-semibold">Recepción del día</span>
+            <span className="text-sm text-muted-foreground">
+              Cola por turno, llegadas, cobros en caja y consultas.
+            </span>
+          </span>
+          <ArrowRight className="size-5 shrink-0 text-muted-foreground/50" />
+        </Link>
+
+        <Link
+          href={`/${clinicSlug}/admin/pagos`}
+          className="flex items-center gap-3 rounded-2xl border bg-card p-4 text-left transition-colors hover:bg-muted/40"
+        >
+          <span className="flex size-11 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
+            <LayoutDashboard className="size-5" />
+          </span>
+          <span className="flex min-w-0 flex-1 flex-col gap-0.5">
+            <span className="font-semibold">Verificación de pagos</span>
+            <span className="text-sm text-muted-foreground">
+              Comprobantes en línea pendientes de aprobar o rechazar.
+            </span>
+          </span>
+          <ArrowRight className="size-5 shrink-0 text-muted-foreground/50" />
+        </Link>
       </section>
 
       <nav className="flex flex-col gap-2">

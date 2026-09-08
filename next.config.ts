@@ -5,7 +5,7 @@ const nextConfig: NextConfig = {
     return [
       {
         source: "/santa-ines",
-        destination: "/clinica-demo",
+        destination: "/clinica-demo/reservar",
         statusCode: 301, // Redirección permanente
       },
       {

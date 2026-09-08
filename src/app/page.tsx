@@ -62,7 +62,7 @@ const WHATSAPP_URL = `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent
  *   UPDATE tenants SET slug = 'clinica-demo', nombre = 'Clínica DEMO'
  *   WHERE slug = 'santa-ines';
  */
-const DEMO_ROUTE = "/clinica-demo"
+const DEMO_ROUTE = "/clinica-demo/reservar"
 
 /** Empresa desarrolladora (footer). */
 const COMPANY_NAME = "Vortex Logic Microsystems"

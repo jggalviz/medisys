@@ -1,65 +1,29 @@
-import { notFound } from "next/navigation"
+import { notFound, redirect } from "next/navigation"
 import type { Metadata } from "next"
 
-import { createClient } from "@/lib/supabase/server"
-import { BookingWizard } from "@/components/booking/BookingWizard"
+import { getTenantBySlug } from "@/app/actions/tenant"
 
-type ClinicPageProps = {
+type ClinicRootPageProps = {
   params: Promise<{ clinicSlug: string }>
 }
 
 /**
- * Página pública Multi-Tenant de la clínica.
- * URL directa de reserva: /[clinicSlug] (ej. https://medisys.com.ve/clinica-demo).
- *
- * Carga la info pública del tenant (nombre, logo, datos_pago_movil) y
- * despliega el BookingWizard (Paciente → Especialidad → Fecha/hora → Pago).
+ * Raíz de la clínica: /[clinicSlug] valida el tenant activo y redirige al
+ * wizard de reserva en /[clinicSlug]/reservar (mantiene compatibilidad con
+ * enlaces antiguos como /clinica-demo o /santa-ines).
  */
-export async function generateMetadata({
-  params,
-}: ClinicPageProps): Promise<Metadata> {
-  const { clinicSlug } = await params
-  const supabase = await createClient()
-
-  const { data: tenant } = await supabase
-    .from("tenants")
-    .select("nombre, logo_url, slug")
-    .eq("slug", clinicSlug)
-    .eq("is_active", true)
-    .maybeSingle()
-
-  if (!tenant) {
-    return {
-      title: "Clínica no encontrada | Medisys",
-      robots: { index: false },
-    }
-  }
-
-  return {
-    title: `Reservar cita en ${tenant.nombre} | Medisys`,
-    description: `Agenda tu cita médica en ${tenant.nombre}. Elige especialista, día y hora y paga con Pago Móvil desde tu teléfono.`,
-    openGraph: {
-      title: `Reservar cita en ${tenant.nombre} | Medisys`,
-      description: "Agenda y paga tu cita médica en minutos.",
-      ...(tenant.logo_url ? { images: [tenant.logo_url] } : {}),
-    },
-  }
+export const metadata: Metadata = {
+  title: "Redirigiendo a la reserva | Medisys",
+  robots: { index: false },
 }
 
-export default async function ClinicPage({ params }: ClinicPageProps) {
+export default async function ClinicRootPage({ params }: ClinicRootPageProps) {
   const { clinicSlug } = await params
-  const supabase = await createClient()
+  const tenant = await getTenantBySlug(clinicSlug)
 
-  const { data: tenant, error } = await supabase
-    .from("tenants")
-    .select("*")
-    .eq("slug", clinicSlug)
-    .eq("is_active", true)
-    .maybeSingle()
-
-  if (error || !tenant) {
+  if (!tenant) {
     notFound()
   }
 
-  return <BookingWizard tenant={tenant} />
+  redirect(`/${clinicSlug}/reservar`)
 }

@@ -1,7 +1,7 @@
 /**
  * MEDISYS · Tipos del módulo administrativo (recepción / verificación de pagos)
  * DTOs compartidos entre las Server Actions de `src/app/actions/admin.ts`
- * y la UI de `src/app/(admin)/admin/pagos`.
+ * y la UI de `src/app/[clinicSlug]/admin/*`.
  */
 import type { Appointment, AppointmentStatus, Doctor, Profile } from "./database"
 import type { TurnoSeleccionado } from "./booking"
