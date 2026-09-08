@@ -67,18 +67,6 @@ export function TenantSettings({ tenant }: { tenant: Tenant }) {
     return () => window.clearTimeout(id)
   }, [toast])
 
-  /**
-   * Sincroniza el formulario cuando llega una prop `tenant` nueva (p. ej. tras
-   * `router.refresh()` posterior a un guardado). Se usa el patrón oficial de
-   * React de "ajustar estado cuando cambia una prop" (sin useEffect).
-   */
-  const [tenantSincronizado, setTenantSincronizado] = useState<Tenant>(tenant)
-  if (tenant !== tenantSincronizado) {
-    setTenantSincronizado(tenant)
-    setForm(inicialDatos(tenant))
-    setLogoUrl(tenant.logo_url ?? null)
-  }
-
   useEffect(() => {
     return () => {
       if (previewObjectUrl) URL.revokeObjectURL(previewObjectUrl)
@@ -148,7 +136,13 @@ export function TenantSettings({ tenant }: { tenant: Tenant }) {
         data: form,
       })
       if (resultado.ok) {
-        // Obliga a re-ejecutar el Server Component para traer datos frescos.
+        // Actualiza el estado local con la respuesta fresca de la BD (la
+        // acción devuelve el tenant persistido). Así el formulario no se
+        // revierte por re-renders internos con la prop antigua.
+        const tenantActualizado = resultado.data.tenant
+        setForm(inicialDatos(tenantActualizado))
+        setLogoUrl(tenantActualizado.logo_url ?? null)
+        // Obliga a re-ejecutar el Server Component para refrescar la prop.
         router.refresh()
         setToast({ tipo: "ok", mensaje: "Configuración guardada ✓" })
       } else {
