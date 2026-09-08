@@ -381,10 +381,14 @@ export function EspecialistasManager({ tenantId }: { tenantId: string }) {
                 <Campo label="Cédula / Colegiado">
                   <Input
                     value={form.cedula ?? ""}
+                    placeholder="V-12345678"
                     onChange={(e) =>
                       setForm((p) => ({ ...p, cedula: e.target.value }))
                     }
                   />
+                  <p className="text-xs text-muted-foreground">
+                    Formatos válidos: V-12345678, V12345678 o solo 12345678.
+                  </p>
                 </Campo>
                 <Campo label="Teléfono">
                   <Input
