@@ -8,7 +8,7 @@
  * - Al confirmar se bloquea la cita 15 minutos (`lockAppointmentSlot`) y se
  *   guarda la hora referencial del turno (08:00 mañana / 13:00 tarde).
  */
-import { useMemo, useState, useTransition } from "react"
+import { useEffect, useMemo, useRef, useState, useTransition } from "react"
 import {
   CalendarDays,
   ChevronLeft,
@@ -103,7 +103,21 @@ export function StepDateTimeSelect({ doctor, patient, notice, onLocked }: Props)
   const [lockError, setLockError] = useState<string | null>(null)
   const [isLocking, startLocking] = useTransition()
 
+  /** Contenedor de las tarjetas de turno (para autoscroll al elegir fecha). */
+  const turnosRef = useRef<HTMLElement | null>(null)
+
   const days = useMemo(() => buildMonthDays(year, monthIdx), [year, monthIdx])
+
+  // Autoscroll: al elegir una fecha, la sección de turnos ya está en el DOM
+  // (después del render) y se desplaza hacia ella de forma suave.
+  useEffect(() => {
+    if (!selectedDate) return
+
+    const id = window.setTimeout(() => {
+      turnosRef.current?.scrollIntoView({ behavior: "smooth", block: "start" })
+    }, 0)
+    return () => window.clearTimeout(id)
+  }, [selectedDate])
 
   const isCurrentMonth =
     year === today.getFullYear() && monthIdx === today.getMonth()
@@ -290,7 +304,16 @@ export function StepDateTimeSelect({ doctor, patient, notice, onLocked }: Props)
       </section>
 
             {selectedDate && (
-        <section className="flex flex-col gap-3" aria-live="polite">
+        <section
+          ref={turnosRef}
+          aria-live="polite"
+          className={cn(
+            "flex scroll-mt-28 flex-col gap-3 rounded-2xl border-2 border-dashed p-4 transition-colors duration-300",
+            !selectedTurno
+              ? "border-primary/50 bg-primary/[0.04]"
+              : "border-border bg-card"
+          )}
+        >
           <div className="flex items-center justify-between">
             <h3 className="flex items-center gap-2 text-base font-semibold">
               <Clock className="size-4 text-primary" />
@@ -304,6 +327,12 @@ export function StepDateTimeSelect({ doctor, patient, notice, onLocked }: Props)
             Elige el turno que prefieras. La atención dentro del turno es por
             orden de llegada.
           </p>
+
+          {!selectedTurno && (
+            <p className="flex items-center gap-1.5 text-sm font-semibold text-primary">
+              👇 Selecciona tu turno a continuación
+            </p>
+          )}
 
           <div
             role="radiogroup"

@@ -141,9 +141,21 @@ export function StepPayment({
   const lockDanger = lockRemainingMs < 120_000
   const cuentas = tenant.datos_pago_movil?.cuentas ?? []
   const cuentasPagoMovil = cuentas.filter(
-    (cuenta) => cuenta.metodo === "pago_movil"
+    (cuenta) =>
+      cuenta.metodo === "pago_movil" && Boolean(cuenta.banco && cuenta.telefono)
   )
   const instrucciones = tenant.datos_pago_movil?.instrucciones ?? null
+
+  /**
+   * ¿La clínica publicó una cuenta de Pago Móvil completa?
+   * (requiere banco + teléfono; la cédula/RIF se muestra si está cargada).
+   */
+  const tienePagoMovil = cuentasPagoMovil.length > 0
+
+  /** Método efectivo: sin Pago Móvil, la reserva se paga en recepción. */
+  const metodoEfectivo: "en_linea" | "recepcion" = tienePagoMovil
+    ? metodo
+    : "recepcion"
 
   // Fecha/hora de la cita desde `fecha_hora` (esquema lean, ISO local -04:00).
   const fechaHoraLocal = appointment.fecha_hora ?? ""
@@ -158,7 +170,7 @@ export function StepPayment({
     REFERENCIA_RE.test(referencia.trim()) &&
     (file !== null || uploadedUrl !== null)
 
-  const puedeEnviar = metodo === "recepcion" || pagoEnLineaValido
+  const puedeEnviar = metodoEfectivo === "recepcion" || pagoEnLineaValido
 
   useEffect(() => {
     return () => {
@@ -240,7 +252,7 @@ export function StepPayment({
     setSubmitError(null)
 
     // Opción b) Pagar en recepción: no requiere datos extra.
-    if (metodo === "recepcion") {
+    if (metodoEfectivo === "recepcion") {
       setSubmitting(true)
       const result = await registerAppointmentPayment(appointment.id, {
         metodo: "recepcion",
@@ -360,8 +372,9 @@ export function StepPayment({
         )}
       </section>
 
-      {/* Selector de método de pago */}
-      <section className="flex flex-col gap-3" aria-label="Elige el método de pago">
+      {/* Selector de método de pago: solo si la clínica tiene Pago Móvil */}
+      {tienePagoMovil && (
+        <section className="flex flex-col gap-3" aria-label="Elige el método de pago">
         <h3 className="font-semibold">¿Cómo quieres pagar?</h3>
         <div role="radiogroup" aria-label="Métodos de pago" className="flex flex-col gap-2">
           <button
@@ -413,9 +426,19 @@ export function StepPayment({
             </span>
           </button>
         </div>
-      </section>
+        </section>
+      )}
 
-            {metodo === "recepcion" ? (
+      {!tienePagoMovil ? (
+        <Alert>
+          <ShieldAlert className="size-4" />
+          <AlertTitle>La clínica no publicó datos de Pago Móvil</AlertTitle>
+          <AlertDescription>
+            Puedes completar la reserva y pagar en recepción el día de tu cita.
+            La recepción te indicará cómo pagar en el momento.
+          </AlertDescription>
+        </Alert>
+      ) : metodoEfectivo === "recepcion" ? (
         <div
           role="note"
           aria-label="Pago en recepción"
@@ -432,8 +455,7 @@ export function StepPayment({
       ) : (
         <>
           {/* Datos de las cuentas Pago Móvil del tenant */}
-          {cuentasPagoMovil.length > 0 ? (
-            <section className="flex flex-col gap-3" aria-label="Cuentas de Pago Móvil">
+          <section className="flex flex-col gap-3" aria-label="Cuentas de Pago Móvil">
               <div className="flex items-center gap-2">
                 <Landmark className="size-5 text-primary" aria-hidden="true" />
                 <h3 className="font-semibold">Datos para tu Pago Móvil</h3>
@@ -486,17 +508,7 @@ export function StepPayment({
                   </div>
                 )
               })}
-            </section>
-          ) : (
-            <Alert>
-              <ShieldAlert className="size-4" />
-              <AlertTitle>La clínica no publicó datos de Pago Móvil</AlertTitle>
-              <AlertDescription>
-                Puedes completar la reserva y pagar en recepción el día de tu
-                cita, o contactar a la clínica para coordinar el pago.
-              </AlertDescription>
-            </Alert>
-          )}
+          </section>
 
           {/* Formulario del Pago Móvil en línea */}
           <section className="flex flex-col gap-4" aria-label="Datos del Pago Móvil">
@@ -659,13 +671,13 @@ export function StepPayment({
             ? "Guardando reserva…"
             : uploading
               ? "Subiendo comprobante…"
-              : metodo === "recepcion"
+              : metodoEfectivo === "recepcion"
                 ? "Apartar cupo · Pagar en recepción"
                 : "Confirmar pago en línea"}
           {!uploading && !submitting && <Lock className="size-4" />}
         </Button>
         <p className="mt-2 text-center text-[11px] text-muted-foreground">
-          {metodo === "recepcion" ? (
+          {metodoEfectivo === "recepcion" ? (
             <>
               Tu cita quedará <strong>apartada</strong> para pagar en caja el día
               de la cita.
