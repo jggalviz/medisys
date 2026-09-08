@@ -190,16 +190,21 @@ export async function updateTenantSettings(
       }
     }
 
-    // `maybeSingle` devuelve `null` cuando la fila no existe (0 filas).
+    // `maybeSingle` devuelve `null` cuando la actualización afectó 0 filas.
+    // La fila ya fue validada como existente (meta), por lo que 0 filas aquí
+    // significa que RLS bloqueó la modificación para esta sesión.
     if (!resultado.data) {
       return {
         ok: false,
-        message: "La clínica no se encontró para guardar la configuración.",
+        message:
+          "No tienes permisos de administrador para guardar cambios en esta clínica.",
       }
     }
     const tenantActualizado = resultado.data
 
-    // Refresca el wizard público y la raíz de la clínica inmediatamente.
+    // Revalida la página Server Component de configuración y la raíz de la
+    // clínica para que Next.js no sirva datos en caché desactualizados.
+    revalidatePath(`/${meta.slug}/admin/configuracion`)
     revalidatePath(`/${meta.slug}/reservar`)
     revalidatePath(`/${meta.slug}`)
     revalidatePath("/")
@@ -304,6 +309,7 @@ export async function uploadTenantLogo(
       }
     }
 
+    revalidatePath(`/${meta.slug}/admin/configuracion`)
     revalidatePath(`/${meta.slug}/reservar`)
     revalidatePath(`/${meta.slug}`)
     revalidatePath("/")
