@@ -12,10 +12,11 @@ export const RESERVAR_DEMO_ROUTE = `/${DEMO_CLINIC_SLUG}/reservar`
 export const ADMIN_DEMO_ROUTE = `/${DEMO_CLINIC_SLUG}/admin`
 
 /**
- * Credenciales de acceso de la demo (seed de `0001_auth_multi_tenant.sql`).
+ * Credenciales de acceso de la demo.
+ * La contraseña debe cumplir la política de Supabase Auth (mínimo 6 caracteres).
  * Se muestran en el callout del login y en el botón de autocompletado.
  */
 export const DEMO_CREDENCIALES = {
   email: "demo@demo.com",
-  password: "demo",
+  password: "demo123456",
 } as const
