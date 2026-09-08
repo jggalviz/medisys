@@ -1,7 +1,7 @@
 import Link from "next/link"
 import type { Metadata } from "next"
 
-import { ArrowLeft, ArrowRight, Building2, CalendarClock, LayoutDashboard } from "lucide-react"
+import { ArrowLeft, ArrowRight, Building2, CalendarClock, LayoutDashboard, Stethoscope } from "lucide-react"
 
 type AdminPageProps = {
   params: Promise<{ clinicSlug: string }>
@@ -85,6 +85,21 @@ export default async function AdminPage({ params }: AdminPageProps) {
             <span className="text-sm text-muted-foreground">
               Datos de la clínica, Pago Móvil, branding y capacidad (solo
               admin).
+            </span>
+          </span>
+          <ArrowRight className="size-5 shrink-0 text-muted-foreground/50" />
+        </Link>
+        <Link
+          href={`/${clinicSlug}/admin/especialistas`}
+          className="flex items-center gap-3 rounded-2xl border bg-card p-4 text-left transition-colors hover:bg-muted/40"
+        >
+          <span className="flex size-11 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
+            <Stethoscope className="size-5" />
+          </span>
+          <span className="flex min-w-0 flex-1 flex-col gap-0.5">
+            <span className="font-semibold">Especialistas y horarios</span>
+            <span className="text-sm text-muted-foreground">
+              Alta/edición del equipo médico y su disponibilidad.
             </span>
           </span>
           <ArrowRight className="size-5 shrink-0 text-muted-foreground/50" />

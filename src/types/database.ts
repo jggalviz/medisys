@@ -167,27 +167,53 @@ export type ProfileUpdate = Partial<ProfileInsert>
 /* doctors                                                             */
 /* ------------------------------------------------------------------ */
 
+export type TurnoHabitualEspecialista = "manana" | "tarde" | "ambos"
+
 export type Doctor = {
   id: string
   tenant_id: string
   nombres: string
   apellidos: string
+  /** Nombre completo en una sola columna (cuando el esquema lo usa). */
+  nombre?: string | null
   /** Especialidad principal. */
   especialidad: string
   /** Especialidades adicionales / badges mostrados en la tarjeta. */
   especialidades: string[]
+  /** Cédula / número de colegiado del especialista. */
+  cedula?: string | null
+  telefono?: string | null
   foto_url: string | null
   /** Precio de consulta en bolívares (VES) o divisa según tenant. */
   precio_consulta: number
+  /** Días de atención (1=Lunes … 6=Sábado). */
+  dias_atencion?: number[] | null
+  /** Turno habitual por defecto. */
+  turno_habitual?: TurnoHabitualEspecialista | null
   activo: boolean
+  is_active?: boolean | null
   created_at: string
 }
 
-export type DoctorInsert = Omit<Doctor, "id" | "created_at" | "especialidades" | "activo"> & {
+export type DoctorInsert = Omit<
+  Doctor,
+  | "id"
+  | "created_at"
+  | "especialidades"
+  | "activo"
+  | "nombres"
+  | "apellidos"
+  | "precio_consulta"
+  | "foto_url"
+> & {
   id?: string
+  created_at?: string
   especialidades?: string[]
   activo?: boolean
-  created_at?: string
+  nombres?: string
+  apellidos?: string
+  foto_url?: string | null
+  precio_consulta?: number
 }
 
 export type DoctorUpdate = Partial<DoctorInsert>
