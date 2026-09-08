@@ -66,13 +66,13 @@ function metodoPagoLinea(appointment: Appointment): string {
 }
 
 const ESTADO_BADGE: Record<string, string> = {
-  pendiente_validacion: "bg-amber-100 text-amber-800",
-  pago_en_recepcion: "bg-sky-100 text-sky-800",
-  confirmada: "bg-emerald-100 text-emerald-800",
-  en_espera: "bg-sky-100 text-sky-800",
-  en_consulta: "bg-indigo-100 text-indigo-800",
-  atendido: "bg-zinc-200 text-zinc-700",
-  completada: "bg-zinc-200 text-zinc-700",
+  pendiente_validacion: "bg-[#fef3c7] text-[#92400e]",
+  pago_en_recepcion: "bg-[#e0f2fe] text-[#075985]",
+  confirmada: "bg-[#d1fae5] text-[#065f46]",
+  en_espera: "bg-[#e0f2fe] text-[#075985]",
+  en_consulta: "bg-[#e0e7ff] text-[#3730a3]",
+  atendido: "bg-[#e4e4e7] text-[#3f3f46]",
+  completada: "bg-[#e4e4e7] text-[#3f3f46]",
 }
 
 export function ReceiptDownload({
@@ -152,9 +152,10 @@ export function ReceiptDownload({
       <div
         id="medisys-receipt-card"
         aria-hidden="true"
-        className="pointer-events-none fixed -left-[2000px] top-0 z-[-1] w-[400px] bg-white text-zinc-900"
+        style={{ color: "#18181b", backgroundColor: "#ffffff" }}
+        className="pointer-events-none fixed -left-[2000px] top-0 z-[-1] w-[400px]"
       >
-        <div className="border-b-4 border-teal-600 px-6 pb-4 pt-6">
+        <div className="border-b-4 border-[#0d9488] px-6 pb-4 pt-6">
           <div className="flex items-center gap-3">
             {tenant.logo_url ? (
               // eslint-disable-next-line @next/next/no-img-element -- Logo del tenant en el recibo
@@ -164,7 +165,7 @@ export function ReceiptDownload({
                 className="size-11 rounded-full object-cover"
               />
             ) : (
-              <span className="flex size-11 items-center justify-center rounded-full bg-teal-600 text-sm font-bold text-white">
+              <span className="flex size-11 items-center justify-center rounded-full bg-[#0d9488] text-sm font-bold text-white">
                 {tenant.nombre.slice(0, 2).toUpperCase()}
               </span>
             )}
@@ -172,7 +173,7 @@ export function ReceiptDownload({
               <p className="text-base font-extrabold leading-tight">
                 {tenant.nombre}
               </p>
-              <p className="text-xs text-zinc-500">
+              <p className="text-xs text-[#71717a]">
                 Comprobante de cita · Medisys
               </p>
             </div>
@@ -182,8 +183,8 @@ export function ReceiptDownload({
         <div className="flex flex-col gap-4 px-6 py-5">
           <div className="flex items-start justify-between gap-3">
             <div>
-              <p className="text-xs text-zinc-500">Código de reserva</p>
-              <p className="font-mono text-lg font-bold text-teal-700">
+              <p className="text-xs text-[#71717a]">Código de reserva</p>
+              <p className="font-mono text-lg font-bold text-[#0f766e]">
                 {codigo}
               </p>
             </div>
@@ -191,7 +192,7 @@ export function ReceiptDownload({
               className={cn(
                 "rounded-full px-2.5 py-1 text-[11px] font-semibold",
                 ESTADO_BADGE[appointment.estado] ??
-                  "bg-zinc-200 text-zinc-700"
+                  "bg-[#e4e4e7] text-[#3f3f46]"
               )}
             >
               {etiquetaEstado(appointment.estado)}
@@ -214,14 +215,14 @@ export function ReceiptDownload({
 
           <div className="flex items-center justify-between border-t pt-3">
             <span className="text-sm font-semibold">Costo de la consulta</span>
-            <span className="text-base font-extrabold text-teal-700">
+            <span className="text-base font-extrabold text-[#0f766e]">
               {costo ?? "Por confirmar"}
             </span>
           </div>
         </div>
 
-        <div className="bg-zinc-50 px-6 py-4">
-          <p className="text-[11px] leading-5 text-zinc-500">
+        <div className="bg-[#fafafa] px-6 py-4">
+          <p className="text-[11px] leading-5 text-[#71717a]">
             {tenant.nombre} · {tenant.telefono ?? ""} · {tenant.direccion ?? ""}
             {"\n"}Generado por Medisys (Vortex Logic Microsystems) ·{" "}
             {new Date().toLocaleTimeString("es-VE", {
@@ -237,11 +238,11 @@ export function ReceiptDownload({
 
 function Fila({ label, valor }: { label: string; valor: string }) {
   return (
-    <div className="flex items-baseline justify-between gap-3 border-b border-dashed border-zinc-200 py-1 last:border-0">
-      <dt className="text-xs uppercase tracking-wide text-zinc-500">
+    <div className="flex items-baseline justify-between gap-3 border-b border-dashed border-[#e4e4e7] py-1 last:border-0">
+      <dt className="text-xs uppercase tracking-wide text-[#71717a]">
         {label}
       </dt>
-      <dd className="text-right font-medium text-zinc-900">{valor}</dd>
+      <dd className="text-right font-medium text-[#18181b]">{valor}</dd>
     </div>
   )
 }

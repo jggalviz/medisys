@@ -211,7 +211,7 @@ export function BookingWizard({ tenant }: Props) {
                 href={waUrl}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex h-12 w-full items-center justify-center gap-2 rounded-xl border border-emerald-200 bg-white px-6 text-base font-semibold text-emerald-700 transition hover:border-emerald-300 hover:bg-emerald-50"
+                className="inline-flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-[#25d366] px-6 text-base font-semibold text-white shadow-sm transition hover:bg-[#1ebe5b] active:scale-[0.99]"
               >
                 Enviar por WhatsApp 💬
               </a>

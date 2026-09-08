@@ -16,6 +16,23 @@ export function turnoLabel(
   return "Por confirmar"
 }
 
+/** Etiqueta del estado de la reserva para el mensaje de WhatsApp. */
+export function estadoCitaLabel(
+  estado: Appointment["estado"]
+): string {
+  const etiquetas: Partial<Record<Appointment["estado"], string>> = {
+    pendiente: "Cita en proceso",
+    pendiente_validacion: "Pago en revisión",
+    pago_en_recepcion: "Pago en recepción",
+    confirmada: "Confirmada",
+    en_espera: "En espera",
+    en_consulta: "En consulta",
+    atendido: "Atendido",
+    completada: "Completada",
+  }
+  return etiquetas[estado] ?? estado
+}
+
 /** 'YYYY-MM-DDTHH:mm...' → "02/09/2026 10:30". */
 function fechaLegible(fechaHora: string): string {
   const fecha = fechaHora.slice(0, 10)
@@ -80,6 +97,7 @@ export function generateWhatsAppShareUrl({
     }`,
     `📅 Fecha: ${fechaLegible(appointment.fecha_hora)}`,
     `🕐 Turno: ${turnoLabel(appointment.turno)}`,
+    `📌 Estado: ${estadoCitaLabel(appointment.estado)}`,
     `💳 Pago: ${metodoPagoLegible(appointment)}`,
     ``,
     `Por favor confírmame los detalles de mi cita.`,
