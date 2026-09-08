@@ -379,6 +379,8 @@ const ESTADOS_BLOQUEANTES: Appointment["estado"][] = [
   "pendiente_validacion",
   "pago_en_recepcion",
   "confirmada",
+  "en_espera",
+  "en_consulta",
   "completada",
 ]
 

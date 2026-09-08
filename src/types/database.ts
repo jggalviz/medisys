@@ -64,6 +64,10 @@ export type AppointmentStatus =
   | "pendiente_validacion" // pagó en línea; la clínica debe validar comprobante/referencia
   | "pago_en_recepcion" // eligió pagar el día de la cita en recepción
   | "confirmada" // pago validado por la clínica
+  | "pago_rechazado" // pago rechazado por la recepción (comprobante no válido)
+  | "en_espera" // paciente llegó a la clínica y espera en sala
+  | "en_consulta" // el especialista está atendiendo al paciente
+  | "atendido" // consulta finalizada
   | "completada"
   | "cancelada"
   | "expirada" // lock vencido sin pago (slot liberado)
@@ -230,6 +234,10 @@ export type Appointment = {
   /** Opcional según migración: banco de origen de la transferencia. */
   banco_origen?: string | null
   comprobante_url: string | null
+  /** Método con el que se cobró en caja (efectivo/punto/pago móvil). */
+  payment_method?: "efectivo" | "punto" | "pago_movil" | null
+  /** Nota interna de la recepción (columna `nota`, si existe). */
+  nota?: string | null
   created_at: string
 }
 
