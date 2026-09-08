@@ -49,6 +49,9 @@ function normalizarLimite(valor: number | null | undefined): number | null {
   return valor > 0 ? Math.floor(valor) : null
 }
 
+const UUID_RE =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+
 /**
  * Actualiza la configuración operativa del tenant. Solo el personal con rol
  * 'admin' puede ejecutarla. Si el esquema no tiene aún las columnas nuevas
@@ -61,6 +64,9 @@ export async function updateTenantSettings(
     const tenantId = input.tenantId?.trim()
     if (!tenantId) {
       return { ok: false, message: "Falta el identificador del tenant." }
+    }
+    if (!UUID_RE.test(tenantId)) {
+      return { ok: false, message: "El identificador del tenant no es válido." }
     }
 
     const supabase = await createClient()
@@ -114,7 +120,7 @@ export async function updateTenantSettings(
         .update(payload)
         .eq("id", tenantId)
         .select("*")
-        .single()
+        .maybeSingle()
 
     let resultado = await guardar(payloadCompleto)
     // Esquema sin migrar (columnas nuevas no existen) → solo campos base.
@@ -122,19 +128,29 @@ export async function updateTenantSettings(
       resultado = await guardar(payloadMinimo)
     }
 
-    if (resultado.error || !resultado.data) {
+    if (resultado.error) {
       return {
         ok: false,
-        message: resultado.error?.message ?? "No se pudo guardar la configuración.",
+        message:
+          resultado.error.message ?? "No se pudo guardar la configuración.",
       }
     }
+
+    // `maybeSingle` devuelve `null` cuando la fila no existe (0 filas).
+    if (!resultado.data) {
+      return {
+        ok: false,
+        message: "La clínica no se encontró para guardar la configuración.",
+      }
+    }
+    const tenantActualizado = resultado.data
 
     // Refresca el wizard público y la raíz de la clínica inmediatamente.
     revalidatePath(`/${meta.slug}/reservar`)
     revalidatePath(`/${meta.slug}`)
     revalidatePath("/")
 
-    return { ok: true, data: { tenant: resultado.data } }
+    return { ok: true, data: { tenant: tenantActualizado } }
   } catch (cause) {
     const message =
       cause instanceof Error ? cause.message : "Error inesperado al guardar."
@@ -219,12 +235,18 @@ export async function uploadTenantLogo(
       .update({ logo_url: logoUrl })
       .eq("id", tenantId)
       .select("*")
-      .single()
+      .maybeSingle()
 
-    if (updateError || !tenant) {
+    if (updateError) {
       return {
         ok: false,
-        message: updateError?.message ?? "No se pudo actualizar el logo.",
+        message: updateError.message ?? "No se pudo actualizar el logo.",
+      }
+    }
+    if (!tenant) {
+      return {
+        ok: false,
+        message: "La clínica no se encontró para guardar el logo.",
       }
     }
 
