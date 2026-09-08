@@ -565,14 +565,20 @@ export async function lockAppointmentSlot(input: {
       error = resultado.error
     }
 
-    // 23505 = unique_violation (índice único parcial recomendado).
+    // ------------------------------------------------------------------
+    // TODO(limites): La verificación de cupo máximo por TURNO se habilitará
+    // cuando se lea la configuración dinámica de la clínica
+    // (`tenant.max_slots_per_shift` o `especialista_config`). Mientras tanto,
+    // el wizard público permite reservas ILIMITADAS: cualquier fecha +
+    // especialista + turno avanza directo al Paso 4 sin bloqueo por cupos.
+    //
+    // Nota: si la BD aún tuviera un índice único parcial sobre
+    // `appointments(doctor_id, fecha_hora)`, elimínalo para permitir más de
+    // una reserva por turno (ver migración 0002_unlimited_bookings.sql).
+    // ------------------------------------------------------------------
     if (error) {
-      if (error.code === "23505") {
-        return err(
-          "SLOT_UNAVAILABLE",
-          "Este turno ya tiene una reserva activa para esa fecha. Prueba con el otro turno."
-        )
-      }
+      // No se interpreta 23505 como "turno ocupado": la validación de cupos
+      // ya no aplica y solo se reportan errores reales de infraestructura.
       return err("SERVER_ERROR", error.message)
     }
     if (!appointment) {
