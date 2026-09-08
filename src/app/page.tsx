@@ -280,11 +280,13 @@ function HeroSection() {
           </h1>
 
           <p className="mt-6 max-w-xl text-pretty text-lg leading-8 text-zinc-600">
-            Medisys es la plataforma que usan consultorios y clínicas en
-            Venezuela para que sus pacientes reserven solos desde el teléfono y
-            paguen con Pago Móvil. Tu recepción valida comprobantes y
-            referencias en tiempo real: menos llamadas, cero colas y ninguna
-            transferencia perdida.
+            Medisys es la solución SaaS multi-tenant diseñada para optimizar la
+            agendación médica y la gestión operativa en clínicas y
+            consultorios. Permite a los pacientes autogestionar sus citas desde
+            cualquier dispositivo y procesar pagos vía Pago Móvil. Automatiza
+            la recepción, concilia referencias en tiempo real y reduce
+            drásticamente las llamadas administrativas y la saturación en sala
+            de espera.
           </p>
 
           <div className="mt-8 flex w-full flex-col gap-3 sm:w-auto sm:flex-row">
