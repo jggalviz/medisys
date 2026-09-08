@@ -164,6 +164,14 @@ export function StepPayment({
   const fechaLegible = fechaCita ? formatLongDate(fechaCita) : "Por confirmar"
   const monto = doctor.precio_consulta > 0 ? doctor.precio_consulta : null
 
+  /** Etiqueta del turno guardado (con fallback desde la hora referencial). */
+  const turnoLabel =
+    appointment.turno === "manana" || horaCita.startsWith("08")
+      ? "Turno Mañana"
+      : appointment.turno === "tarde" || horaCita.startsWith("13")
+        ? "Turno Tarde"
+        : null
+
   /** El pago en línea es válido con teléfono + referencia + comprobante. */
   const pagoEnLineaValido =
     telefonoEmisor.trim().replace(/\D/g, "").length >= 7 &&
@@ -347,27 +355,42 @@ export function StepPayment({
       {/* Resumen de la cita */}
       <section className="rounded-2xl border bg-card p-4" aria-label="Resumen de la cita">
         <h3 className="mb-1 flex items-center gap-2 text-sm font-semibold uppercase tracking-wide text-muted-foreground">
-          <BadgeCheck className="size-4 text-primary" /> Resumen
+          <BadgeCheck className="size-4 text-primary" /> Resumen de la reserva
         </h3>
+
+        {/* Consultorio / clínica */}
+        {tenant.nombre && <SummaryRow label="Clínica" value={tenant.nombre} />}
+        {tenant.direccion && (
+          <SummaryRow label="Dirección" value={tenant.direccion} />
+        )}
+        {tenant.telefono && (
+          <SummaryRow label="Recepción" value={tenant.telefono} />
+        )}
+
+        {/* Detalles de la cita */}
         <SummaryRow label="Paciente" value={perfilNombre(patient)} />
+        <SummaryRow label="Especialidad" value={doctor.especialidad} />
         <SummaryRow label="Especialista" value={doctorNombre(doctor)} />
         <SummaryRow
-          label="Fecha y hora"
-          value={horaCita ? `${fechaLegible} · ${horaCita}` : fechaLegible}
+          label="Fecha y turno"
+          value={turnoLabel ? `${fechaLegible} · ${turnoLabel}` : fechaLegible}
         />
+
+        {/* Monto / precio de la consulta */}
         {monto !== null ? (
           <>
             <Separator className="my-2" />
             <div className="flex items-center justify-between pt-1">
-              <span className="text-sm font-medium">Total a pagar</span>
+              <span className="text-sm font-medium">Monto a pagar</span>
               <span className="text-xl font-bold text-primary">
                 {formatMonto(monto)}
               </span>
             </div>
           </>
         ) : (
-          <p className="mt-2 text-xs text-muted-foreground">
-            El monto de la consulta se confirma con el especialista.
+          <p className="mt-2 rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-xs font-medium text-amber-800 dark:border-amber-400/30 dark:bg-amber-400/10 dark:text-amber-200">
+            El precio de la cita se confirmará al momento de realizar el pago
+            en recepción.
           </p>
         )}
       </section>
