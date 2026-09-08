@@ -17,6 +17,6 @@ export const ADMIN_DEMO_ROUTE = `/${DEMO_CLINIC_SLUG}/admin`
  * Se muestran en el callout del login y en el botón de autocompletado.
  */
 export const DEMO_CREDENCIALES = {
-  email: "demo@demo.com",
+  email: "demo1@demo.com",
   password: "demo123456",
 } as const
