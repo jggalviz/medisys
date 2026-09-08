@@ -10,7 +10,6 @@ import {
   CalendarCheck,
   CalendarClock,
   Check,
-  HeartPulse,
   LayoutDashboard,
   MessageCircle,
   ShieldCheck,
@@ -19,6 +18,9 @@ import {
 import type { LucideIcon } from "lucide-react"
 
 import { cn } from "@/lib/utils"
+import { Navbar } from "@/components/landing/Navbar"
+import { Brand } from "@/components/landing/Brand"
+import { RESERVAR_DEMO_ROUTE } from "@/lib/demo"
 
 /* ------------------------------------------------------------------ */
 /* SEO de la landing page (ruta "/")                                   */
@@ -55,14 +57,10 @@ const WHATSAPP_URL = `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent
 )}`
 
 /**
- * Ruta de la demo activa.
- * La clínica de demostración se llama "Clínica DEMO" y su slug en Supabase
- * debe ser `clinica-demo`. Si el tenant todavía existe como `santa-ines`,
- * renómbralo en la base de datos:
- *   UPDATE tenants SET slug = 'clinica-demo', nombre = 'Clínica DEMO'
- *   WHERE slug = 'santa-ines';
+ * Ruta de la demo de reservas (centralizada en `src/lib/demo.ts`).
+ * Cambiar el slug solo en `DEMO_CLINIC_SLUG`.
  */
-const DEMO_ROUTE = "/clinica-demo/reservar"
+const DEMO_ROUTE = RESERVAR_DEMO_ROUTE
 
 /** Empresa desarrolladora (footer). */
 const COMPANY_NAME = "Vortex Logic Microsystems"
@@ -72,14 +70,6 @@ const SALES_EMAIL = "ventas@vortex.com.ve"
 /* ------------------------------------------------------------------ */
 /* Tipos y datos de las secciones                                      */
 /* ------------------------------------------------------------------ */
-
-type NavItem = { label: string; href: string }
-
-const NAV_ITEMS: readonly NavItem[] = [
-  { label: "Beneficios", href: "#beneficios" },
-  { label: "Cómo funciona", href: "#como-funciona" },
-  { label: "Precios", href: "#precios" },
-]
 
 type Benefit = {
   icon: LucideIcon
@@ -172,70 +162,6 @@ function Container({
     <div className={cn("mx-auto w-full max-w-7xl px-6 lg:px-8", className)}>
       {children}
     </div>
-  )
-}
-
-function Brand({ inverted = false }: { inverted?: boolean }) {
-  return (
-    <span className="inline-flex items-center gap-2.5">
-      <span className="flex size-9 items-center justify-center rounded-xl bg-linear-to-br from-teal-500 to-cyan-600 text-white shadow-md shadow-teal-600/20">
-        <HeartPulse className="size-5" aria-hidden="true" strokeWidth={2.2} />
-      </span>
-      <span
-        className={cn(
-          "text-lg font-bold tracking-tight",
-          inverted ? "text-white" : "text-zinc-900"
-        )}
-      >
-        Medisys
-      </span>
-    </span>
-  )
-}
-
-function SiteHeader() {
-  return (
-    <header className="sticky top-0 z-40 border-b border-zinc-200/70 bg-white/85 backdrop-blur-md">
-      <Container className="flex h-16 items-center justify-between gap-4">
-        <Link href="/" aria-label="Medisys, inicio" className="shrink-0">
-          <Brand />
-        </Link>
-
-        <nav
-          aria-label="Navegación principal"
-          className="hidden items-center gap-8 md:flex"
-        >
-          {NAV_ITEMS.map((item) => (
-            <a
-              key={item.href}
-              href={item.href}
-              className="text-sm font-medium text-zinc-600 transition-colors hover:text-zinc-950"
-            >
-              {item.label}
-            </a>
-          ))}
-        </nav>
-
-        <div className="flex items-center gap-2">
-          <a
-            href={WHATSAPP_URL}
-            target="_blank"
-            rel="noopener noreferrer"
-            aria-label="Escribir por WhatsApp"
-            className="inline-flex size-9 items-center justify-center rounded-full border border-zinc-200 text-zinc-600 transition-colors hover:border-emerald-300 hover:bg-emerald-50 hover:text-emerald-600"
-          >
-            <MessageCircle className="size-4" aria-hidden="true" />
-          </a>
-          <Link
-            href={DEMO_ROUTE}
-            className="inline-flex h-9 items-center gap-1.5 rounded-full bg-zinc-900 px-4 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-zinc-700"
-          >
-            Probar demo
-            <ArrowRight className="size-4" aria-hidden="true" />
-          </Link>
-        </div>
-      </Container>
-    </header>
   )
 }
 
@@ -874,7 +800,7 @@ function SiteFooter() {
 export default function Home() {
   return (
     <div className="flex min-h-dvh flex-col bg-white">
-      <SiteHeader />
+      <Navbar />
       <main className="flex-1">
         <HeroSection />
         <StepsSection />
