@@ -130,6 +130,7 @@ export function TenantSettings({ tenant }: { tenant: Tenant }) {
     startSaving(async () => {
       const resultado = await updateTenantSettings({
         tenantId: tenant.id,
+        clinicSlug: tenant.slug || "clinica-demo",
         data: form,
       })
       if (resultado.ok) {
