@@ -10,3 +10,12 @@ export const RESERVAR_DEMO_ROUTE = `/${DEMO_CLINIC_SLUG}/reservar`
 
 /** Experiencia operativa (panel admin). */
 export const ADMIN_DEMO_ROUTE = `/${DEMO_CLINIC_SLUG}/admin`
+
+/**
+ * Credenciales de acceso de la demo (seed de `0001_auth_multi_tenant.sql`).
+ * Se muestran en el callout del login y en el botón de autocompletado.
+ */
+export const DEMO_CREDENCIALES = {
+  email: "demo@demo.com",
+  password: "demo",
+} as const

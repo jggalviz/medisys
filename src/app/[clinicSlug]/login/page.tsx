@@ -4,6 +4,7 @@ import Link from "next/link"
 
 import { LoginForm } from "@/components/auth/LoginForm"
 import { getTenantBySlug } from "@/app/actions/tenant"
+import { DEMO_CLINIC_SLUG } from "@/lib/demo"
 
 type LoginPageProps = {
   params: Promise<{ clinicSlug: string }>
@@ -44,6 +45,7 @@ export default async function LoginPage({ params }: LoginPageProps) {
         clinicSlug={tenant.slug}
         tenantNombre={tenant.nombre}
         tenantLogoUrl={tenant.logo_url}
+        esDemo={tenant.slug === DEMO_CLINIC_SLUG}
       />
     </main>
   )
