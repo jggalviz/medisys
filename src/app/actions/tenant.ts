@@ -75,8 +75,10 @@ export async function updateTenantSettings(
 
     const supabase = await createClient()
 
-    // Resolución del tenant: por slug (primero) o por id.
-    let meta: { id: string; slug: string } | null = null
+    // Resolución del tenant: PRIMERO por slug (clinicSlug) y, solo si el slug
+    // no devuelve fila, fallback por id (tenantId). Así el `id` nunca se usa
+    // cuando ya existe el slug canónico (evita incongruencias de UUID).
+    let tenantTarget: { id: string; slug: string } | null = null
     let metaError: string | null = null
 
     if (clinicSlug) {
@@ -86,15 +88,12 @@ export async function updateTenantSettings(
         .eq("slug", clinicSlug)
         .eq("is_active", true)
         .maybeSingle()
-      meta = resultado.data
+      tenantTarget = resultado.data
       metaError = resultado.error?.message ?? null
-    } else {
-      if (!tenantId) {
-        return {
-          ok: false,
-          message: "Indica el identificador de la clínica.",
-        }
-      }
+    }
+
+    // Fallback a tenantId solo cuando el slug no matcheó (y no hubo error).
+    if (!tenantTarget && !metaError && tenantId) {
       if (!UUID_RE.test(tenantId)) {
         return {
           ok: false,
@@ -106,12 +105,12 @@ export async function updateTenantSettings(
         .select("id, slug")
         .eq("id", tenantId)
         .maybeSingle()
-      meta = resultado.data
+      tenantTarget = resultado.data
       metaError = resultado.error?.message ?? null
     }
 
     if (metaError) {
-      console.error("[updateTenantSettings] Error al resolver el tenant:", {
+      console.error("[updateTenantSettings] Error al buscar la clínica:", {
         clinicSlug: clinicSlug ?? null,
         tenantId: tenantId ?? null,
         metaError,
@@ -119,17 +118,21 @@ export async function updateTenantSettings(
       return { ok: false, message: "No se pudo verificar la clínica." }
     }
 
-    if (!meta) {
-      // Facilita el depurado: registra exactamente qué slug/id no matcheó.
-      console.error(
-        "[updateTenantSettings] No se encontró un tenant para la clínica:",
-        {
+    if (!tenantTarget) {
+      // Facilita el depurado: registra exactamente qué slug/id recibió.
+      console.error("[updateTenantSettings] Error al buscar clínica:", {
+        input: {
           clinicSlug: clinicSlug ?? null,
           tenantId: tenantId ?? null,
-        }
-      )
-      return { ok: false, message: "La clínica no existe." }
+        },
+      })
+      return {
+        ok: false,
+        message: "La clínica no se encontró para guardar la configuración.",
+      }
     }
+
+    const meta = tenantTarget
 
     const staff = await getStaffForSlug(supabase, meta.slug)
     if (!staff) {
