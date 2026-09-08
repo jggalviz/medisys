@@ -266,6 +266,29 @@ export type AppointmentInsert = Omit<
 export type AppointmentUpdate = Partial<AppointmentInsert>
 
 /* ------------------------------------------------------------------ */
+/* tenant_users (staff multi-tenant)                                   */
+/* ------------------------------------------------------------------ */
+
+/** Roles del personal de una clínica. Se usa 'especialista' (no 'medico'). */
+export type TenantUserRole = "admin" | "recepcion" | "especialista"
+
+export type TenantUser = {
+  id: string
+  tenant_id: string
+  /** Usuario de Supabase Auth (auth.users.id). */
+  user_id: string
+  role: TenantUserRole
+  created_at: string
+}
+
+export type TenantUserInsert = Omit<TenantUser, "id" | "created_at"> & {
+  id?: string
+  created_at?: string
+}
+
+export type TenantUserUpdate = Partial<TenantUserInsert>
+
+/* ------------------------------------------------------------------ */
 /* Tipado del cliente Supabase (createClient<Database>)                */
 /* ------------------------------------------------------------------ */
 
@@ -276,6 +299,12 @@ export type Database = {
         Row: Tenant
         Insert: TenantInsert
         Update: TenantUpdate
+        Relationships: []
+      }
+      tenant_users: {
+        Row: TenantUser
+        Insert: TenantUserInsert
+        Update: TenantUserUpdate
         Relationships: []
       }
       profiles: {
