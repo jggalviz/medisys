@@ -20,6 +20,8 @@ import { ArrowLeft, Check, LoaderCircle, TimerReset } from "lucide-react"
 import type { Appointment, Doctor, Profile, Tenant } from "@/types/database"
 import type { LockCreated } from "@/types/booking"
 import { releaseLockedSlot } from "@/app/actions/booking"
+import { generateWhatsAppShareUrl } from "@/lib/whatsapp"
+import { ReceiptDownload } from "./ReceiptDownload"
 import { StepPatientSelect } from "./StepPatientSelect"
 import { StepDoctorSelect } from "./StepDoctorSelect"
 import { StepDateTimeSelect } from "./StepDateTimeSelect"
@@ -130,6 +132,18 @@ export function BookingWizard({ tenant }: Props) {
   const lockDanger = locked && remainingMs < 120_000
 
   if (done) {
+    const waUrl =
+      tenant && doctor && patient
+        ? generateWhatsAppShareUrl({
+            tenantName: tenant.nombre,
+            appointment: done,
+            clinicPhone: tenant.telefono,
+            patientName: `${patient.nombres} ${patient.apellidos}`.trim(),
+            doctorName: `${doctor.nombres} ${doctor.apellidos}`.trim(),
+            especialidad: doctor.especialidad,
+          })
+        : null
+
     return (
       <div className="mx-auto flex min-h-dvh w-full max-w-md flex-col items-center justify-center gap-6 px-6 py-12 text-center">
         <span className="flex size-20 items-center justify-center rounded-full bg-emerald-500/10 text-emerald-600">
@@ -182,6 +196,28 @@ export function BookingWizard({ tenant }: Props) {
             </>
           )}
         </dl>
+
+        {/* Acciones: descarga del recibo y WhatsApp */}
+        {tenant && doctor && patient && (
+          <div className="flex w-full flex-col gap-2">
+            <ReceiptDownload
+              tenant={tenant}
+              patient={patient}
+              doctor={doctor}
+              appointment={done}
+            />
+            {waUrl && (
+              <a
+                href={waUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex h-12 w-full items-center justify-center gap-2 rounded-xl border border-emerald-200 bg-white px-6 text-base font-semibold text-emerald-700 transition hover:border-emerald-300 hover:bg-emerald-50"
+              >
+                Enviar por WhatsApp 💬
+              </a>
+            )}
+          </div>
+        )}
 
         <div className="w-full">
           <button
