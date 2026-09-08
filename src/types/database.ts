@@ -110,8 +110,16 @@ export type Tenant = {
   slug: string
   nombre: string
   logo_url: string | null
-  telefono: string | null
-  direccion: string | null
+  /** Opcional según esquema: teléfono institucional / WhatsApp. */
+  telefono?: string | null
+  /** Opcional según esquema: dirección física de la clínica. */
+  direccion?: string | null
+  /** Opcional según esquema: RIF / cédula jurídica. */
+  rif?: string | null
+  /** Switch para habilitar/pausar Pago Móvil en línea en el wizard. */
+  pago_movil_enabled?: boolean | null
+  /** Límite máximo de cupos por turno; null/0 = ilimitado. */
+  max_slots_per_shift?: number | null
   is_active: boolean
   datos_pago_movil: DatosPagoMovil | null
   created_at: string
