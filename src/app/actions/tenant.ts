@@ -1,7 +1,7 @@
 "use server"
 
 /**
- * MEDISYS · Contexto de tenant para las rutas dinámicas por `[clinicSlug]`.
+ * MEDISYS · Contexto de clínica para las rutas dinámicas por `[clinicSlug]`.
  *
  * Todas las páginas de reserva y administración resuelven aquí la clínica
  * activa y pasan su `id` a las Server Actions correspondientes, sin depender
@@ -18,7 +18,7 @@ import { createClient } from "@/lib/supabase/server"
 import { getStaffForSlug } from "@/lib/staff"
 
 /**
- * Busca el tenant activo por su slug.
+ * Busca la clínica activa por su slug.
  * Devuelve `null` si no existe o si `is_active` es false (→ la página debe
  * renderizar notFound()).
  */
@@ -40,7 +40,7 @@ export async function getTenantBySlug(
 }
 
 /* ------------------------------------------------------------------ */
-/* Configuración del tenant (solo rol admin)                           */
+/* Configuración de la clínica (solo rol admin)                        */
 /* ------------------------------------------------------------------ */
 
 /** Normaliza el límite: 0 / vacío → null (ilimitado). */
@@ -53,12 +53,10 @@ const UUID_RE =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 
 /**
- * Actualiza la configuración operativa del tenant. Solo el personal con rol
+ * Actualiza la configuración operativa de la clínica. Solo el personal con rol
  * 'admin' puede ejecutarla. Acepta el `tenantId` o el `clinicSlug` del slug:
  * si llega un slug, primero se resuelve el `id` real consultando `tenants`
  * por `.eq("slug", clinicSlug)` y el UPDATE se filtra por ese `id` canónico.
- * Si el esquema no tiene aún las columnas nuevas (PGRST204), reintenta con
- * un payload mínimo.
  */
 export async function updateTenantSettings(
   input: UpdateTenantSettingsInput
@@ -75,9 +73,8 @@ export async function updateTenantSettings(
 
     const supabase = await createClient()
 
-    // Resolución del tenant: PRIMERO por slug (clinicSlug) y, solo si el slug
-    // no devuelve fila, fallback por id (tenantId). Así el `id` nunca se usa
-    // cuando ya existe el slug canónico (evita incongruencias de UUID).
+    // Resolución de la clínica: PRIMERO por slug (clinicSlug) y, solo si el slug
+    // no devuelve fila, fallback por id (tenantId).
     let tenantTarget: { id: string; slug: string } | null = null
     let metaError: string | null = null
 
@@ -119,7 +116,6 @@ export async function updateTenantSettings(
     }
 
     if (!tenantTarget) {
-      // Facilita el depurado: registra exactamente qué slug/id recibió.
       console.error("[updateTenantSettings] Error al buscar clínica:", {
         input: {
           clinicSlug: clinicSlug ?? null,
@@ -159,99 +155,48 @@ export async function updateTenantSettings(
       rif: data.rif?.trim() || null,
       direccion: data.direccion?.trim() || null,
       telefono: data.telefono?.trim() || null,
-      pago_movil_enabled: data.pago_movil_enabled,
+      pago_movil_enabled: Boolean(data.pago_movil_enabled),
       max_slots_per_shift: maxSlots,
       datos_pago_movil: datosPago,
     }
-    const payloadMinimo: TenantUpdate = {
-      nombre,
-      datos_pago_movil: datosPago,
-    }
 
-    // Depuración estricta: imprime exactamente lo que llegó del formulario.
-    console.log("[updateTenantSettings] Payload recibido:", input.data)
+    console.log("[updateTenantSettings] Payload enviado a PostgreSQL:", payloadCompleto)
 
-    const guardar = async (payload: TenantUpdate, intento: number) => {
-      console.log(
-        `[updateTenantSettings] UPDATE intento ${intento} → payload:`,
-        payload
-      )
-      const resultado = await supabase
-        .from("tenants")
-        .update(payload)
-        .eq("id", meta.id)
-        .select("*")
-        .maybeSingle()
-
-      if (resultado.error) {
-        // Error exacto de Supabase/PostgREST antes de devolver al toast.
-        console.error(
-          `[updateTenantSettings] ERROR DE SUPABASE AL ACTUALIZAR (intento ${intento}):`,
-          resultado.error
-        )
-      } else {
-        // Respuesta cruda de PostgreSQL tras el UPDATE (debe traer la fila).
-        console.log(
-          `[updateTenantSettings] Resultado de PostgreSQL tras UPDATE (intento ${intento}):`,
-          resultado.data
-        )
-      }
-      return resultado
-    }
-
-    let resultado = await guardar(payloadCompleto, 1)
-    // Esquema sin migrar (columnas nuevas no existen) → reintento mínimo.
-    if (resultado.error?.code === "PGRST204") {
-      console.warn(
-        "[updateTenantSettings] Columnas nuevas ausentes (PGRST204) → reintento con payload mínimo."
-      )
-      resultado = await guardar(payloadMinimo, 2)
-    }
+    const resultado = await supabase
+      .from("tenants")
+      .update(payloadCompleto)
+      .eq("id", meta.id)
+      .select("*")
+      .maybeSingle()
 
     if (resultado.error) {
-      // El detalle exacto ya se imprimió en consola; propaga prefijo BD.
+      console.error("[updateTenantSettings] ERROR DE SUPABASE AL ACTUALIZAR:", resultado.error)
       return {
         ok: false,
         message: `Error en BD: ${resultado.error.message}`,
       }
     }
 
-    // Persistencia: `maybeSingle` devuelve null si PostgreSQL afectó 0 filas.
-    // La fila ya existía (meta), así que aquí implica bloqueo por RLS.
     if (!resultado.data) {
-      console.error(
-        "[updateTenantSettings] UPDATE afectó 0 filas (posible bloqueo RLS):",
-        { slug: meta.slug, tenantId: meta.id, payloadRecibido: input.data }
-      )
+      console.error("[updateTenantSettings] UPDATE afectó 0 filas (bloqueo RLS):", {
+        slug: meta.slug,
+        tenantId: meta.id,
+      })
       return {
         ok: false,
-        message:
-          "No tienes permisos de administrador para guardar cambios en esta clínica.",
+        message: "No tienes permisos de administrador para guardar cambios en esta clínica.",
       }
     }
+
     const tenantActualizado = resultado.data
 
-    // Prueba de persistencia: confirma los valores tal como quedaron en BD.
-    console.log(
-      "[updateTenantSettings] Persistencia verificada → tenant actualizado:",
-      {
-        id: tenantActualizado.id,
-        slug: tenantActualizado.slug,
-        nombre: tenantActualizado.nombre,
-        rif: tenantActualizado.rif,
-        direccion: tenantActualizado.direccion,
-        telefono: tenantActualizado.telefono,
-        pago_movil_enabled: tenantActualizado.pago_movil_enabled,
-        max_slots_per_shift: tenantActualizado.max_slots_per_shift,
-      }
-    )
+    console.log("[updateTenantSettings] Guardado exitoso en PostgreSQL:", tenantActualizado)
 
-    // Revalida la página Server Component de configuración y la raíz de la
-    // clínica para que Next.js no sirva datos en caché desactualizados.
-    revalidatePath(`/${meta.slug}/admin/configuracion`)
-    revalidatePath(`/${meta.slug}/reservar`)
-    revalidatePath(`/${meta.slug}`)
-    revalidatePath("/")
+    // Revalidación completa de rutas
+    revalidatePath(`/${meta.slug}/admin/configuracion`, "page")
+    revalidatePath(`/${meta.slug}/reservar`, "page")
+    revalidatePath(`/${meta.slug}`, "layout")
+    revalidatePath("/", "layout")
 
     return { ok: true, data: { tenant: tenantActualizado } }
   } catch (cause) {
@@ -353,10 +298,10 @@ export async function uploadTenantLogo(
       }
     }
 
-    revalidatePath(`/${meta.slug}/admin/configuracion`)
-    revalidatePath(`/${meta.slug}/reservar`)
-    revalidatePath(`/${meta.slug}`)
-    revalidatePath("/")
+    revalidatePath(`/${meta.slug}/admin/configuracion`, "page")
+    revalidatePath(`/${meta.slug}/reservar`, "page")
+    revalidatePath(`/${meta.slug}`, "layout")
+    revalidatePath("/", "layout")
 
     return { ok: true, data: { logoUrl, tenant } }
   } catch (cause) {
