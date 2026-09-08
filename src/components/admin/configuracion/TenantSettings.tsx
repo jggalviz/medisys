@@ -6,6 +6,7 @@
  * Persiste con `updateTenantSettings` y sube el logo con `uploadTenantLogo`.
  */
 import { useEffect, useState, useTransition } from "react"
+import { useRouter } from "next/navigation"
 import { CheckCircle2, ImageUp, LoaderCircle, ShieldAlert } from "lucide-react"
 
 import type { CuentaCobro, Tenant } from "@/types/database"
@@ -58,12 +59,25 @@ export function TenantSettings({ tenant }: { tenant: Tenant }) {
   const [toast, setToast] = useState<Toast>(null)
   const [isSaving, startSaving] = useTransition()
   const [isUploading, startUploading] = useTransition()
+  const router = useRouter()
 
   useEffect(() => {
     if (!toast) return
     const id = window.setTimeout(() => setToast(null), 3500)
     return () => window.clearTimeout(id)
   }, [toast])
+
+  /**
+   * Sincroniza el formulario cuando llega una prop `tenant` nueva (p. ej. tras
+   * `router.refresh()` posterior a un guardado). Se usa el patrón oficial de
+   * React de "ajustar estado cuando cambia una prop" (sin useEffect).
+   */
+  const [tenantSincronizado, setTenantSincronizado] = useState<Tenant>(tenant)
+  if (tenant !== tenantSincronizado) {
+    setTenantSincronizado(tenant)
+    setForm(inicialDatos(tenant))
+    setLogoUrl(tenant.logo_url ?? null)
+  }
 
   useEffect(() => {
     return () => {
@@ -134,6 +148,8 @@ export function TenantSettings({ tenant }: { tenant: Tenant }) {
         data: form,
       })
       if (resultado.ok) {
+        // Obliga a re-ejecutar el Server Component para traer datos frescos.
+        router.refresh()
         setToast({ tipo: "ok", mensaje: "Configuración guardada ✓" })
       } else {
         setToast({ tipo: "error", mensaje: resultado.message })
@@ -165,6 +181,8 @@ export function TenantSettings({ tenant }: { tenant: Tenant }) {
       if (resultado.ok) {
         setLogoUrl(resultado.data.logoUrl)
         setLogoFile(null)
+        // Re-ejecuta el Server Component para persistir logo_url en la prop.
+        router.refresh()
         setToast({ tipo: "ok", mensaje: "Logo actualizado ✓" })
       } else {
         setToast({ tipo: "error", mensaje: resultado.message })

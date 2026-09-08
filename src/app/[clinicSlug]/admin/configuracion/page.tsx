@@ -9,6 +9,12 @@ import { getStaffForSlug } from "@/lib/staff"
 import { getTenantBySlug } from "@/app/actions/tenant"
 import { TenantSettings } from "@/components/admin/configuracion/TenantSettings"
 
+/**
+ * Evita el renderizado estático/cacheo: esta página lee la sesión del admin
+ * y los datos actuales de la clínica en cada petición para reflejar cambios.
+ */
+export const dynamic = "force-dynamic"
+
 export const metadata: Metadata = {
   title: "Configuración de la Clínica | Medisys",
   robots: { index: false },
