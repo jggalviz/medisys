@@ -33,13 +33,6 @@ type Props = {
 }
 
 const PASOS = ["Paciente", "Especialidad", "Fecha y hora", "Pago"] as const
-
-/**
- * Teléfono de respaldo para la demo: si la clínica no tiene `tenant.telefono`
- * configurado, el botón de WhatsApp igual se muestra con este número.
- * ⚠️ Sustituir por el número oficial en producción.
- */
-const WHATSAPP_FALLBACK_DEMO = "584120000000"
 type StepIndex = 1 | 2 | 3 | 4
 
 function formatoRestante(ms: number): string {
@@ -139,14 +132,13 @@ export function BookingWizard({ tenant }: Props) {
   const lockDanger = locked && remainingMs < 120_000
 
   if (done) {
-    // Fallback: el botón de WhatsApp NUNCA se oculta, aunque la clínica no
-    // tenga teléfono configurado (usa el número demo por defecto).
+    // WhatsApp de compartir genérico (sin número): el botón siempre está
+    // disponible en la confirmación.
     const waUrl =
       tenant && doctor && patient
         ? generateWhatsAppShareUrl({
             tenantName: tenant.nombre,
             appointment: done,
-            clinicPhone: tenant.telefono || WHATSAPP_FALLBACK_DEMO,
             patientName: `${patient.nombres} ${patient.apellidos}`.trim(),
             doctorName: `${doctor.nombres} ${doctor.apellidos}`.trim(),
             especialidad: doctor.especialidad,

@@ -1,9 +1,10 @@
 /**
  * MEDISYS · Enlace de WhatsApp para confirmar/consultar la cita.
  *
- * `generateWhatsAppShareUrl` construye un enlace https://wa.me/... con un
- * mensaje estructurado en texto plano (URL-encoded) con los datos clave de
- * la reserva: código, paciente, especialista, fecha, turno y pago.
+ * `generateWhatsAppShareUrl` construye un enlace de compartir genérico
+ * (`https://wa.me/?text=…` — sin número de teléfono) con el mensaje
+ * estructurado en texto plano (URL-encoded) y los datos clave de la reserva:
+ * código, paciente, especialista, fecha, turno, estado y pago.
  */
 import type { Appointment } from "@/types/database"
 
@@ -64,28 +65,23 @@ function metodoPagoLegible(appointment: Appointment): string {
 export type WhatsAppShareInput = {
   tenantName: string
   appointment: Appointment
-  /** Teléfono de la clínica (WhatsApp). Se normaliza quitando signos. */
-  clinicPhone: string | null
   patientName?: string
   doctorName?: string
   especialidad?: string
 }
 
 /**
- * Devuelve el enlace wa.me listo para `target="_blank"`, o `null` si la
- * clínica no tiene teléfono de WhatsApp configurado.
+ * Devuelve el enlace de compartir genérico de WhatsApp listo para
+ * `target="_blank"`. No incluye número de teléfono: el destinatario lo elige
+ * al abrir la app.
  */
 export function generateWhatsAppShareUrl({
   tenantName,
   appointment,
-  clinicPhone,
   patientName,
   doctorName,
   especialidad,
-}: WhatsAppShareInput): string | null {
-  const telefono = clinicPhone?.replace(/[^\d]/g, "")
-  if (!telefono) return null
-
+}: WhatsAppShareInput): string {
   const codigo = appointment.id.slice(0, 8).toUpperCase()
   const lineas = [
     `Hola ${tenantName}, tengo una cita reservada con Medisys 👋`,
@@ -103,5 +99,5 @@ export function generateWhatsAppShareUrl({
     `Por favor confírmame los detalles de mi cita.`,
   ]
 
-  return `https://wa.me/${telefono}?text=${encodeURIComponent(lineas.join("\n"))}`
+  return `https://wa.me/?text=${encodeURIComponent(lineas.join("\n"))}`
 }
