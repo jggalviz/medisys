@@ -54,29 +54,80 @@ const UUID_RE =
 
 /**
  * Actualiza la configuración operativa del tenant. Solo el personal con rol
- * 'admin' puede ejecutarla. Si el esquema no tiene aún las columnas nuevas
- * (PGRST204), reintenta con un payload mínimo.
+ * 'admin' puede ejecutarla. Acepta el `tenantId` o el `clinicSlug` del slug:
+ * si llega un slug, primero se resuelve el `id` real consultando `tenants`
+ * por `.eq("slug", clinicSlug)` y el UPDATE se filtra por ese `id` canónico.
+ * Si el esquema no tiene aún las columnas nuevas (PGRST204), reintenta con
+ * un payload mínimo.
  */
 export async function updateTenantSettings(
   input: UpdateTenantSettingsInput
 ): Promise<TenantSettingsResult<{ tenant: Tenant }>> {
   try {
-    const tenantId = input.tenantId?.trim()
-    if (!tenantId) {
-      return { ok: false, message: "Falta el identificador del tenant." }
-    }
-    if (!UUID_RE.test(tenantId)) {
-      return { ok: false, message: "El identificador del tenant no es válido." }
+    const tenantId = input.tenantId?.trim() || undefined
+    const clinicSlug = input.clinicSlug?.trim() || undefined
+    if (!tenantId && !clinicSlug) {
+      return {
+        ok: false,
+        message: "Indica el slug o el identificador del tenant.",
+      }
     }
 
     const supabase = await createClient()
 
-    const { data: meta, error: metaError } = await supabase
-      .from("tenants")
-      .select("id, slug")
-      .eq("id", tenantId)
-      .maybeSingle()
-    if (metaError || !meta) {
+    // Resolución del tenant: por slug (primero) o por id.
+    let meta: { id: string; slug: string } | null = null
+    let metaError: string | null = null
+
+    if (clinicSlug) {
+      const resultado = await supabase
+        .from("tenants")
+        .select("id, slug")
+        .eq("slug", clinicSlug)
+        .eq("is_active", true)
+        .maybeSingle()
+      meta = resultado.data
+      metaError = resultado.error?.message ?? null
+    } else {
+      if (!tenantId) {
+        return {
+          ok: false,
+          message: "Indica el identificador del tenant.",
+        }
+      }
+      if (!UUID_RE.test(tenantId)) {
+        return {
+          ok: false,
+          message: "El identificador del tenant no es válido.",
+        }
+      }
+      const resultado = await supabase
+        .from("tenants")
+        .select("id, slug")
+        .eq("id", tenantId)
+        .maybeSingle()
+      meta = resultado.data
+      metaError = resultado.error?.message ?? null
+    }
+
+    if (metaError) {
+      console.error("[updateTenantSettings] Error al resolver el tenant:", {
+        clinicSlug: clinicSlug ?? null,
+        tenantId: tenantId ?? null,
+        metaError,
+      })
+      return { ok: false, message: "No se pudo verificar la clínica." }
+    }
+
+    if (!meta) {
+      // Facilita el depurado: registra exactamente qué slug/id no matcheó.
+      console.error(
+        "[updateTenantSettings] No se encontró un tenant para la clínica:",
+        {
+          clinicSlug: clinicSlug ?? null,
+          tenantId: tenantId ?? null,
+        }
+      )
       return { ok: false, message: "La clínica no existe." }
     }
 
@@ -118,7 +169,7 @@ export async function updateTenantSettings(
       supabase
         .from("tenants")
         .update(payload)
-        .eq("id", tenantId)
+        .eq("id", meta.id)
         .select("*")
         .maybeSingle()
 

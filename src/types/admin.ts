@@ -115,7 +115,10 @@ export type TenantSettingsData = {
 }
 
 export type UpdateTenantSettingsInput = {
-  tenantId: string
+  /** Identificador UUID del tenant (rutas admin actuales). */
+  tenantId?: string | null
+  /** Slug alternativo (ej. "clinica-demo"); se resuelve su `id` por consulta. */
+  clinicSlug?: string | null
   data: TenantSettingsData
 }
 
