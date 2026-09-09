@@ -266,8 +266,6 @@ export async function createEspecialista(
       precio_consulta: normalizarPrecio(input.precio_consulta),
       activo,
       is_active: activo,
-      dias_atencion: input.dias_atencion,
-      turno_habitual: input.turno_habitual,
     }
 
     const { data, error } = await supabase
@@ -322,8 +320,6 @@ export async function updateEspecialista(
       precio_consulta: normalizarPrecio(input.precio_consulta),
       activo,
       is_active: activo,
-      dias_atencion: input.dias_atencion,
-      turno_habitual: input.turno_habitual,
     }
 
     const { data, error } = await supabase
