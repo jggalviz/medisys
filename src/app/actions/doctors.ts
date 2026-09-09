@@ -22,7 +22,6 @@ import { createClient } from "@/lib/supabase/server"
 export type EspecialistaInput = {
   nombre: string
   especialidad: string
-  cedula?: string | null
   telefono?: string | null
   /** Precio de la consulta en USD (se convierte con la tasa BCV en el wizard). */
   precio_consulta?: number | null
@@ -37,7 +36,6 @@ export type EspecialistaItem = {
   tenant_id: string
   nombre: string
   especialidad: string
-  cedula: string | null
   telefono: string | null
   /** Precio de consulta en USD (columna `doctors.precio_consulta`). */
   precio_consulta: number
@@ -85,10 +83,17 @@ function precioDesdeFila(value: unknown): number {
   return Number.isFinite(precio) && precio > 0 ? precio : 0
 }
 
-/** Normaliza el precio USD del formulario: vacío/null → 0, sin negativos. */
-function normalizarPrecio(valor: number | null | undefined): number {
-  const numero = Number(valor)
-  return Number.isFinite(numero) && numero > 0 ? Math.round(numero * 100) / 100 : 0
+/**
+ * Normaliza el precio USD: limpia la entrada (coma → punto), la convierte a
+ * float y la redondea a 2 decimales. Vacío/null/negativo → 0.
+ */
+function normalizarPrecio(
+  valor: number | string | null | undefined
+): number {
+  const precioLimpio =
+    parseFloat(String(valor ?? "").replace(/,/g, ".")) || 0
+  if (!Number.isFinite(precioLimpio) || precioLimpio <= 0) return 0
+  return Math.round(precioLimpio * 100) / 100
 }
 
 /** Normaliza una fila cruda de `doctors` (tolera columnas ausentes). */
@@ -106,7 +111,6 @@ function normalizarEspecialista(row: Record<string, unknown>): EspecialistaItem 
     tenant_id: str(row.tenant_id),
     nombre,
     especialidad: str(row.especialidad) || "General",
-    cedula: nuloTexto(row.cedula),
     telefono: nuloTexto(row.telefono),
     precio_consulta: precioDesdeFila(row.precio_consulta),
     activo,
@@ -207,62 +211,13 @@ function partesNombre(nombre: string): { nombres: string; apellidos: string } {
   }
 }
 
-/**
- * Normaliza una cédula venezolana a su forma canónica "V12345678".
- * Acepta formatos flexibles: "V-12345678", "V12345678", "v-12.345.678",
- * "12.345.678" o solo dígitos "12345678". Quita puntos, guiones y espacios,
- * conserva el prefijo de letra (V/E/J/G…) y valida 6 a 9 dígitos.
- * Devuelve `null` si no hay valor o el formato es inválido.
- */
-function formatearCedula(value: string | null | undefined): string | null {
-  if (value == null) return null
-  const limpio = value.trim()
-  if (!limpio) return null
-
-  const match = limpio
-    .toUpperCase()
-    .match(/^([A-Z])?\s*[-.]?\s*([\d\s.\-]+)$/)
-  if (!match) return null
-
-  const numeros = (match[2] ?? "").replace(/[\s.\-]/g, "")
-  return /^\d{6,9}$/.test(numeros) ? `${match[1] ?? ""}${numeros}` : null
-}
-
-/** Valida el formato antes de enviar; si devuelve texto es un error amigable. */
-function validarCedula(input: EspecialistaInput): string | null {
-  const valor = input.cedula?.trim()
-  if (!valor) return null
-  if (!formatearCedula(valor)) {
-    return "Cédula inválida. Usa el formato venezolano (ej. V-12345678 o 12345678)."
-  }
-  return null
-}
-
-/** Comprueba si la cédula ya existe en la clínica (excluyendo a un doctor). */
-async function existeCedulaEnTenant(
-  supabase: SupabaseClient<Database>,
-  tenantId: string,
-  cedula: string | null,
-  excluirId?: string
-): Promise<boolean> {
-  if (!cedula) return false
-  let consulta = supabase
-    .from("doctors")
-    .select("id")
-    .eq("tenant_id", tenantId)
-    .eq("cedula", cedula)
-  if (excluirId) consulta = consulta.neq("id", excluirId)
-  const { data, error } = await consulta.maybeSingle()
-  return !error && data != null
-}
-
 /** Traduce errores de base de datos a mensajes amigables. */
 function mensajeDeError(
   error: { code?: string; message?: string } | null,
   fallback: string
 ): string {
   if (error?.code === "23505") {
-    return "Ya existe un especialista con esa cédula en esta clínica."
+    return "Ya existe un registro con esos datos en esta clínica."
   }
   return error?.message ?? fallback
 }
@@ -270,8 +225,6 @@ function mensajeDeError(
 function validarInput(input: EspecialistaInput): string | null {
   if (!input.nombre?.trim()) return "El nombre es obligatorio."
   if (!input.especialidad?.trim()) return "La especialidad es obligatoria."
-  const errorCedula = validarCedula(input)
-  if (errorCedula) return errorCedula
   const diasValidos =
     input.dias_atencion.every((d) => d >= 1 && d <= 6) &&
     new Set(input.dias_atencion).size === input.dias_atencion.length
@@ -302,19 +255,6 @@ export async function createEspecialista(
     const errorValidacion = validarInput(input)
     if (errorValidacion) return { ok: false, message: errorValidacion }
 
-    const cedula = formatearCedula(input.cedula)
-    const existe = await existeCedulaEnTenant(
-      supabase,
-      ctx.data.tenantId,
-      cedula
-    )
-    if (existe) {
-      return {
-        ok: false,
-        message: `Ya existe un especialista con la cédula “${cedula}” en esta clínica.`,
-      }
-    }
-
     const partes = partesNombre(input.nombre)
     const activo = input.activo ?? true
     const payload: DoctorInsert = {
@@ -322,7 +262,6 @@ export async function createEspecialista(
       nombres: partes.nombres,
       apellidos: partes.apellidos,
       especialidad: input.especialidad.trim(),
-      cedula,
       telefono: input.telefono?.trim() || null,
       precio_consulta: normalizarPrecio(input.precio_consulta),
       activo,
@@ -373,27 +312,12 @@ export async function updateEspecialista(
     const errorValidacion = validarInput(input)
     if (errorValidacion) return { ok: false, message: errorValidacion }
 
-    const cedula = formatearCedula(input.cedula)
-    const existe = await existeCedulaEnTenant(
-      supabase,
-      ctx.data.tenantId,
-      cedula,
-      especialistaId
-    )
-    if (existe) {
-      return {
-        ok: false,
-        message: `Ya existe un especialista con la cédula “${cedula}” en esta clínica.`,
-      }
-    }
-
     const partes = partesNombre(input.nombre)
     const activo = input.activo ?? true
     const payload: DoctorUpdate = {
       nombres: partes.nombres,
       apellidos: partes.apellidos,
       especialidad: input.especialidad.trim(),
-      cedula,
       telefono: input.telefono?.trim() || null,
       precio_consulta: normalizarPrecio(input.precio_consulta),
       activo,
