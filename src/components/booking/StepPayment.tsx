@@ -147,10 +147,14 @@ export function StepPayment({
   const instrucciones = tenant.datos_pago_movil?.instrucciones ?? null
 
   /**
-   * ¿La clínica publicó una cuenta de Pago Móvil completa?
-   * (requiere banco + teléfono; la cédula/RIF se muestra si está cargada).
+   * ¿La clínica habilitó la pasarela de Pago Móvil y publicó datos completos?
+   * Requiere: switch `pago_movil_enabled`, objeto `datos_pago_movil` presente
+   * y al menos una cuenta con banco + teléfono.
    */
-  const tienePagoMovil = cuentasPagoMovil.length > 0
+  const tienePagoMovil =
+    tenant.pago_movil_enabled === true &&
+    Boolean(tenant.datos_pago_movil) &&
+    cuentasPagoMovil.length > 0
 
   /** Método efectivo: sin Pago Móvil, la reserva se paga en recepción. */
   const metodoEfectivo: "en_linea" | "recepcion" = tienePagoMovil

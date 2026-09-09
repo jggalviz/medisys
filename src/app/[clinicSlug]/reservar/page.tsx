@@ -4,6 +4,13 @@ import type { Metadata } from "next"
 import { BookingWizard } from "@/components/booking/BookingWizard"
 import { getTenantBySlug } from "@/app/actions/tenant"
 
+/**
+ * Página pública de reserva: lee la configuración actual de la clínica
+ * (p. ej. `pago_movil_enabled` y `datos_pago_movil`) en cada petición, sin
+ * cachear el render del Server Component.
+ */
+export const dynamic = "force-dynamic"
+
 type ReservarPageProps = {
   params: Promise<{ clinicSlug: string }>
 }
