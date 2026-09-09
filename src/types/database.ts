@@ -245,6 +245,26 @@ export type ScheduleInsert = Omit<Schedule, "id" | "activo"> & {
 export type ScheduleUpdate = Partial<ScheduleInsert>
 
 /* ------------------------------------------------------------------ */
+/* bcv_rates (tasa oficial del Banco Central de Venezuela)             */
+/* ------------------------------------------------------------------ */
+
+export type BcvRate = {
+  id: string
+  /** Fecha de la tasa ('YYYY-MM-DD'). */
+  fecha: string
+  /** Bolívares por 1 USD. */
+  tasa: number
+  /** Momento en que se publicó/consultó la tasa. */
+  fetched_at: string
+  fuente: string
+}
+
+export type BcvRateInsert = Omit<BcvRate, "id" | "fetched_at"> & {
+  id?: string
+  fetched_at?: string
+}
+
+/* ------------------------------------------------------------------ */
 /* appointments (reservas + lock de 15 min)                            */
 /* ------------------------------------------------------------------ */
 
@@ -363,6 +383,12 @@ export type Database = {
         Row: Appointment
         Insert: AppointmentInsert
         Update: AppointmentUpdate
+        Relationships: []
+      }
+      bcv_rates: {
+        Row: BcvRate
+        Insert: BcvRateInsert
+        Update: Partial<BcvRateInsert>
         Relationships: []
       }
     }

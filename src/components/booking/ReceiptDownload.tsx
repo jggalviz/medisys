@@ -11,7 +11,7 @@ import { useRef, useState } from "react"
 import { LoaderCircle } from "lucide-react"
 
 import type { Appointment, Doctor, Profile, Tenant } from "@/types/database"
-import { doctorNombre, formatMonto, perfilNombre } from "@/lib/format"
+import { doctorNombre, formatUSD, perfilNombre } from "@/lib/format"
 import { turnoLabel } from "@/lib/whatsapp"
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
@@ -86,7 +86,9 @@ export function ReceiptDownload({
   const cardRef = useRef<HTMLDivElement | null>(null)
 
   const costo =
-    doctor.precio_consulta > 0 ? formatMonto(doctor.precio_consulta) : null
+    doctor.precio_consulta > 0
+      ? `${formatUSD(doctor.precio_consulta)} USD`
+      : null
   const codigo = appointment.id.slice(0, 8).toUpperCase()
   const emision = new Date().toLocaleDateString("es-VE", {
     weekday: "long",

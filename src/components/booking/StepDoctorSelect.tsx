@@ -23,7 +23,7 @@ import {
 import type { Doctor } from "@/types/database"
 import type { DoctorSchedule, DoctorWithTenant } from "@/types/booking"
 import { getDoctorsByTenant } from "@/app/actions/booking"
-import { doctorNombre, formatMonto, iniciales } from "@/lib/format"
+import { doctorNombre, formatUSD, iniciales } from "@/lib/format"
 import { Button } from "@/components/ui/button"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { Skeleton } from "@/components/ui/skeleton"
@@ -136,7 +136,7 @@ function DoctorCard({
           </span>
           {doctor.precio_consulta > 0 && (
             <span className="text-xs text-muted-foreground">
-              Consulta {formatMonto(doctor.precio_consulta)}
+              Consulta {formatUSD(doctor.precio_consulta)}
             </span>
           )}
         </span>

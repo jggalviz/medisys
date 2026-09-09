@@ -38,9 +38,28 @@ export function formatMonto(monto: number): string {
   return new Intl.NumberFormat("es-VE", {
     style: "currency",
     currency: "VES",
-    minimumFractionDigits: monto % 1 === 0 ? 2 : 2,
+    minimumFractionDigits: 2,
     maximumFractionDigits: 2,
   }).format(monto)
+}
+
+/** Precio formateado en dólares USD. p. ej. "$25.00". */
+export function formatUSD(monto: number): string {
+  return new Intl.NumberFormat("en-US", {
+    style: "currency",
+    currency: "USD",
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  }).format(monto)
+}
+
+/** Monto en Bolívares con etiqueta "Bs." (para desgloses BCV). */
+export function formatBs(monto: number): string {
+  const numero = new Intl.NumberFormat("es-VE", {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  }).format(monto)
+  return `Bs. ${numero}`
 }
 
 /** Etiqueta de una cuenta de cobro (banco o Zelle) para el paso de pago. */

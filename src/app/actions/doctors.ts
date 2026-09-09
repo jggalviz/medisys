@@ -24,6 +24,8 @@ export type EspecialistaInput = {
   especialidad: string
   cedula?: string | null
   telefono?: string | null
+  /** Precio de la consulta en USD (se convierte con la tasa BCV en el wizard). */
+  precio_consulta?: number | null
   /** 1=Lunes … 6=Sábado. */
   dias_atencion: number[]
   turno_habitual: TurnoHabitualEspecialista
@@ -37,6 +39,8 @@ export type EspecialistaItem = {
   especialidad: string
   cedula: string | null
   telefono: string | null
+  /** Precio de consulta en USD (columna `doctors.precio_consulta`). */
+  precio_consulta: number
   activo: boolean
   dias_atencion: number[]
   turno_habitual: TurnoHabitualEspecialista
@@ -76,6 +80,17 @@ function turnoDesdeFila(value: unknown): TurnoHabitualEspecialista {
     : "ambos"
 }
 
+function precioDesdeFila(value: unknown): number {
+  const precio = Number(value)
+  return Number.isFinite(precio) && precio > 0 ? precio : 0
+}
+
+/** Normaliza el precio USD del formulario: vacío/null → 0, sin negativos. */
+function normalizarPrecio(valor: number | null | undefined): number {
+  const numero = Number(valor)
+  return Number.isFinite(numero) && numero > 0 ? Math.round(numero * 100) / 100 : 0
+}
+
 /** Normaliza una fila cruda de `doctors` (tolera columnas ausentes). */
 function normalizarEspecialista(row: Record<string, unknown>): EspecialistaItem {
   const separado = [str(row.nombres), str(row.apellidos)]
@@ -93,6 +108,7 @@ function normalizarEspecialista(row: Record<string, unknown>): EspecialistaItem 
     especialidad: str(row.especialidad) || "General",
     cedula: nuloTexto(row.cedula),
     telefono: nuloTexto(row.telefono),
+    precio_consulta: precioDesdeFila(row.precio_consulta),
     activo,
     dias_atencion: diasDesdeFila(row.dias_atencion),
     turno_habitual: turnoDesdeFila(row.turno_habitual),
@@ -308,6 +324,7 @@ export async function createEspecialista(
       especialidad: input.especialidad.trim(),
       cedula,
       telefono: input.telefono?.trim() || null,
+      precio_consulta: normalizarPrecio(input.precio_consulta),
       activo,
       is_active: activo,
       dias_atencion: input.dias_atencion,
@@ -378,6 +395,7 @@ export async function updateEspecialista(
       especialidad: input.especialidad.trim(),
       cedula,
       telefono: input.telefono?.trim() || null,
+      precio_consulta: normalizarPrecio(input.precio_consulta),
       activo,
       is_active: activo,
       dias_atencion: input.dias_atencion,

@@ -25,6 +25,7 @@ import {
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import { formatUSD } from "@/lib/format"
 import { cn } from "@/lib/utils"
 
 const DIAS_LABEL = ["Lun", "Mar", "Mié", "Jue", "Vie", "Sáb"]
@@ -37,6 +38,7 @@ const VACIO: EspecialistaInput = {
   especialidad: "",
   cedula: null,
   telefono: null,
+  precio_consulta: 0,
   dias_atencion: [],
   turno_habitual: "ambos",
   activo: true,
@@ -117,6 +119,7 @@ export function EspecialistasManager({ tenantId }: { tenantId: string }) {
       especialidad: item.especialidad,
       cedula: item.cedula ?? "",
       telefono: item.telefono ?? "",
+      precio_consulta: item.precio_consulta,
       dias_atencion: item.dias_atencion,
       turno_habitual: item.turno_habitual,
       activo: item.activo,
@@ -270,6 +273,11 @@ export function EspecialistasManager({ tenantId }: { tenantId: string }) {
                       .filter(Boolean)
                       .join(" · ") || "Sin datos de contacto"}
                   </span>
+                  {item.precio_consulta > 0 && (
+                    <span className="mt-0.5 text-xs font-semibold text-emerald-600 dark:text-emerald-400">
+                      Consulta {formatUSD(item.precio_consulta)}
+                    </span>
+                  )}
                 </div>
                 <Switch
                   activo={item.activo}
@@ -377,6 +385,30 @@ export function EspecialistasManager({ tenantId }: { tenantId: string }) {
                   }
                 />
               </Campo>
+              <Campo label="Precio de consulta (USD)">
+                <Input
+                  type="number"
+                  inputMode="decimal"
+                  min={0}
+                  step="0.01"
+                  placeholder="20.00"
+                  value={form.precio_consulta ?? ""}
+                  onChange={(e) =>
+                    setForm((p) => ({
+                      ...p,
+                      precio_consulta:
+                        e.target.value === ""
+                          ? 0
+                          : Math.max(0, Number(e.target.value)),
+                    }))
+                  }
+                />
+                <p className="text-xs text-muted-foreground">
+                  Monto en dólares; el paciente verá el equivalente en Bs. con
+                  la tasa BCV.
+                </p>
+              </Campo>
+
               <div className="grid gap-3 sm:grid-cols-2">
                 <Campo label="Cédula / Colegiado">
                   <Input

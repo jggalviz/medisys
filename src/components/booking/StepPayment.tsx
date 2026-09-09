@@ -40,12 +40,14 @@ import type {
   Tenant,
 } from "@/types/database"
 import { registerAppointmentPayment } from "@/app/actions/booking"
+import { getLatestBcvRate, TASA_BCV_FALLBACK } from "@/lib/bcv"
 import { createClient as createSupabaseClient } from "@/lib/supabase/client"
 import { formatLongDate } from "@/lib/date"
 import {
   cuentaDetalle,
   doctorNombre,
-  formatMonto,
+  formatBs,
+  formatUSD,
   perfilNombre,
 } from "@/lib/format"
 import { Button } from "@/components/ui/button"
@@ -134,6 +136,8 @@ export function StepPayment({
   const supabase = useMemo(() => createSupabaseClient(), [])
 
   const [metodo, setMetodo] = useState<"en_linea" | "recepcion">("en_linea")
+  /** Tasa oficial BCV (Bs./USD); mientras se lee se usa el fallback. */
+  const [tasaBCV, setTasaBCV] = useState<number>(TASA_BCV_FALLBACK)
   const [telefonoEmisor, setTelefonoEmisor] = useState("")
   const [bancoOrigen, setBancoOrigen] = useState("")
   const [referencia, setReferencia] = useState("")
@@ -224,7 +228,11 @@ export function StepPayment({
   const fechaCita = fechaHoraLocal.slice(0, 10)
   const horaCita = fechaHoraLocal.length >= 16 ? fechaHoraLocal.slice(11, 16) : ""
   const fechaLegible = fechaCita ? formatLongDate(fechaCita) : "Por confirmar"
-  const monto = doctor.precio_consulta > 0 ? doctor.precio_consulta : null
+  /** Precio de la consulta en USD (columna `doctors.precio_consulta`). */
+  const precioUSD =
+    doctor.precio_consulta > 0 ? doctor.precio_consulta : null
+  /** Total en Bolívares según la tasa BCV: montoBs = precioUSD * tasaBCV. */
+  const montoBs = precioUSD !== null ? precioUSD * tasaBCV : null
 
   /** Etiqueta del turno guardado (con fallback desde la hora referencial). */
   const turnoLabel =
@@ -241,6 +249,17 @@ export function StepPayment({
     (file !== null || uploadedUrl !== null)
 
   const puedeEnviar = metodoEfectivo === "recepcion" || pagoEnLineaValido
+
+  useEffect(() => {
+    let active = true
+    void getLatestBcvRate(supabase).then((tasa) => {
+      if (!active) return
+      if (tasa > 0) setTasaBCV(tasa)
+    })
+    return () => {
+      active = false
+    }
+  }, [supabase])
 
   useEffect(() => {
     return () => {
@@ -438,15 +457,34 @@ export function StepPayment({
           value={turnoLabel ? `${fechaLegible} · ${turnoLabel}` : fechaLegible}
         />
 
-        {/* Monto / precio de la consulta */}
-        {monto !== null ? (
+        {/* Monto dinámico: USD + tasa BCV + total en Bolívares */}
+        {precioUSD !== null ? (
           <>
             <Separator className="my-2" />
-            <div className="flex items-center justify-between pt-1">
-              <span className="text-sm font-medium">Monto a pagar</span>
-              <span className="text-xl font-bold text-primary">
-                {formatMonto(monto)}
-              </span>
+            <div className="flex flex-col gap-1.5 pt-1 text-sm">
+              <div className="flex items-center justify-between gap-3">
+                <span className="text-muted-foreground">Precio consulta</span>
+                <span className="font-medium tabular-nums">
+                  {formatUSD(precioUSD)} USD
+                </span>
+              </div>
+              <div className="flex items-center justify-between gap-3">
+                <span className="text-muted-foreground">
+                  Tasa oficial BCV
+                </span>
+                <span className="font-medium tabular-nums">
+                  {formatBs(tasaBCV)} / USD
+                </span>
+              </div>
+              <Separator className="my-1" />
+              <div className="flex items-center justify-between gap-3 pt-1">
+                <span className="font-medium">
+                  Total a pagar en Pago Móvil
+                </span>
+                <span className="text-xl font-bold text-primary tabular-nums">
+                  {formatBs(montoBs ?? 0)}
+                </span>
+              </div>
             </div>
           </>
         ) : (
