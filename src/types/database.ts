@@ -245,6 +245,35 @@ export type ScheduleInsert = Omit<Schedule, "id" | "activo"> & {
 export type ScheduleUpdate = Partial<ScheduleInsert>
 
 /* ------------------------------------------------------------------ */
+/* medical_records (expediente clínico de portales)                    */
+/* ------------------------------------------------------------------ */
+
+export type MedicalRecord = {
+  id: string
+  tenant_id: string
+  appointment_id: string
+  patient_id: string
+  doctor_id: string
+  motivo: string | null
+  diagnostico: string | null
+  tratamiento: string | null
+  notas: string | null
+  created_at: string
+  updated_at: string
+}
+
+export type MedicalRecordInsert = Omit<
+  MedicalRecord,
+  "id" | "created_at" | "updated_at"
+> & {
+  id?: string
+  created_at?: string
+  updated_at?: string
+}
+
+export type MedicalRecordUpdate = Partial<MedicalRecordInsert>
+
+/* ------------------------------------------------------------------ */
 /* bcv_rates (tasa oficial del Banco Central de Venezuela)             */
 /* ------------------------------------------------------------------ */
 
@@ -389,6 +418,12 @@ export type Database = {
         Row: BcvRate
         Insert: BcvRateInsert
         Update: Partial<BcvRateInsert>
+        Relationships: []
+      }
+      medical_records: {
+        Row: MedicalRecord
+        Insert: MedicalRecordInsert
+        Update: MedicalRecordUpdate
         Relationships: []
       }
     }
