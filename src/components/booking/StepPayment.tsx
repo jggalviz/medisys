@@ -31,7 +31,14 @@ import {
   WalletCards,
 } from "lucide-react"
 
-import type { Appointment, Doctor, Profile, Tenant } from "@/types/database"
+import type {
+  Appointment,
+  CuentaCobro,
+  DatosPagoMovil,
+  Doctor,
+  Profile,
+  Tenant,
+} from "@/types/database"
 import { registerAppointmentPayment } from "@/app/actions/booking"
 import { createClient as createSupabaseClient } from "@/lib/supabase/client"
 import { formatLongDate } from "@/lib/date"
@@ -139,22 +146,73 @@ export function StepPayment({
   const [submitting, setSubmitting] = useState(false)
 
   const lockDanger = lockRemainingMs < 120_000
-  const cuentas = tenant.datos_pago_movil?.cuentas ?? []
+  // Lectura TOLERANTE del JSONB `datos_pago_movil`: acepta el formato
+  // unificado del Admin `{ cuentas: [...], instrucciones }` y también la
+  // forma plana/legacy `{ banco, telefono, cedula|cedula_rif, titular }`.
+  const datosPago = tenant.datos_pago_movil as unknown as (DatosPagoMovil & {
+    banco?: string | null
+    telefono?: string | null
+    titular?: string | null
+    cedula_rif?: string | null
+    cedula?: string | null
+  }) | null
+
+  const texto = (valor?: string | null): string =>
+    typeof valor === "string" ? valor.trim() : ""
+
+  const cuentasDirectas = Array.isArray(datosPago)
+    ? (datosPago as unknown as CuentaCobro[])
+    : []
+  const cuentasAnidadas = Array.isArray(datosPago?.cuentas)
+    ? datosPago.cuentas
+    : []
+  const tieneCuentaPlana = Boolean(
+    datosPago &&
+      typeof datosPago !== "string" &&
+      texto(datosPago.banco) &&
+      texto(datosPago.telefono)
+  )
+
+  const cuentas: CuentaCobro[] =
+    cuentasDirectas.length > 0 || cuentasAnidadas.length > 0
+      ? [...cuentasDirectas, ...cuentasAnidadas]
+      : tieneCuentaPlana && datosPago
+        ? [
+            {
+              metodo: "pago_movil",
+              banco: texto(datosPago.banco) || null,
+              titular: texto(datosPago.titular),
+              cedula_rif:
+                texto(datosPago.cedula_rif) || texto(datosPago.cedula) || null,
+              telefono: texto(datosPago.telefono) || null,
+              correo_zelle: null,
+            },
+          ]
+        : []
+
   const cuentasPagoMovil = cuentas.filter(
     (cuenta) =>
       cuenta.metodo === "pago_movil" && Boolean(cuenta.banco && cuenta.telefono)
   )
-  const instrucciones = tenant.datos_pago_movil?.instrucciones ?? null
+  const instrucciones = datosPago?.instrucciones ?? null
 
   /**
-   * ¿La clínica habilitó la pasarela de Pago Móvil y publicó datos completos?
-   * Requiere: switch `pago_movil_enabled`, objeto `datos_pago_movil` presente
-   * y al menos una cuenta con banco + teléfono.
+   * ¿La clínica habilitó Pago Móvil y publicó contenido? El JSONB puede ser:
+   *  - string plano/largo (bloque de texto libre con los datos bancarios),
+   *  - objeto con campos (`banco`, `telefono`, … o `cuentas`),
+   *  - arreglo de cuentas.
    */
-  const tienePagoMovil =
-    tenant.pago_movil_enabled === true &&
-    Boolean(tenant.datos_pago_movil) &&
-    cuentasPagoMovil.length > 0
+  const rawDatos: unknown = tenant.datos_pago_movil
+  const tieneContenido =
+    typeof rawDatos === "string"
+      ? rawDatos.trim().length > 0
+      : Boolean(
+          rawDatos &&
+            typeof rawDatos === "object" &&
+            Object.keys(rawDatos as Record<string, unknown>).length > 0
+        )
+
+  const tienePagoMovil = tenant.pago_movil_enabled === true && tieneContenido
 
   /** Método efectivo: sin Pago Móvil, la reserva se paga en recepción. */
   const metodoEfectivo: "en_linea" | "recepcion" = tienePagoMovil

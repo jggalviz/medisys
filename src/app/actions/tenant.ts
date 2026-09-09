@@ -9,7 +9,12 @@
  */
 import { revalidatePath } from "next/cache"
 
-import type { Tenant, TenantUpdate } from "@/types/database"
+import type {
+  CuentaCobro,
+  DatosPagoMovil,
+  Tenant,
+  TenantUpdate,
+} from "@/types/database"
 import type {
   TenantSettingsResult,
   UpdateTenantSettingsInput,
@@ -47,6 +52,69 @@ export async function getTenantBySlug(
 function normalizarLimite(valor: number | null | undefined): number | null {
   if (typeof valor !== "number" || !Number.isFinite(valor)) return null
   return valor > 0 ? Math.floor(valor) : null
+}
+
+/**
+ * Unifica el JSONB `datos_pago_movil` a la estructura dinámica compartida:
+ * `{ cuentas: CuentaCobro[], instrucciones: string | null }`.
+ *
+ * Acepta y migra dos formas de entrada:
+ *  1. Forma nueva del Admin: `{ cuentas: [...], instrucciones }`.
+ *  2. Forma plana/legacy: `{ banco, telefono, cedula|cedula_rif, titular,
+ *     instrucciones }` → la envuelve en un arreglo `cuentas` con un solo ítem.
+ */
+function normalizarDatosPagoMovil(value: unknown): DatosPagoMovil | null {
+  if (!value || typeof value !== "object") return null
+  const raw = value as Record<string, unknown>
+  const texto = (v: unknown): string =>
+    typeof v === "string" ? v.trim() : ""
+
+  const listaRecibida = Array.isArray(raw.cuentas)
+    ? (raw.cuentas as unknown[]).filter(
+        (item): item is Record<string, unknown> =>
+          Boolean(item) && typeof item === "object"
+      )
+    : []
+
+  const normalizarCuenta = (cuenta: Record<string, unknown>): CuentaCobro => {
+    const metodo = cuenta.metodo === "zelle" ? "zelle" : "pago_movil"
+    return {
+      metodo,
+      banco: texto(cuenta.banco) || null,
+      titular: texto(cuenta.titular),
+      cedula_rif:
+        texto(cuenta.cedula_rif) || texto(cuenta.cedula) || null,
+      telefono: texto(cuenta.telefono) || null,
+      correo_zelle: texto(cuenta.correo_zelle) || null,
+    }
+  }
+
+  // 1) Arreglo `cuentas` (forma nueva): se conserva y normaliza tal cual.
+  const cuentasNormalizadas = listaRecibida.map(normalizarCuenta)
+
+  // 2) Si no vino un arreglo, deriva una cuenta desde campos planos.
+  const tieneCuentaPlana = Boolean(texto(raw.banco) && texto(raw.telefono))
+  const cuentas: CuentaCobro[] =
+    cuentasNormalizadas.length > 0
+      ? cuentasNormalizadas
+      : tieneCuentaPlana
+        ? ([
+            {
+              metodo: "pago_movil",
+              banco: texto(raw.banco) || null,
+              titular: texto(raw.titular),
+              cedula_rif:
+                texto(raw.cedula_rif) || texto(raw.cedula) || null,
+              telefono: texto(raw.telefono) || null,
+              correo_zelle: null,
+            },
+          ] as CuentaCobro[])
+        : []
+
+  return {
+    cuentas,
+    instrucciones: texto(raw.instrucciones) || null,
+  }
 }
 
 const UUID_RE =
@@ -147,7 +215,8 @@ export async function updateTenantSettings(
       return { ok: false, message: "El nombre de la clínica es obligatorio." }
     }
 
-    const datosPago = data.datos_pago_movil ?? null
+    // Guarda el JSONB unificado: SIEMPRE con `cuentas` (dinámico Admin↔Wizard).
+    const datosPago = normalizarDatosPagoMovil(data.datos_pago_movil)
     const maxSlots = normalizarLimite(data.max_slots_per_shift)
 
     const payloadCompleto: TenantUpdate = {
