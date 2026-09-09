@@ -73,6 +73,30 @@ const BUCKET_COMPROBANTES = "comprobantes"
 /** Referencias de Pago Móvil/Zelle: entre 4 y 8 dígitos. */
 const REFERENCIA_RE = /^\d{4,8}$/
 
+/** Bancos venezolanos más comunes para el selector del banco de origen. */
+const BANCOS_VENEZUELA = [
+  "Banesco",
+  "Mercantil Banco Universal",
+  "Banco de Venezuela",
+  "Provincial (BBVA)",
+  "Bancamiga",
+  "Banco Nacional de Crédito (BNC)",
+  "Banco Exterior",
+  "Bancaribe",
+  "Banco Bicentenario",
+  "Banco del Tesoro",
+  "Banco Occidental de Descuento (BOD)",
+  "Banplus",
+  "Banco Activo",
+  "Venezolano de Crédito",
+  "Banco Sofitasa",
+  "Banco Caroní",
+  "DelSur",
+  "Mi Banco",
+  "Banco Plaza",
+  "Otro banco",
+] as const
+
 function formatoRestante(ms: number): string {
   const total = Math.max(0, Math.floor(ms / 1000))
   const min = Math.floor(total / 60)
@@ -242,9 +266,10 @@ export function StepPayment({
         ? "Turno Tarde"
         : null
 
-  /** El pago en línea es válido con teléfono + referencia + comprobante. */
+  /** El pago en línea es válido con teléfono + banco + referencia + comprobante. */
   const pagoEnLineaValido =
     telefonoEmisor.trim().replace(/\D/g, "").length >= 7 &&
+    bancoOrigen.trim().length > 0 &&
     REFERENCIA_RE.test(referencia.trim()) &&
     (file !== null || uploadedUrl !== null)
 
@@ -370,6 +395,10 @@ export function StepPayment({
     }
     if (telefonoLimpio.replace(/\D/g, "").length < 7) {
       setSubmitError("Indica el teléfono desde el cual realizaste el Pago Móvil.")
+      return
+    }
+    if (!bancoOrigen.trim()) {
+      setSubmitError("Selecciona o ingresa el banco de origen.")
       return
     }
     if (!file && !uploadedUrl) {
@@ -652,16 +681,24 @@ export function StepPayment({
             </div>
 
             <div className="flex flex-col gap-1.5">
-              <Label htmlFor="pago-banco-origen">Banco de origen (Opcional)</Label>
-              <Input
+              <Label htmlFor="pago-banco-origen">Banco de origen *</Label>
+              <select
                 id="pago-banco-origen"
                 name="banco_origen"
-                autoComplete="off"
-                placeholder="Ej. Banco de Venezuela"
-                maxLength={40}
+                required
                 value={bancoOrigen}
                 onChange={(e) => setBancoOrigen(e.target.value)}
-              />
+                className="h-11 w-full rounded-xl border bg-background px-3 text-sm focus-visible:outline-2 focus-visible:outline-ring"
+              >
+                <option value="" disabled>
+                  Selecciona un banco…
+                </option>
+                {BANCOS_VENEZUELA.map((banco) => (
+                  <option key={banco} value={banco}>
+                    {banco}
+                  </option>
+                ))}
+              </select>
             </div>
 
             <div className="flex flex-col gap-1.5">
@@ -806,7 +843,7 @@ export function StepPayment({
               de la cita.
             </>
           ) : !puedeEnviar ? (
-            "Completa el teléfono, la referencia y adjunta el comprobante."
+            "Completa el teléfono, el banco, la referencia y adjunta el comprobante."
           ) : (
             <>
               Tu cita queda <strong>en revisión</strong> hasta que la clínica
