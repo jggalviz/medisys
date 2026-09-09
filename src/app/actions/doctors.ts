@@ -22,6 +22,7 @@ import { createClient } from "@/lib/supabase/server"
 export type EspecialistaInput = {
   nombre: string
   especialidad: string
+  cedula?: string | null
   telefono?: string | null
   /** Precio de la consulta en USD (se convierte con la tasa BCV en el wizard). */
   precio_consulta?: number | null
@@ -36,6 +37,7 @@ export type EspecialistaItem = {
   tenant_id: string
   nombre: string
   especialidad: string
+  cedula: string | null
   telefono: string | null
   /** Precio de consulta en USD (columna `doctors.precio_consulta`). */
   precio_consulta: number
@@ -111,6 +113,7 @@ function normalizarEspecialista(row: Record<string, unknown>): EspecialistaItem 
     tenant_id: str(row.tenant_id),
     nombre,
     especialidad: str(row.especialidad) || "General",
+    cedula: nuloTexto(row.cedula),
     telefono: nuloTexto(row.telefono),
     precio_consulta: precioDesdeFila(row.precio_consulta),
     activo,
@@ -262,6 +265,7 @@ export async function createEspecialista(
       nombres: partes.nombres,
       apellidos: partes.apellidos,
       especialidad: input.especialidad.trim(),
+      cedula: input.cedula?.trim() || null,
       telefono: input.telefono?.trim() || null,
       precio_consulta: normalizarPrecio(input.precio_consulta),
       activo,
@@ -316,6 +320,7 @@ export async function updateEspecialista(
       nombres: partes.nombres,
       apellidos: partes.apellidos,
       especialidad: input.especialidad.trim(),
+      cedula: input.cedula?.trim() || null,
       telefono: input.telefono?.trim() || null,
       precio_consulta: normalizarPrecio(input.precio_consulta),
       activo,

@@ -36,6 +36,7 @@ type Toast = { tipo: "ok" | "error"; mensaje: string } | null
 const VACIO: EspecialistaInput = {
   nombre: "",
   especialidad: "",
+  cedula: null,
   telefono: null,
   precio_consulta: 0,
   dias_atencion: [],
@@ -119,6 +120,7 @@ export function EspecialistasManager({ tenantId }: { tenantId: string }) {
     setForm({
       nombre: item.nombre,
       especialidad: item.especialidad,
+      cedula: item.cedula ?? "",
       telefono: item.telefono ?? "",
       precio_consulta: item.precio_consulta,
       dias_atencion: item.dias_atencion,
@@ -313,9 +315,9 @@ export function EspecialistasManager({ tenantId }: { tenantId: string }) {
                     {item.especialidad}
                   </span>
                   <span className="text-xs text-muted-foreground">
-                    {item.telefono
-                      ? `Tel.: ${item.telefono}`
-                      : "Sin datos de contacto"}
+                    {[item.cedula && `Coleg.: ${item.cedula}`, item.telefono]
+                      .filter(Boolean)
+                      .join(" · ") || "Sin datos de contacto"}
                   </span>
                   {item.precio_consulta > 0 && (
                     <span className="mt-0.5 text-xs font-semibold text-emerald-600 dark:text-emerald-400">
@@ -447,16 +449,30 @@ export function EspecialistasManager({ tenantId }: { tenantId: string }) {
                 </p>
               </Campo>
 
-              <Campo label="Teléfono">
-                <Input
-                  value={form.telefono ?? ""}
-                  inputMode="tel"
-                  placeholder="0412-1234567"
-                  onChange={(e) =>
-                    setForm((p) => ({ ...p, telefono: e.target.value }))
-                  }
-                />
-              </Campo>
+              <div className="grid gap-3 sm:grid-cols-2">
+                <Campo label="Cédula / Colegiado">
+                  <Input
+                    value={form.cedula ?? ""}
+                    placeholder="V-12345678"
+                    onChange={(e) =>
+                      setForm((p) => ({ ...p, cedula: e.target.value }))
+                    }
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    Opcional: V-12345678, V12345678 o solo 12345678.
+                  </p>
+                </Campo>
+                <Campo label="Teléfono">
+                  <Input
+                    value={form.telefono ?? ""}
+                    inputMode="tel"
+                    placeholder="0412-1234567"
+                    onChange={(e) =>
+                      setForm((p) => ({ ...p, telefono: e.target.value }))
+                    }
+                  />
+                </Campo>
+              </div>
 
               <Campo label="Turno habitual">
                 <select
