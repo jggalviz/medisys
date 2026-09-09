@@ -74,6 +74,8 @@ export function EspecialistasManager({ tenantId }: { tenantId: string }) {
   const [busyId, setBusyId] = useState<string | null>(null)
   const [toast, setToast] = useState<Toast>(null)
   const [saving, setSaving] = useState(false)
+  /** Texto crudo del precio (se formatea a 2 decimales en el blur). */
+  const [precioTexto, setPrecioTexto] = useState("")
 
   useEffect(() => {
     let active = true
@@ -110,6 +112,7 @@ export function EspecialistasManager({ tenantId }: { tenantId: string }) {
 
   function abrirNuevo() {
     setForm(VACIO)
+    setPrecioTexto("")
     setModal({ item: null })
   }
 
@@ -124,7 +127,38 @@ export function EspecialistasManager({ tenantId }: { tenantId: string }) {
       turno_habitual: item.turno_habitual,
       activo: item.activo,
     })
+    setPrecioTexto(
+      item.precio_consulta > 0 ? item.precio_consulta.toFixed(2) : ""
+    )
     setModal({ item })
+  }
+
+  /** Acepta solo dígitos y un punto decimal (las comas se pasan a puntos). */
+  function cambiarPrecio(texto: string) {
+    const normalizado = texto.replace(/,/g, ".")
+    if (!/^\d*(\.\d{0,2})?$/.test(normalizado)) return
+    setPrecioTexto(normalizado)
+    const numero = Number(normalizado)
+    setForm((prev) => ({
+      ...prev,
+      precio_consulta:
+        normalizado.trim() !== "" && Number.isFinite(numero) && numero > 0
+          ? numero
+          : 0,
+    }))
+  }
+
+  /** Al salir del campo: parsea y formatea SIEMPRE con 2 decimales. */
+  function formatearPrecio() {
+    const numero = Number(precioTexto.replace(/,/g, "."))
+    if (precioTexto.trim() === "" || !Number.isFinite(numero) || numero <= 0) {
+      setPrecioTexto("")
+      setForm((prev) => ({ ...prev, precio_consulta: 0 }))
+      return
+    }
+    const conDosDecimales = Math.round(numero * 100) / 100
+    setPrecioTexto(conDosDecimales.toFixed(2))
+    setForm((prev) => ({ ...prev, precio_consulta: conDosDecimales }))
   }
 
   function toggleDia(dia: number) {
@@ -151,9 +185,21 @@ export function EspecialistasManager({ tenantId }: { tenantId: string }) {
     if (saving || !modal) return
     setSaving(true)
     const item = modal.item
+
+    // Normaliza el precio SIEMPRE a 2 decimales antes de enviar a Supabase.
+    const numeroPrecio = Number(precioTexto.replace(/,/g, "."))
+    const precioFinal =
+      precioTexto.trim() !== "" && Number.isFinite(numeroPrecio) && numeroPrecio > 0
+        ? Math.round(numeroPrecio * 100) / 100
+        : 0
+    const datosParaGuardar: EspecialistaInput = {
+      ...form,
+      precio_consulta: precioFinal,
+    }
+
     const resultado = item
-      ? await updateEspecialista(tenantId, item.id, form)
-      : await createEspecialista(tenantId, form)
+      ? await updateEspecialista(tenantId, item.id, datosParaGuardar)
+      : await createEspecialista(tenantId, datosParaGuardar)
     setSaving(false)
 
     if (resultado.ok) {
@@ -387,25 +433,19 @@ export function EspecialistasManager({ tenantId }: { tenantId: string }) {
               </Campo>
               <Campo label="Precio de consulta (USD)">
                 <Input
-                  type="number"
+                  type="text"
                   inputMode="decimal"
-                  min={0}
-                  step="0.01"
-                  placeholder="20.00"
-                  value={form.precio_consulta ?? ""}
-                  onChange={(e) =>
-                    setForm((p) => ({
-                      ...p,
-                      precio_consulta:
-                        e.target.value === ""
-                          ? 0
-                          : Math.max(0, Number(e.target.value)),
-                    }))
-                  }
+                  autoComplete="off"
+                  maxLength={12}
+                  placeholder="25.00"
+                  value={precioTexto}
+                  onChange={(e) => cambiarPrecio(e.target.value)}
+                  onBlur={formatearPrecio}
                 />
                 <p className="text-xs text-muted-foreground">
-                  Monto en dólares; el paciente verá el equivalente en Bs. con
-                  la tasa BCV.
+                  Solo números (ej. 25, 25.5 o 25.50). Al salir del campo se
+                  guarda con dos decimales; el paciente verá el equivalente en
+                  Bs. con la tasa BCV.
                 </p>
               </Campo>
 
