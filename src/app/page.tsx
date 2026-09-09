@@ -46,11 +46,10 @@ export const metadata: Metadata = {
 /* ------------------------------------------------------------------ */
 
 /**
- * ⚠️ PLACEHOLDER COMERCIAL.
- * Reemplazar por el número oficial de ventas en formato internacional:
- * código de país + número, sin "+", espacios ni guiones. Ej.: "584141234567".
+ * Número oficial de ventas/contacto en formato internacional:
+ * código de país + número, sin "+", espacios ni guiones. WhatsApp +58 424-2810101 → "584228101010".
  */
-const WHATSAPP_NUMBER = "584120000000"
+const WHATSAPP_NUMBER = "584228101010"
 
 const WHATSAPP_URL = `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(
   "Hola Medisys 👋, vi la landing y quiero activar la plataforma en mi consultorio o clínica."
