@@ -160,6 +160,15 @@ function QuickPatientForm({
       onSubmit={handleSubmit}
       className="rounded-2xl border bg-card p-4 focus-within:border-primary/40"
     >
+      <div className="mb-4 flex flex-col gap-1">
+        <h3 className="flex items-center gap-2 font-semibold">
+          <UserRound className="size-4 text-primary" aria-hidden="true" />
+          Ingresar datos de la cita
+        </h3>
+        <p className="text-sm text-muted-foreground">
+          Completa la información de quien asistirá a la consulta.
+        </p>
+      </div>
       <div className="grid grid-cols-2 gap-3">
         <div className="col-span-2 flex flex-col gap-1.5 sm:col-span-1">
           <Label htmlFor="paciente-nombres">Nombres *</Label>
@@ -264,7 +273,7 @@ function QuickPatientForm({
 
       {error && (
         <Alert variant="destructive" className="mt-3">
-          <AlertTitle>No se pudo registrar</AlertTitle>
+          <AlertTitle>No se pudo continuar con la cita</AlertTitle>
           <AlertDescription>{error}</AlertDescription>
         </Alert>
       )}
@@ -275,7 +284,7 @@ function QuickPatientForm({
         className="mt-4 h-12 w-full gap-2 rounded-xl text-base"
       >
         {isPending && <LoaderCircle className="size-4 animate-spin" />}
-        {isPending ? "Guardando paciente…" : "Guardar y continuar"}
+        {isPending ? "Procesando datos…" : "Continuar con la cita"}
         {!isPending && <ChevronRight className="size-4" />}
       </Button>
     </form>
@@ -319,7 +328,6 @@ export function StepPatientSelect({
 
   const loading = load.status === "loading"
   const loadError = load.status === "error" ? load.message : null
-  const isAuthenticated = load.status === "ok" ? load.isAuthenticated : false
   const patients = load.status === "ok" ? load.patients : []
 
   function handleSaved(patient: Profile) {
@@ -332,10 +340,10 @@ export function StepPatientSelect({
     <div className="flex flex-col gap-5">
       <header>
         <h2 className="text-xl font-semibold tracking-tight">
-          ¿Para quién es la cita?
+          Solicitar Cita Médica
         </h2>
         <p className="mt-1 text-sm text-muted-foreground">
-          Elige un paciente registrado o agrega un familiar/menor de edad.
+          Ingresa la información requerida para agendar tu consulta.
         </p>
       </header>
 
@@ -388,7 +396,9 @@ export function StepPatientSelect({
                 className="mt-1 h-11 w-full gap-2 rounded-xl text-sm"
               >
                 <Plus className="size-4" />
-                {showQuick ? "Cerrar formulario" : "Registrar familiar o menor de edad"}
+                {showQuick
+                  ? "Cerrar formulario"
+                  : "Asistirá otra persona (familiar o menor)"}
               </Button>
             </section>
           )}
@@ -399,17 +409,14 @@ export function StepPatientSelect({
                 <UserRound className="size-5" />
               </span>
               <div>
-                <h3 className="font-semibold">
-                  {isAuthenticated ? "Aún no tienes pacientes registrados" : "Parece tu primera visita"}
-                </h3>
+                <h3 className="font-semibold">Información de Asistencia</h3>
                 <p className="mt-1 text-sm text-muted-foreground">
-                  {isAuthenticated
-                    ? "Registra tu perfil de titular en un minuto y luego podrás añadir familiares."
-                    : "Registra rápidamente al paciente (puedes ser tú o un menor a tu cargo)."}
+                  Especifica los datos de la persona que asistirá a la consulta
+                  médica.
                 </p>
               </div>
               <Button type="button" onClick={() => setShowQuick(true)} className="h-12 w-full rounded-xl">
-                Registrar paciente
+                Agendar para mí
               </Button>
             </section>
           )}
