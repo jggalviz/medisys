@@ -45,13 +45,13 @@ export function TarjetaRecaudacion({
     moneda === "USD" ? formatoUsd(monto) : formatoVes(monto)
 
   return (
-    <article className="flex flex-col gap-3 rounded-2xl border border-primary/40 bg-gradient-to-br from-card to-primary/5 p-4">
-      <div className="flex items-center justify-between gap-2">
-        <div className="flex items-center gap-2">
+    <article className="flex min-h-full min-w-0 flex-col justify-between gap-2 overflow-hidden rounded-2xl border border-primary/40 bg-gradient-to-br from-card to-primary/5 p-4">
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <div className="flex min-w-0 items-center gap-2">
           <span className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
             <Banknote className="size-5" aria-hidden="true" />
           </span>
-          <span className="text-[13px] font-medium text-muted-foreground">
+          <span className="truncate text-[13px] font-medium text-muted-foreground">
             Ingresos del día
           </span>
         </div>
@@ -60,7 +60,7 @@ export function TarjetaRecaudacion({
         <div
           role="group"
           aria-label="Moneda de la recaudación"
-          className="flex shrink-0 rounded-full border bg-muted/60 p-0.5 text-[11px] font-semibold"
+          className="flex shrink-0 flex-wrap rounded-full border bg-muted/60 p-0.5 text-[11px] font-semibold"
         >
           <button
             type="button"
@@ -101,9 +101,13 @@ export function TarjetaRecaudacion({
       </div>
 
       {moneda === "VES" && (
-        <span className="inline-flex w-fit items-center gap-1.5 rounded-full bg-emerald-500/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-emerald-700 dark:text-emerald-400">
+        <span className="inline-flex w-fit max-w-full items-center gap-1.5 overflow-hidden rounded-full bg-emerald-500/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-emerald-700 dark:text-emerald-400">
           <span aria-hidden="true">🏦</span>
-          Tasa BCV: {tasaBCV.toLocaleString("es-VE", { minimumFractionDigits: 2 })} Bs/USD
+          <span className="truncate">
+            Tasa BCV:{" "}
+            {tasaBCV.toLocaleString("es-VE", { minimumFractionDigits: 2 })}{" "}
+            Bs/USD
+          </span>
         </span>
       )}
     </article>
