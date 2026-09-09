@@ -22,14 +22,22 @@ export function convertirADolares(usd: number, tasaBCV: number): number {
 /** Lee la última tasa BCV publicada (o el fallback). Nunca lanza. */
 export async function getLatestBcvRate(supabase: Client): Promise<number> {
   try {
+    // Sin `.single()`: procesa el array devuelto para que NUNCA se produzca
+    // "Cannot coerce the result to a single JSON object".
     const { data } = await supabase
       .from("bcv_rates")
-      .select("tasa")
+      .select("*")
       .order("fetched_at", { ascending: false })
       .limit(1)
-      .maybeSingle()
 
-    const tasa = Number(data?.tasa)
+    const fila = (data ?? [])[0] as
+      | (Partial<Record<string, unknown>> & { tasa?: unknown; rate?: unknown })
+      | undefined
+    if (!fila) return TASA_BCV_FALLBACK
+
+    // Tolera tanto `tasa` (esquema local) como `rate` (esquema real remoto).
+    const cruda = fila.tasa ?? fila.rate
+    const tasa = Number(cruda)
     return Number.isFinite(tasa) && tasa > 0 ? tasa : TASA_BCV_FALLBACK
   } catch {
     return TASA_BCV_FALLBACK

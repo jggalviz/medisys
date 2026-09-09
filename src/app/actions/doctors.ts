@@ -276,7 +276,7 @@ export async function createEspecialista(
       .from("doctors")
       .insert(payload)
       .select("*")
-      .single()
+      .maybeSingle()
 
     if (error || !data) {
       return {
@@ -333,7 +333,7 @@ export async function updateEspecialista(
       .eq("id", especialistaId)
       .eq("tenant_id", ctx.data.tenantId)
       .select("*")
-      .single()
+      .maybeSingle()
 
     if (error || !data) {
       return {
@@ -374,7 +374,7 @@ export async function toggleEspecialista(
       .eq("id", especialistaId)
       .eq("tenant_id", ctx.data.tenantId)
       .select("*")
-      .single()
+      .maybeSingle()
 
     if (error || !data) {
       return {
