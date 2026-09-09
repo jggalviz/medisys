@@ -5,7 +5,6 @@ import type { Metadata } from "next"
 import {
   ArrowLeft,
   ArrowRight,
-  Banknote,
   Building2,
   CalendarClock,
   CheckCircle2,
@@ -22,6 +21,7 @@ import type { DashboardKpis } from "@/app/actions/dashboard"
 import { getDashboardKpis } from "@/app/actions/dashboard"
 import { getDailyAppointments } from "@/app/actions/admin"
 import { getTenantBySlug } from "@/app/actions/tenant"
+import { TarjetaRecaudacion } from "@/components/admin/dashboard/TarjetaRecaudacion"
 import { createClient } from "@/lib/supabase/server"
 import { getStaffForSlug } from "@/lib/staff"
 import { toISODate } from "@/lib/date"
@@ -113,14 +113,6 @@ function infoPaciente(p: AdminPatient | null): string {
   )
 }
 
-function formatBs(cantidad: number): string {
-  return new Intl.NumberFormat("es-VE", {
-    style: "currency",
-    currency: "VES",
-    maximumFractionDigits: 2,
-  }).format(cantidad)
-}
-
 function horaDe(fechaHora: string): string {
   return fechaHora.slice(11, 16) || "--:--"
 }
@@ -174,11 +166,6 @@ export default async function AdminPage({ params }: AdminPageProps) {
     month: "long",
   }).format(new Date(`${dateISO}T12:00:00-04:00`))
 
-  const { abonado, porValidar } = kpis?.recaudacion ?? {
-    abonado: 0,
-    porValidar: 0,
-  }
-
   const tarjetas = kpis
     ? [
         {
@@ -204,14 +191,6 @@ export default async function AdminPage({ params }: AdminPageProps) {
           valor: String(kpis.atendidas),
           subtexto: `${kpis.canceladas} canceladas en el día`,
           destacado: false,
-        },
-        {
-          id: "recaudacion",
-          titulo: "Recaudación del día",
-          icono: <Banknote className="size-5" />,
-          valor: formatBs(abonado),
-          subtexto: `por validar ${formatBs(porValidar)}`,
-          destacado: true,
         },
       ]
     : null
@@ -292,7 +271,9 @@ export default async function AdminPage({ params }: AdminPageProps) {
         className="grid grid-cols-2 gap-3 lg:grid-cols-4"
       >
         {tarjetas
-          ? tarjetas.map((tarjeta) => (
+          ? (
+            <>
+              {tarjetas.map((tarjeta) => (
               <article
                 key={tarjeta.id}
                 className={cn(
@@ -323,7 +304,15 @@ export default async function AdminPage({ params }: AdminPageProps) {
                   </span>
                 </div>
               </article>
-            ))
+              ))}
+              {/* Tarjeta financiera con conmutación USD / VES */}
+              <TarjetaRecaudacion
+                ingresosUsd={kpis?.ingresos.usd ?? 0}
+                porValidarUsd={kpis?.recaudacion.porValidar ?? 0}
+                tasaBCV={kpis?.tasaBCV ?? 36.5}
+              />
+            </>
+          )
           : [0, 1, 2, 3].map((clave) => <SkeletonCard key={clave} />)}
       </section>
 

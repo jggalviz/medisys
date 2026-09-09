@@ -11,6 +11,7 @@ import type { SupabaseClient } from "@supabase/supabase-js"
 
 import type { Appointment, Database, TenantUserRole } from "@/types/database"
 import { createClient } from "@/lib/supabase/server"
+import { getLatestBcvRate } from "@/lib/bcv"
 
 export type DashboardKpis = {
   fecha: string
@@ -18,6 +19,13 @@ export type DashboardKpis = {
   enCola: number
   atendidas: number
   canceladas: number
+  /** Tasa BCV aplicada (Bs./USD) para la conversión. */
+  tasaBCV: number
+  /** Ingresos estimados del día en USD y en Bolívares (precio_consulta). */
+  ingresos: {
+    usd: number
+    ves: number
+  }
   recaudacion: {
     abonado: number
     porValidar: number
@@ -143,6 +151,8 @@ export async function getDashboardKpis(
       enCola: 0,
       atendidas: 0,
       canceladas: 0,
+      tasaBCV: 0,
+      ingresos: { usd: 0, ves: 0 },
       recaudacion: {
         abonado: 0,
         porValidar: 0,
@@ -150,6 +160,9 @@ export async function getDashboardKpis(
         efectivoPresencial: 0,
       },
     }
+
+    // Ingresos estimados del día sumando el precio de cada cita (en USD).
+    let ingresosUSD = 0
 
     for (const fila of citas) {
       const cita = fila as Record<string, unknown>
@@ -161,6 +174,8 @@ export async function getDashboardKpis(
         | "pago_movil"
         | null
         | undefined
+
+      ingresosUSD += precio
 
       if (enCola.has(estado)) kpis.enCola += 1
       if (atendidas.has(estado)) kpis.atendidas += 1
@@ -188,6 +203,12 @@ export async function getDashboardKpis(
         kpis.recaudacion.efectivoPresencial += precio
       }
     }
+
+    // Tasa oficial BCV + conversión USD → VES de los ingresos del día.
+    const tasaBCV = await getLatestBcvRate(supabase)
+    kpis.tasaBCV = tasaBCV
+    kpis.ingresos.usd = ingresosUSD
+    kpis.ingresos.ves = ingresosUSD * tasaBCV
 
     return { ok: true, data: kpis }
   } catch (cause) {
