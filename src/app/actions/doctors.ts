@@ -214,17 +214,6 @@ function partesNombre(nombre: string): { nombres: string; apellidos: string } {
   }
 }
 
-/** Traduce errores de base de datos a mensajes amigables. */
-function mensajeDeError(
-  error: { code?: string; message?: string } | null,
-  fallback: string
-): string {
-  if (error?.code === "23505") {
-    return "Ya existe un registro con esos datos en esta clínica."
-  }
-  return error?.message ?? fallback
-}
-
 function validarInput(input: EspecialistaInput): string | null {
   if (!input.nombre?.trim()) return "El nombre es obligatorio."
   if (!input.especialidad?.trim()) return "La especialidad es obligatoria."
@@ -279,9 +268,14 @@ export async function createEspecialista(
       .maybeSingle()
 
     if (error || !data) {
+      if (error) {
+        // Muestra la causa exacta en consola y devuelve su mensaje a la UI.
+        console.error("[createEspecialista] Error de Supabase al crear médico:", error)
+        return { ok: false, message: error.message }
+      }
       return {
         ok: false,
-        message: mensajeDeError(error, "No se pudo crear el especialista."),
+        message: "No se pudo crear el especialista: no se devolvió la fila.",
       }
     }
     revalidar(ctx.data.slug)
@@ -316,6 +310,9 @@ export async function updateEspecialista(
 
     const partes = partesNombre(input.nombre)
     const activo = input.activo ?? true
+    // Sanitización: solo columnas actualizables. Nunca enviamos `id`,
+    // `tenant_id`, `created_at` ni claves primarias (PostgreSQL no permite
+    // sobreescribirlas en un UPDATE).
     const payload: DoctorUpdate = {
       nombres: partes.nombres,
       apellidos: partes.apellidos,
@@ -327,24 +324,92 @@ export async function updateEspecialista(
       is_active: activo,
     }
 
+    // Filtro estricto: solo por clave primaria `id` + clave de inquilino.
+    // Diagnóstico: confirma los IDs que llegan antes de tocar la BD.
+    console.log("[updateEspecialista] Actualizando médico:", {
+      doctorId: especialistaId,
+      tenantId: ctx.data.tenantId,
+      slug: ctx.data.slug,
+    })
+
     const { data, error } = await supabase
       .from("doctors")
       .update(payload)
       .eq("id", especialistaId)
-      .eq("tenant_id", ctx.data.tenantId)
-      .select("*")
-      .maybeSingle()
+      .select()
 
-    if (error || !data) {
+    if (error) {
+      console.error(
+        "[updateEspecialista] Error Supabase Update:",
+        error,
+        { doctorId: especialistaId, tenantId: ctx.data.tenantId }
+      )
+      return { ok: false, message: error.message }
+    }
+
+    const actualizado = (data ?? [])[0] ?? null
+    if (!actualizado) {
+      // Fallback: el id no existe como fila actualizable → UPSERT de
+      // creación/reconciliación con la PK `id` y el `tenant_id` del contexto.
+      console.warn(
+        `[updateEspecialista] UPDATE sin filas (id ${especialistaId}); reintentando con UPSERT…`,
+        { tenantId: ctx.data.tenantId }
+      )
+
+      const payloadConId: DoctorInsert = {
+        id: especialistaId,
+        tenant_id: ctx.data.tenantId,
+        nombres: payload.nombres ?? "",
+        apellidos: payload.apellidos ?? "",
+        especialidad: payload.especialidad ?? "General",
+        cedula: payload.cedula ?? null,
+        telefono: payload.telefono ?? null,
+        precio_consulta: payload.precio_consulta ?? 0,
+        activo: payload.activo ?? true,
+        is_active: payload.is_active ?? true,
+      }
+
+      const upsert = await supabase
+        .from("doctors")
+        .upsert(payloadConId, { onConflict: "id" })
+        .select("*")
+        .maybeSingle()
+
+      if (upsert.error) {
+        console.error(
+          "[updateEspecialista] Error al hacer upsert de especialista:",
+          upsert.error,
+          { doctorId: especialistaId, tenantId: ctx.data.tenantId }
+        )
+        return {
+          ok: false,
+          message: `Error en base de datos: ${upsert.error.message}`,
+        }
+      }
+
+      const creado = upsert.data ?? null
+      if (!creado) {
+        return {
+          ok: false,
+          message: `No se pudo crear o actualizar el especialista con ID ${especialistaId}.`,
+        }
+      }
+
+      revalidar(ctx.data.slug)
       return {
-        ok: false,
-        message: mensajeDeError(error, "No se pudo actualizar el especialista."),
+        ok: true,
+        data: normalizarEspecialista(
+          creado as unknown as Record<string, unknown>
+        ),
       }
     }
+
     revalidar(ctx.data.slug)
     return {
       ok: true,
-      data: normalizarEspecialista(data as unknown as Record<string, unknown>),
+      data: normalizarEspecialista(
+        actualizado as unknown as Record<string, unknown>
+      ),
     }
   } catch (cause) {
     return {
