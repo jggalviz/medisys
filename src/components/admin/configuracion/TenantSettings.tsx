@@ -145,6 +145,16 @@ export function TenantSettings({ tenant }: { tenant: Tenant }) {
 
   function guardarCambios() {
     if (isSaving) return
+    // Bloqueo por UX: no se guardan los demás ajustes si hay una imagen
+    // seleccionada pendiente de subir (evita perderla silenciosamente).
+    if (archivoPendiente) {
+      setToast({
+        tipo: "error",
+        mensaje:
+          "Debes hacer clic en «Subir logo» para procesar la imagen antes de guardar los cambios.",
+      })
+      return
+    }
     startSaving(async () => {
       const resultado = await updateTenantSettings({
         tenantId: tenant.id,
@@ -221,6 +231,9 @@ export function TenantSettings({ tenant }: { tenant: Tenant }) {
   }
 
   const previewSrc = previewObjectUrl ?? logoUrl
+
+  /** Hay una imagen elegida que aún NO se ha subido a Storage. */
+  const archivoPendiente = logoFile !== null
 
     return (
     <div className="mt-6 flex flex-col gap-5">
@@ -437,9 +450,10 @@ export function TenantSettings({ tenant }: { tenant: Tenant }) {
             </label>
           </div>
 
-          {logoFile && (
-            <p className="text-xs text-muted-foreground">
-              Archivo: {logoFile.name} · presiona «Subir logo» para guardarlo.
+          {archivoPendiente && (
+            <p className="rounded-xl border border-amber-300/70 bg-amber-50 px-3 py-2 text-xs font-medium text-amber-800 dark:border-amber-500/40 dark:bg-amber-950/40 dark:text-amber-300">
+              Archivo seleccionado: {logoFile?.name}. Presiona «Subir logo» para
+              guardarlo; hasta entonces no podrás guardar los cambios.
             </p>
           )}
 
@@ -484,11 +498,27 @@ export function TenantSettings({ tenant }: { tenant: Tenant }) {
       )}
 
       {/* Guardar cambios */}
-      <div className="sticky bottom-0 -mx-4 border-t bg-background/95 px-4 py-3 backdrop-blur">
+      <div className="sticky bottom-0 -mx-4 flex flex-col gap-2 border-t bg-background/95 px-4 py-3 backdrop-blur">
+        {archivoPendiente && (
+          <p
+            id="logo-pendiente-aviso"
+            role="status"
+            className="rounded-xl border border-amber-300/70 bg-amber-50 px-3 py-2 text-xs font-medium text-amber-800 dark:border-amber-500/40 dark:bg-amber-950/40 dark:text-amber-300"
+          >
+            Debes hacer clic en «Subir logo» para procesar la imagen antes de
+            guardar los cambios.
+          </p>
+        )}
         <Button
           type="button"
           onClick={guardarCambios}
-          disabled={isSaving || isUploading}
+          disabled={isSaving || isUploading || archivoPendiente}
+          aria-describedby={archivoPendiente ? "logo-pendiente-aviso" : undefined}
+          title={
+            archivoPendiente
+              ? "Debes hacer clic en «Subir logo» para procesar la imagen antes de guardar los cambios."
+              : undefined
+          }
           className="h-12 w-full gap-2 rounded-xl text-base"
         >
           {isSaving && <LoaderCircle className="size-4 animate-spin" />}
