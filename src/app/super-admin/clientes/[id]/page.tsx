@@ -163,6 +163,10 @@ export default async function ClienteDetallePage({ params }: Props) {
           label="Vencimiento de membresía"
           valor={formatearVencimiento(cliente.suscripcionVenceAt)}
         />
+        <Dato
+          label="Landing pública"
+          valor={cliente.landingEnabled ? "Activa" : "Desactivada"}
+        />
       </section>
 
       {/* Especialistas */}

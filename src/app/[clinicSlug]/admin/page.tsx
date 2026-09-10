@@ -8,6 +8,7 @@ import {
   Building2,
   CalendarClock,
   CheckCircle2,
+  Globe,
   Hourglass,
   ShieldAlert,
   ShieldCheck,
@@ -215,6 +216,12 @@ export default async function AdminPage({ params }: AdminPageProps) {
       titulo: "Especialistas",
       descripcion: "Equipo médico y horarios",
       icono: <Stethoscope className="size-5" />,
+    },
+    {
+      href: `/${clinicSlug}/admin/landing`,
+      titulo: "Mi Landing Page",
+      descripcion: "Perfil público, servicios y redes",
+      icono: <Globe className="size-5" />,
     },
     {
       href: `/${clinicSlug}/admin/configuracion`,

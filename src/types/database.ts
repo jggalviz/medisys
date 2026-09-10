@@ -108,6 +108,25 @@ export type DatosPagoMovil = {
 /** Planes comerciales del tenant (definen límites y flujo de reserva). */
 export type PlanTenant = "PRO" | "CLINICA"
 
+/* ------------------------ Landing Page del tenant ------------------------ */
+
+/** Servicio / tratamiento destacado mostrado en la landing pública. */
+export type LandingServicio = {
+  titulo: string
+  descripcion: string
+}
+
+/** Contenido editable de la Landing Page (tenant.landing_config). */
+export type LandingConfig = {
+  hero_titulo: string | null
+  hero_subtitulo: string | null
+  sobre_nosotros: string | null
+  horarios: string | null
+  instagram: string | null
+  facebook: string | null
+  servicios: LandingServicio[]
+}
+
 export type Tenant = {
   id: string
   slug: string
@@ -129,6 +148,10 @@ export type Tenant = {
   max_especialistas?: number | null
   /** Fecha/hora de vencimiento de la membresía (suscripción del SaaS). */
   suscripcion_vence_at?: string | null
+  /** Switch de la Landing Page pública (/{slug}). */
+  landing_enabled?: boolean | null
+  /** Contenido editable de la Landing Page. */
+  landing_config?: LandingConfig | null
   is_active: boolean
   datos_pago_movil: DatosPagoMovil | null
   created_at: string

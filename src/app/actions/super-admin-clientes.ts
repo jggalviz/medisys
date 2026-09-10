@@ -40,6 +40,7 @@ export type ClienteDetalle = {
   logoUrl: string | null
   createdAt: string
   suscripcionVenceAt: string | null
+  landingEnabled: boolean
   totalCitas: number
   doctores: ClienteDoctor[]
   citasActivas: ClienteCita[]
@@ -149,6 +150,7 @@ export async function getClienteDetalle(
           tenant.suscripcion_vence_at == null
             ? null
             : texto(tenant.suscripcion_vence_at),
+        landingEnabled: tenant.landing_enabled !== false,
         totalCitas: totalCitas ?? 0,
         doctores: listaDoctores,
         citasActivas,

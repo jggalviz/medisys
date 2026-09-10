@@ -1,29 +1,368 @@
-import { notFound, redirect } from "next/navigation"
+import { notFound } from "next/navigation"
 import type { Metadata } from "next"
+import {
+  AtSign,
+  CalendarCheck,
+  Clock,
+  Globe,
+  MapPin,
+  Phone,
+  Stethoscope,
+} from "lucide-react"
 
 import { getTenantBySlug } from "@/app/actions/tenant"
+import { getDoctorsByTenant } from "@/app/actions/booking"
+import { doctorNombre, formatUSD, iniciales } from "@/lib/format"
+import {
+  landingHabilitada,
+  normalizarLandingConfig,
+  urlRedSocial,
+} from "@/lib/landing"
 
-type ClinicRootPageProps = {
+/**
+ * Landing Page / Perfil Profesional del tenant: /[clinicSlug].
+ * Lee la configuración (`landing_config`) y el switch (`landing_enabled`) en
+ * cada petición, además de los especialistas activos de la tabla `doctors`.
+ */
+export const dynamic = "force-dynamic"
+
+type ClinicLandingProps = {
   params: Promise<{ clinicSlug: string }>
 }
 
-/**
- * Raíz de la clínica: /[clinicSlug] valida el tenant activo y redirige al
- * wizard de reserva en /[clinicSlug]/reservar (mantiene compatibilidad con
- * enlaces antiguos como /clinica-demo o /santa-ines).
- */
-export const metadata: Metadata = {
-  title: "Redirigiendo a la reserva | Medisys",
-  robots: { index: false },
-}
-
-export default async function ClinicRootPage({ params }: ClinicRootPageProps) {
+export async function generateMetadata({
+  params,
+}: ClinicLandingProps): Promise<Metadata> {
   const { clinicSlug } = await params
   const tenant = await getTenantBySlug(clinicSlug)
 
   if (!tenant) {
-    notFound()
+    return { title: "Clínica no encontrada | Medisys", robots: { index: false } }
   }
 
-  redirect(`/${clinicSlug}/reservar`)
+  const config = normalizarLandingConfig(tenant.landing_config)
+  const titulo = config.hero_titulo ?? tenant.nombre
+  const descripcion =
+    config.hero_subtitulo ??
+    `Agenda tu cita médica en ${tenant.nombre} de forma rápida y segura.`
+
+  return {
+    title: `${titulo} | ${tenant.nombre}`,
+    description: descripcion,
+    openGraph: {
+      title: `${titulo} | ${tenant.nombre}`,
+      description: descripcion,
+      ...(tenant.logo_url ? { images: [tenant.logo_url] } : {}),
+    },
+  }
 }
+
+export default async function ClinicLandingPage({ params }: ClinicLandingProps) {
+  const { clinicSlug } = await params
+  const tenant = await getTenantBySlug(clinicSlug)
+  if (!tenant) notFound()
+
+  // Switch público: landing desactivada → pantalla de mantenimiento amigable.
+  if (!landingHabilitada(tenant)) {
+    return (
+      <Mantenimiento
+        nombre={tenant.nombre}
+        clinicSlug={clinicSlug}
+        telefono={tenant.telefono ?? null}
+      />
+    )
+  }
+
+  const config = normalizarLandingConfig(tenant.landing_config)
+  const resultado = await getDoctorsByTenant(clinicSlug)
+  const doctores = resultado.ok ? [...resultado.data] : []
+
+  const especialidades = Array.from(
+    new Set(
+      doctores
+        .flatMap((doctor) => [doctor.especialidad, ...(doctor.especialidades ?? [])])
+        .map((e) => e?.trim())
+        .filter((e): e is string => Boolean(e))
+    )
+  ).slice(0, 8)
+
+  const reservarHref = `/${clinicSlug}/reservar`
+  const instagram = urlRedSocial(config.instagram, "instagram")
+  const facebook = urlRedSocial(config.facebook, "facebook")
+
+  return (
+    <main className="min-h-dvh bg-muted/30">
+      <header className="border-b bg-gradient-to-b from-primary/10 via-background to-background">
+        <div className="mx-auto flex w-full max-w-5xl flex-col gap-6 px-4 py-10 sm:px-6 sm:py-14">
+          <div className="flex flex-col items-start gap-5 sm:flex-row sm:items-center">
+            {tenant.logo_url ? (
+              // eslint-disable-next-line @next/next/no-img-element -- logo del tenant (Storage externo)
+              <img
+                src={tenant.logo_url}
+                alt={`Logo de ${tenant.nombre}`}
+                className="size-20 shrink-0 rounded-3xl border bg-background object-cover shadow-sm"
+              />
+            ) : (
+              <span className="flex size-20 shrink-0 items-center justify-center rounded-3xl border bg-background text-2xl font-bold text-primary shadow-sm">
+                {tenant.nombre.charAt(0).toUpperCase()}
+              </span>
+            )}
+            <div className="flex flex-col gap-2">
+              <span className="text-sm font-semibold uppercase tracking-wide text-primary">
+                {tenant.nombre}
+              </span>
+              <h1 className="text-3xl font-bold leading-tight tracking-tight sm:text-4xl">
+                {config.hero_titulo ?? `Bienvenido a ${tenant.nombre}`}
+              </h1>
+              {config.hero_subtitulo && (
+                <p className="max-w-2xl text-base text-muted-foreground">
+                  {config.hero_subtitulo}
+                </p>
+              )}
+            </div>
+          </div>
+
+          {especialidades.length > 0 && (
+            <ul className="flex flex-wrap gap-2">
+              {especialidades.map((esp) => (
+                <li
+                  key={esp}
+                  className="rounded-full border bg-background px-3 py-1 text-xs font-medium text-muted-foreground"
+                >
+                  {esp}
+                </li>
+              ))}
+            </ul>
+          )}
+
+          <div className="flex flex-wrap items-center gap-3">
+            <a
+              href={reservarHref}
+              className="inline-flex h-12 items-center justify-center gap-2 rounded-xl bg-primary px-6 text-base font-semibold text-primary-foreground transition-opacity hover:opacity-90"
+            >
+              <CalendarCheck className="size-5" />
+              Reservar Cita
+            </a>
+            {tenant.telefono && (
+              <a
+                href={`tel:${tenant.telefono.replace(/\s+/g, "")}`}
+                className="inline-flex h-12 items-center gap-2 rounded-xl border bg-background px-5 text-sm font-medium transition-colors hover:bg-muted/50"
+              >
+                <Phone className="size-4" />
+                {tenant.telefono}
+              </a>
+            )}
+            {(instagram || facebook) && (
+              <div className="flex flex-wrap items-center gap-2">
+                {instagram && (
+                  <a
+                    href={instagram}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex h-10 items-center gap-2 rounded-full border bg-background px-4 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
+                  >
+                    <AtSign className="size-4" />
+                    Instagram
+                  </a>
+                )}
+                {facebook && (
+                  <a
+                    href={facebook}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex h-10 items-center gap-2 rounded-full border bg-background px-4 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
+                  >
+                    <Globe className="size-4" />
+                    Facebook
+                  </a>
+                )}
+              </div>
+            )}
+          </div>
+        </div>
+      </header>
+
+      <div className="mx-auto flex w-full max-w-5xl flex-col gap-10 px-4 py-10 sm:px-6 sm:py-14">
+        {/* Sobre nosotros */}
+        {config.sobre_nosotros && (
+          <section className="flex flex-col gap-3">
+            <h2 className="text-xl font-bold tracking-tight">Sobre nosotros</h2>
+            <p className="whitespace-pre-line text-base leading-relaxed text-muted-foreground">
+              {config.sobre_nosotros}
+            </p>
+          </section>
+        )}
+
+        {/* Servicios y horarios */}
+        {(config.servicios.length > 0 || config.horarios) && (
+          <section className="grid gap-4 lg:grid-cols-3">
+            {config.servicios.length > 0 && (
+              <div className="flex flex-col gap-4 lg:col-span-2">
+                <h2 className="text-xl font-bold tracking-tight">
+                  Servicios y tratamientos
+                </h2>
+                <ul className="grid gap-3 sm:grid-cols-2">
+                  {config.servicios.map((servicio) => (
+                    <li
+                      key={servicio.titulo}
+                      className="flex flex-col gap-1 rounded-2xl border bg-card p-4"
+                    >
+                      <span className="flex items-center gap-2 font-semibold">
+                        <Stethoscope className="size-4 text-primary" />
+                        {servicio.titulo}
+                      </span>
+                      {servicio.descripcion && (
+                        <span className="text-sm text-muted-foreground">
+                          {servicio.descripcion}
+                        </span>
+                      )}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+
+            {config.horarios && (
+              <aside className="flex flex-col gap-3 rounded-2xl border bg-card p-5">
+                <h3 className="flex items-center gap-2 text-sm font-semibold uppercase tracking-wide text-muted-foreground">
+                  <Clock className="size-4 text-primary" />
+                  Horarios de atención
+                </h3>
+                <p className="whitespace-pre-line text-sm leading-relaxed">
+                  {config.horarios}
+                </p>
+                {(tenant.direccion || tenant.telefono) && (
+                  <dl className="mt-1 flex flex-col gap-2 border-t pt-3 text-sm">
+                    {tenant.direccion && (
+                      <div className="flex items-start gap-2 text-muted-foreground">
+                        <MapPin className="mt-0.5 size-4 shrink-0 text-primary" />
+                        <span>{tenant.direccion}</span>
+                      </div>
+                    )}
+                    {tenant.telefono && (
+                      <div className="flex items-center gap-2 text-muted-foreground">
+                        <Phone className="size-4 shrink-0 text-primary" />
+                        <span>{tenant.telefono}</span>
+                      </div>
+                    )}
+                  </dl>
+                )}
+              </aside>
+            )}
+          </section>
+        )}
+
+        {/* Especialistas */}
+        {doctores.length > 0 && (
+          <section className="flex flex-col gap-4">
+            <h2 className="text-xl font-bold tracking-tight">Nuestro equipo médico</h2>
+            <ul className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              {doctores.map((doctor) => (
+                <li
+                  key={doctor.id}
+                  className="flex flex-col gap-3 rounded-2xl border bg-card p-5"
+                >
+                  {doctor.foto_url ? (
+                    // eslint-disable-next-line @next/next/no-img-element -- foto del especialista (Storage externo)
+                    <img
+                      src={doctor.foto_url}
+                      alt={doctorNombre(doctor)}
+                      className="size-14 rounded-2xl border object-cover"
+                    />
+                  ) : (
+                    <span className="flex size-14 items-center justify-center rounded-2xl bg-primary/10 text-base font-bold text-primary">
+                      {iniciales(doctor.nombres, doctor.apellidos)}
+                    </span>
+                  )}
+                  <div className="flex flex-col gap-0.5">
+                    <span className="font-semibold">{doctorNombre(doctor)}</span>
+                    <span className="text-sm text-muted-foreground">
+                      {doctor.especialidad}
+                    </span>
+                    {doctor.precio_consulta > 0 && (
+                      <span className="text-sm font-semibold text-teal-700">
+                        {formatUSD(doctor.precio_consulta)}
+                      </span>
+                    )}
+                  </div>
+                  <a
+                    href={reservarHref}
+                    className="mt-auto inline-flex h-10 items-center justify-center rounded-xl border text-sm font-medium transition-colors hover:bg-muted/50"
+                  >
+                    Reservar con este especialista
+                  </a>
+                </li>
+              ))}
+            </ul>
+          </section>
+        )}
+
+        {/* CTA final */}
+        <section className="flex flex-col items-center gap-4 rounded-3xl border bg-primary/5 px-6 py-10 text-center">
+          <h2 className="text-2xl font-bold tracking-tight">
+            Agenda tu cita en minutos
+          </h2>
+          <p className="max-w-xl text-sm text-muted-foreground">
+            Elige tu especialista, el turno que prefieras y paga con Pago Móvil o
+            en recepción. Recibirás la confirmación de {tenant.nombre}.
+          </p>
+          <a
+            href={reservarHref}
+            className="inline-flex h-12 items-center justify-center gap-2 rounded-xl bg-primary px-8 text-base font-semibold text-primary-foreground transition-opacity hover:opacity-90"
+          >
+            <CalendarCheck className="size-5" />
+            Reservar Cita
+          </a>
+        </section>
+
+      </div>
+
+    </main>
+  )
+}
+
+/** Pantalla de mantenimiento cuando `landing_enabled === false`. */
+function Mantenimiento({
+  nombre,
+  clinicSlug,
+  telefono,
+}: {
+  nombre: string
+  clinicSlug: string
+  telefono: string | null
+}) {
+  return (
+    <main className="flex min-h-dvh items-center justify-center bg-muted/30 px-4 py-10">
+      <div className="flex w-full max-w-md flex-col items-center gap-4 rounded-3xl border bg-card p-8 text-center">
+        <span className="flex size-14 items-center justify-center rounded-2xl bg-amber-500/15 text-amber-600">
+          <Clock className="size-6" />
+        </span>
+        <h1 className="text-xl font-bold tracking-tight">
+          Perfil temporalmente inactivo
+        </h1>
+        <p className="text-sm text-muted-foreground">
+          La página pública de <strong>{nombre}</strong> no está disponible en
+          este momento. Puedes agendar tu cita directamente o contactarnos.
+        </p>
+        <a
+          href={`/${clinicSlug}/reservar`}
+          className="inline-flex h-11 items-center justify-center gap-2 rounded-xl bg-primary px-6 text-sm font-semibold text-primary-foreground transition-opacity hover:opacity-90"
+        >
+          <CalendarCheck className="size-4" />
+          Ir al agendamiento
+        </a>
+        {telefono && (
+          <a
+            href={`tel:${telefono.replace(/\s+/g, "")}`}
+            className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground"
+          >
+            <Phone className="size-4" />
+            {telefono}
+          </a>
+        )}
+      </div>
+    </main>
+  )
+}
+
+
