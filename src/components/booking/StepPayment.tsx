@@ -40,7 +40,7 @@ import type {
   Tenant,
 } from "@/types/database"
 import { registerAppointmentPayment } from "@/app/actions/booking"
-import { getLatestBcvRate, TASA_BCV_FALLBACK } from "@/lib/bcv"
+import { getLatestBcvRateDesdeDb, TASA_BCV_FALLBACK } from "@/lib/bcv"
 import { createClient as createSupabaseClient } from "@/lib/supabase/client"
 import { formatLongDate } from "@/lib/date"
 import {
@@ -277,7 +277,8 @@ export function StepPayment({
 
   useEffect(() => {
     let active = true
-    void getLatestBcvRate(supabase).then((tasa) => {
+    // En el navegador solo se consulta la tasa guardada (evita CORS/bloqueos).
+    void getLatestBcvRateDesdeDb(supabase).then((tasa) => {
       if (!active) return
       if (tasa > 0) setTasaBCV(tasa)
     })
