@@ -20,7 +20,11 @@ import type { LucideIcon } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { Navbar } from "@/components/landing/Navbar"
 import { Brand } from "@/components/landing/Brand"
-import { RESERVAR_DEMO_ROUTE, DEMO_CLINIC_SLUG } from "@/lib/demo"
+import {
+  RESERVAR_DEMO_ROUTE,
+  RESERVAR_INDEPENDIENTE_ROUTE,
+  DEMO_CLINIC_SLUG,
+} from "@/lib/demo"
 import { DemoHubTrigger } from "@/components/demo/DemoHubTrigger"
 
 /* ------------------------------------------------------------------ */
@@ -138,13 +142,65 @@ const STEPS: readonly StepItem[] = [
   },
 ]
 
-const PRICING_FEATURES: readonly string[] = [
-  "Especialistas ilimitados",
-  "Soporte prioritario por WhatsApp y correo",
-  "Hosting en la nube con respaldos automáticos",
-  "Personalización con la marca de tu clínica",
-  "Pago Móvil y Zelle habilitados en tu panel",
-  "Pacientes y reservas ilimitadas",
+type PlanLanding = {
+  id: string
+  badge: string
+  nombre: string
+  descripcion: string
+  precio: string
+  precioDetalle: string
+  precioTachado?: string
+  promo: string
+  multisede?: string
+  destacado?: boolean
+  features: readonly string[]
+  demoHref: string
+}
+
+const PLANES_LANDING: readonly PlanLanding[] = [
+  {
+    id: "pro",
+    badge: "PLAN INDEPENDIENTE",
+    nombre: "Plan Especialista Pro",
+    descripcion:
+      "Ideal para médicos independientes que manejan su propio consultorio y agenda personal.",
+    precio: "$30",
+    precioDetalle: "USD / mes · tasa BCV",
+    precioTachado: "$60",
+    promo: "50% OFF el 1er mes → $15 + 7 días gratis",
+    features: [
+      "1 Especialista activo",
+      "Agendamiento automatizado en 3 pasos",
+      "Expedientes e historial de pacientes",
+      "Pago Móvil y Zelle habilitados en tu panel (personalizable a cualquier método de cobro que necesites)",
+      "Soporte por WhatsApp",
+      "7 días de prueba gratis sin compromiso",
+    ],
+    demoHref: RESERVAR_INDEPENDIENTE_ROUTE,
+  },
+  {
+    id: "clinica",
+    badge: "PLAN CLÍNICA",
+    nombre: "Plan Clínica / Centro Médico",
+    descripcion:
+      "Diseñado para centros médicos, clínicas y consultorios con múltiples especialistas.",
+    precio: "$100",
+    precioDetalle: "USD / mes · sede principal",
+    promo: "50% OFF el 1er mes + 7 días gratis",
+    multisede: "$100/mes sede principal + $60/mes por sede adicional",
+    destacado: true,
+    features: [
+      "Especialistas ilimitados por sede",
+      "Recepción, administración y gestión multi-doctor",
+      "Flujo completo de agendamiento público en 4 pasos",
+      "Personalización completa con la marca de la clínica",
+      "Pago Móvil y Zelle habilitados en tu panel (personalizable a cualquier método de cobro que necesites)",
+      "Soporte prioritario por WhatsApp y correo",
+      "Migración y configuración inicial sin costo",
+      "7 días de prueba gratis sin compromiso",
+    ],
+    demoHref: DEMO_ROUTE,
+  },
 ]
 
 /* ------------------------------------------------------------------ */
@@ -525,61 +581,79 @@ function PricingSection() {
       <Container className="py-16 sm:py-20 lg:py-24">
         <SectionHeading
           eyebrow="Precios"
-          title="Una tarifa plana que se paga sola con la primera cita"
-          description="Diseñado para consultorios y clínicas medianas que cobran por consulta: con pocas citas al mes, Medisys se financia solo."
+          title="Elige el plan para tu consultorio o clínica"
+          description="Dos planes claros: agenda personal para médicos independientes o gestión multi-especialista para clínicas y centros médicos."
         />
 
-        <div className="relative mx-auto mt-12 max-w-5xl overflow-hidden rounded-3xl border border-zinc-200 bg-white shadow-2xl shadow-teal-900/10">
-          <div
-            className="h-1.5 w-full bg-linear-to-r from-teal-500 via-cyan-500 to-sky-500"
-            aria-hidden="true"
-          />
+        <div className="mx-auto mt-8 flex w-fit items-center gap-2 rounded-full border border-orange-200 bg-orange-50 px-4 py-2 text-sm font-bold text-orange-700 shadow-sm">
+          <span aria-hidden="true">🔥</span>
+          7 DÍAS GRATIS + 50% OFF EN TU PRIMER MES
+        </div>
 
-          <div className="grid gap-10 p-6 sm:p-10 lg:grid-cols-[0.95fr_1.05fr] lg:gap-14">
-            {/* Columna del plan y CTAs */}
-            <div className="flex flex-col">
-              <span className="inline-flex w-fit items-center rounded-full bg-teal-600/10 px-3 py-1 text-xs font-bold uppercase tracking-wider text-teal-700">
-                Plan único · por sede
+        <div className="mx-auto mt-10 grid max-w-5xl gap-6 md:grid-cols-2">
+          {PLANES_LANDING.map((plan) => (
+            <article
+              key={plan.id}
+              className={cn(
+                "relative flex flex-col rounded-2xl border bg-white p-6 shadow-sm transition-shadow hover:shadow-lg",
+                plan.destacado ? "border-teal-400 ring-2 ring-teal-500/20" : "border-zinc-200"
+              )}
+            >
+              {plan.destacado && (
+                <span className="absolute -top-3 left-6 rounded-full bg-linear-to-r from-teal-600 to-cyan-600 px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-white shadow">
+                  Más elegido
+                </span>
+              )}
+
+              <span className="inline-flex w-fit items-center rounded-full bg-teal-600/10 px-3 py-1 text-[11px] font-bold uppercase tracking-wider text-teal-700">
+                {plan.badge}
               </span>
 
-              <div className="mt-6 flex items-end gap-3">
-                <span className="text-6xl font-extrabold tracking-tight text-zinc-900">
-                  $100
+              <h3 className="mt-4 text-xl font-bold tracking-tight text-zinc-900">
+                {plan.nombre}
+              </h3>
+              <p className="mt-2 text-sm leading-6 text-zinc-600">
+                {plan.descripcion}
+              </p>
+
+              <div className="mt-5 flex items-end gap-2">
+                {plan.precioTachado && (
+                  <span className="pb-2 text-lg font-semibold text-zinc-400 line-through">
+                    {plan.precioTachado}
+                  </span>
+                )}
+                <span className="text-5xl font-extrabold tracking-tight text-zinc-900">
+                  {plan.precio}
                 </span>
-                <span className="pb-2 text-sm font-medium leading-5 text-zinc-500">
-                  USD / mes
-                  <br />
-                  por sede
+                <span className="pb-1.5 text-xs font-medium leading-4 text-zinc-500">
+                  {plan.precioDetalle}
                 </span>
               </div>
 
-              <p className="mt-5 text-pretty leading-7 text-zinc-600">
-                Un solo plan con todo incluido, pensado para clínicas
-                medianas y consultorios con varios especialistas que cobran con
-                Pago Móvil.
+              <p className="mt-3 w-fit rounded-full bg-emerald-500/10 px-3 py-1 text-xs font-semibold text-emerald-700">
+                {plan.promo}
               </p>
 
-              <ul className="mt-6 space-y-3">
-                {[
-                  "Incluye tu enlace público con la marca de tu clínica",
-                  "Configuración y migración de tu agenda sin costo",
-                  "Sin permanencia: cancela cuando quieras",
-                ].map((item) => (
-                  <li
-                    key={item}
-                    className="flex items-start gap-2.5 text-sm text-zinc-600"
-                  >
-                    <span className="mt-0.5 flex size-5 shrink-0 items-center justify-center rounded-full bg-emerald-500/10">
-                      <Check className="size-3 text-emerald-600" aria-hidden="true" />
+              {plan.multisede && (
+                <p className="mt-3 rounded-xl border border-teal-100 bg-teal-50/60 px-3 py-2 text-xs font-medium text-teal-800">
+                  Tarifa multisede: {plan.multisede}
+                </p>
+              )}
+
+              <ul className="mt-5 flex-1 space-y-3">
+                {plan.features.map((feature) => (
+                  <li key={feature} className="flex items-start gap-2.5 text-sm text-zinc-700">
+                    <span className="mt-0.5 flex size-5 shrink-0 items-center justify-center rounded-full bg-teal-600/10 text-teal-600">
+                      <Check className="size-3" aria-hidden="true" strokeWidth={3} />
                     </span>
-                    {item}
+                    <span className="leading-5">{feature}</span>
                   </li>
                 ))}
               </ul>
 
-              <div className="mt-8 flex flex-col gap-3">
+              <div className="mt-6 flex flex-col gap-3">
                 <Link
-                  href={DEMO_ROUTE}
+                  href={plan.demoHref}
                   className="inline-flex h-12 items-center justify-center gap-2 rounded-xl bg-linear-to-r from-teal-600 to-cyan-600 px-6 text-base font-semibold text-white shadow-lg shadow-teal-600/25 transition hover:shadow-xl hover:brightness-110 active:scale-[0.99]"
                 >
                   Probar la demo en vivo
@@ -591,58 +665,21 @@ function PricingSection() {
                   rel="noopener noreferrer"
                   className="inline-flex h-12 items-center justify-center gap-2 rounded-xl border border-zinc-200 bg-white px-6 text-base font-semibold text-zinc-700 shadow-sm transition hover:border-zinc-300 hover:bg-zinc-50"
                 >
-                  <MessageCircle
-                    className="size-4 text-emerald-600"
-                    aria-hidden="true"
-                  />
-                  Activar con un asesor
+                  <MessageCircle className="size-4 text-emerald-600" aria-hidden="true" />
+                  Contactar a un asesor
                 </a>
               </div>
-            </div>
-
-            {/* Columna del checklist */}
-            <div className="lg:border-l lg:border-dashed lg:border-zinc-200 lg:pl-14">
-              <h3 className="text-sm font-bold uppercase tracking-wider text-zinc-400">
-                Todo incluido en la suscripción
-              </h3>
-              <ul className="mt-5 space-y-4">
-                {PRICING_FEATURES.map((feature) => (
-                  <li key={feature} className="flex items-start gap-3">
-                    <span className="mt-0.5 flex size-6 shrink-0 items-center justify-center rounded-full bg-teal-600/10 text-teal-600">
-                      <Check className="size-3.5" aria-hidden="true" strokeWidth={3} />
-                    </span>
-                    <span className="text-[15px] font-medium leading-6 text-zinc-800">
-                      {feature}
-                    </span>
-                  </li>
-                ))}
-              </ul>
-
-              <div className="mt-8 flex flex-col gap-3 rounded-2xl border border-teal-100 bg-teal-50/60 p-5 sm:flex-row sm:items-center sm:justify-between">
-                <p className="text-sm font-medium text-teal-900">
-                  ¿Manejas más de una sede?
-                  <span className="block text-teal-700/80">
-                    Armamos un plan multiclínica con descuento.
-                  </span>
-                </p>
-                <a
-                  href={WHATSAPP_URL}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex h-10 shrink-0 items-center justify-center gap-2 rounded-lg border border-teal-200 bg-white px-4 text-sm font-semibold text-teal-700 transition hover:border-teal-300 hover:bg-teal-50"
-                >
-                  <MessageCircle className="size-4" aria-hidden="true" />
-                  Cotizar sedes
-                </a>
-              </div>
-            </div>
-          </div>
+            </article>
+          ))}
         </div>
+
+        <p className="mx-auto mt-6 max-w-2xl text-center text-xs leading-5 text-zinc-500">
+          Precios en USD. Pagos en Bolívares calculados a la tasa oficial BCV del día.
+        </p>
       </Container>
     </section>
   )
 }
-
 /* ================================================================== */
 /* Footer                                                              */
 /* ================================================================== */
