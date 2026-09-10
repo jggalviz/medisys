@@ -99,13 +99,13 @@ export function DemoHubModal({ label = "Entornos DEMO", className }: Props) {
           role="dialog"
           aria-modal="true"
           aria-label="Entornos DEMO de Medisys"
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm"
+          className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-black/60 p-4 backdrop-blur-sm sm:p-6"
           onClick={(event) => {
             if (event.target === event.currentTarget) setOpen(false)
           }}
         >
-          <div className="flex max-h-[90vh] w-full max-w-2xl flex-col overflow-hidden rounded-2xl border bg-background shadow-2xl">
-            <div className="flex items-center justify-between border-b px-4 py-3">
+          <div className="relative my-auto w-full max-w-2xl max-h-[90vh] overflow-y-auto rounded-2xl bg-white p-6 shadow-2xl">
+            <div className="flex items-center justify-between gap-3">
               <div className="flex flex-col">
                 <span className="text-sm font-semibold">
                   🧪 Entornos DEMO
@@ -118,13 +118,13 @@ export function DemoHubModal({ label = "Entornos DEMO", className }: Props) {
                 type="button"
                 onClick={() => setOpen(false)}
                 aria-label="Cerrar"
-                className="flex size-9 items-center justify-center rounded-full text-muted-foreground hover:bg-muted hover:text-foreground"
+                className="flex size-9 shrink-0 items-center justify-center rounded-full text-muted-foreground hover:bg-muted hover:text-foreground"
               >
                 <X className="size-5" />
               </button>
             </div>
 
-            <div className="flex flex-col gap-3 overflow-auto p-4">
+            <div className="mt-5 flex flex-col gap-3">
               {ACCESOS.map((acceso) => (
                 <Link
                   key={acceso.id}
