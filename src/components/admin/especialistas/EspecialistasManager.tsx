@@ -120,7 +120,7 @@ export function EspecialistasManager({
   }, [items, query])
 
   /** Reglas del plan del tenant (Clínica N vs Médico Pro 1). */
-  const esIndependiente = planType === "independiente"
+  const esIndependiente = planType === "PRO"
   const cupoPlan = esIndependiente
     ? 1
     : typeof maxEspecialistas === "number" && maxEspecialistas > 0

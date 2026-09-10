@@ -106,7 +106,7 @@ export type DatosPagoMovil = {
 }
 
 /** Planes comerciales del tenant (definen límites y flujo de reserva). */
-export type PlanTenant = "multi_especialista" | "independiente"
+export type PlanTenant = "PRO" | "CLINICA"
 
 export type Tenant = {
   id: string
@@ -368,6 +368,8 @@ export type TenantUser = {
   /** Usuario de Supabase Auth (auth.users.id). */
   user_id: string
   role: TenantUserRole
+  /** Precio de consulta por usuario (usado en el Plan PRO). */
+  precio_consulta?: number | null
   created_at: string
 }
 

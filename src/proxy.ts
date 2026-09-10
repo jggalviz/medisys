@@ -19,8 +19,11 @@ export async function proxy(request: NextRequest) {
 
   const isAdminRoute = segments[1] === "admin"
   const isLoginRoute = segments[1] === "login"
+  const isSuperAdminRoute = segments[0] === "super-admin"
 
-  if (!isAdminRoute && !isLoginRoute) return NextResponse.next()
+  if (!isAdminRoute && !isLoginRoute && !isSuperAdminRoute) {
+    return NextResponse.next()
+  }
 
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
   const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
@@ -48,6 +51,20 @@ export async function proxy(request: NextRequest) {
     },
   })
 
+  // Super Admin: exige `user.user_metadata.role === 'super_admin'`.
+  if (isSuperAdminRoute) {
+    const {
+      data: { user },
+    } = await supabase.auth.getUser()
+    const metadata = user?.user_metadata as Record<string, unknown> | undefined
+    if (metadata?.role !== "super_admin") {
+      const loginUrl = new URL("/login", request.url)
+      loginUrl.searchParams.set("next", pathname)
+      return NextResponse.redirect(loginUrl)
+    }
+    return response
+  }
+
   // Verifica sesión + membresía en el tenant (devuelve null ante cualquier error).
   const staff = await getStaffForSlug(supabase, clinicSlug)
 
@@ -69,5 +86,9 @@ export async function proxy(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/:clinicSlug/admin/:path*", "/:clinicSlug/login"],
+  matcher: [
+    "/:clinicSlug/admin/:path*",
+    "/:clinicSlug/login",
+    "/super-admin/:path*",
+  ],
 }

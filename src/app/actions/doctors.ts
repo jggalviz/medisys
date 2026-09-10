@@ -256,7 +256,7 @@ export async function createEspecialista(
       .maybeSingle()
 
     const planRol = tenantPlan as unknown as Record<string, unknown> | null
-    const esIndependiente = planRol?.plan_type === "independiente"
+    const esIndependiente = planRol?.plan_type === "PRO"
     const maxPlanRaw = Number(planRol?.max_especialistas)
     const maxEspecialistas = esIndependiente
       ? 1

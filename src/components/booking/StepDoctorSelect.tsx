@@ -217,7 +217,7 @@ export function StepDoctorSelect({
 
   // Plan Médico Pro ('independiente'): asigna el único especialista y avanza.
   useEffect(() => {
-    if (planType !== "independiente") return
+    if (planType !== "PRO") return
     if (load.status !== "ok" || load.doctors.length !== 1) return
     if (autoRef.current) return
     autoRef.current = true
@@ -268,7 +268,7 @@ export function StepDoctorSelect({
 
   // Plan Médico Pro: sin selector. Se muestra un aviso mientras el único
   // especialista se asigna automáticamente y se avanza al horario.
-  if (planType === "independiente") {
+  if (planType === "PRO") {
     return (
       <div className="flex flex-col gap-5">
         <header>
