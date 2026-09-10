@@ -10,6 +10,7 @@ import { KeyRound, LoaderCircle, Lock, Mail, ShieldAlert } from "lucide-react"
 
 import { signInStaff } from "@/app/actions/auth"
 import { DEMO_CREDENCIALES } from "@/lib/demo"
+import { logoMostrable } from "@/lib/branding"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -69,10 +70,10 @@ export function LoginForm({
     >
       <div className="flex flex-col items-center gap-1 text-center">
         {!esDemo &&
-          (tenantLogoUrl ? (
+          (logoMostrable(tenantLogoUrl) ? (
             // eslint-disable-next-line @next/next/no-img-element -- Logo dinámico del tenant (Supabase Storage)
             <img
-              src={tenantLogoUrl}
+              src={logoMostrable(tenantLogoUrl) as string}
               alt={`Logo de ${tenantNombre}`}
               className="size-12 rounded-full object-cover"
             />

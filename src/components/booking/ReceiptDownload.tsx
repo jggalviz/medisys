@@ -11,6 +11,7 @@ import { useRef, useState } from "react"
 import { LoaderCircle } from "lucide-react"
 
 import type { Appointment, Doctor, Profile, Tenant } from "@/types/database"
+import { inicialesTenant, logoMostrable } from "@/lib/branding"
 import { doctorNombre, formatUSD, perfilNombre } from "@/lib/format"
 import { turnoLabel } from "@/lib/whatsapp"
 import { Button } from "@/components/ui/button"
@@ -189,16 +190,16 @@ export function ReceiptDownload({
       >
         <div className="border-b-4 border-[#0d9488] px-6 pb-4 pt-6">
           <div className="flex items-center gap-3">
-            {tenant.logo_url ? (
+            {logoMostrable(tenant.logo_url) ? (
               // eslint-disable-next-line @next/next/no-img-element -- Logo del tenant en el recibo
               <img
-                src={tenant.logo_url}
+                src={logoMostrable(tenant.logo_url) as string}
                 alt={`Logo de ${tenant.nombre}`}
                 className="size-11 rounded-full object-cover"
               />
             ) : (
               <span className="flex size-11 items-center justify-center rounded-full bg-[#0d9488] text-sm font-bold text-white">
-                {tenant.nombre.slice(0, 2).toUpperCase()}
+                {inicialesTenant(tenant.nombre)}
               </span>
             )}
             <div>

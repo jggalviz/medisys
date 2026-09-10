@@ -18,6 +18,7 @@ import {
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import { logoMostrable } from "@/lib/branding"
 import { cn } from "@/lib/utils"
 
 type TabId = "general" | "pago" | "branding" | "capacidad"
@@ -53,7 +54,7 @@ export function TenantSettings({ tenant }: { tenant: Tenant }) {
   const [form, setForm] = useState<TenantSettingsData>(() =>
     inicialDatos(tenant)
   )
-  const [logoUrl, setLogoUrl] = useState<string | null>(tenant.logo_url ?? null)
+  const [logoUrl, setLogoUrl] = useState<string | null>(logoMostrable(tenant.logo_url))
   const [logoFile, setLogoFile] = useState<File | null>(null)
   const [previewObjectUrl, setPreviewObjectUrl] = useState<string | null>(null)
   const [toast, setToast] = useState<Toast>(null)
@@ -141,7 +142,7 @@ export function TenantSettings({ tenant }: { tenant: Tenant }) {
         // revierte por re-renders internos con la prop antigua.
         const tenantActualizado = resultado.data.tenant
         setForm(inicialDatos(tenantActualizado))
-        setLogoUrl(tenantActualizado.logo_url ?? null)
+        setLogoUrl(logoMostrable(tenantActualizado.logo_url))
         // Obliga a re-ejecutar el Server Component para refrescar la prop.
         router.refresh()
         setToast({ tipo: "ok", mensaje: "Configuración guardada ✓" })

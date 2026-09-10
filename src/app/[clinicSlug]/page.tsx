@@ -19,6 +19,7 @@ import {
 import { getTenantBySlug } from "@/app/actions/tenant"
 import { getDoctorsByTenant } from "@/app/actions/booking"
 import type { LandingConfig } from "@/types/database"
+import { inicialesTenant, logoMostrable } from "@/lib/branding"
 import { doctorNombre, formatUSD, iniciales } from "@/lib/format"
 import {
   landingHabilitada,
@@ -52,6 +53,8 @@ export async function generateMetadata({
   const descripcion =
     config.hero_subtitulo ??
     `Agenda tu cita médica en ${tenant.nombre} de forma rápida y segura.`
+  // Nunca compartir logos obsoletos (p. ej. "Santa Inés") en el Open Graph.
+  const logo = logoMostrable(tenant.logo_url)
 
   return {
     title: `${titulo} | ${tenant.nombre}`,
@@ -59,7 +62,7 @@ export async function generateMetadata({
     openGraph: {
       title: `${titulo} | ${tenant.nombre}`,
       description: descripcion,
-      ...(tenant.logo_url ? { images: [tenant.logo_url] } : {}),
+      ...(logo ? { images: [logo] } : {}),
     },
   }
 }
@@ -81,6 +84,7 @@ export default async function ClinicLandingPage({ params }: ClinicLandingProps) 
   }
 
   const config = normalizarLandingConfig(tenant.landing_config)
+  const logo = logoMostrable(tenant.logo_url)
   const resultado = await getDoctorsByTenant(clinicSlug)
   const doctores = resultado.ok ? [...resultado.data] : []
 
@@ -102,16 +106,19 @@ export default async function ClinicLandingPage({ params }: ClinicLandingProps) 
       <header className="border-b bg-gradient-to-b from-primary/10 via-background to-background">
         <div className="mx-auto flex w-full max-w-5xl flex-col gap-6 px-4 py-10 sm:px-6 sm:py-14">
           <div className="flex flex-col items-start gap-5 sm:flex-row sm:items-center">
-            {tenant.logo_url ? (
+            {logo ? (
               // eslint-disable-next-line @next/next/no-img-element -- logo del tenant (Storage externo)
               <img
-                src={tenant.logo_url}
+                src={logo}
                 alt={`Logo de ${tenant.nombre}`}
                 className="size-20 shrink-0 rounded-3xl border bg-background object-cover shadow-sm"
               />
             ) : (
-              <span className="flex size-20 shrink-0 items-center justify-center rounded-3xl border bg-background text-2xl font-bold text-primary shadow-sm">
-                {tenant.nombre.charAt(0).toUpperCase()}
+              <span
+                aria-label={`Marca de ${tenant.nombre}`}
+                className="flex size-20 shrink-0 items-center justify-center rounded-3xl border bg-primary/10 text-2xl font-bold text-primary shadow-sm"
+              >
+                {inicialesTenant(tenant.nombre)}
               </span>
             )}
             <div className="flex flex-col gap-2">

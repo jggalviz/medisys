@@ -3,6 +3,7 @@ import type { Metadata } from "next"
 
 import { BookingWizard } from "@/components/booking/BookingWizard"
 import { getTenantBySlug } from "@/app/actions/tenant"
+import { logoMostrable } from "@/lib/branding"
 
 /**
  * Página pública de reserva: lee la configuración actual de la clínica
@@ -41,7 +42,9 @@ export async function generateMetadata({
     openGraph: {
       title: `Reservar cita en ${tenant.nombre} | Medisys`,
       description: "Agenda y paga tu cita médica en minutos.",
-      ...(tenant.logo_url ? { images: [tenant.logo_url] } : {}),
+      ...(logoMostrable(tenant.logo_url)
+        ? { images: [logoMostrable(tenant.logo_url) as string] }
+        : {}),
     },
   }
 }

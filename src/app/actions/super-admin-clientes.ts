@@ -9,6 +9,7 @@
  */
 import { createAdminClient } from "@/lib/supabase/admin"
 import { getSuperAdmin } from "@/lib/super-admin"
+import { logoMostrable } from "@/lib/branding"
 import type { AppointmentStatus, PlanTenant } from "@/types/database"
 import type { SuperAdminResult } from "@/app/actions/super-admin"
 
@@ -144,7 +145,7 @@ export async function getClienteDetalle(
         telefono: tenant.telefono == null ? null : texto(tenant.telefono),
         rif: tenant.rif == null ? null : texto(tenant.rif),
         direccion: tenant.direccion == null ? null : texto(tenant.direccion),
-        logoUrl: tenant.logo_url == null ? null : texto(tenant.logo_url),
+        logoUrl: logoMostrable(tenant.logo_url == null ? null : texto(tenant.logo_url)),
         createdAt: texto(tenant.created_at),
         suscripcionVenceAt:
           tenant.suscripcion_vence_at == null
