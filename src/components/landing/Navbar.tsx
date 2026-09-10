@@ -13,7 +13,7 @@ import Link from "next/link"
 import { Menu, X } from "lucide-react"
 
 import { Brand } from "./Brand"
-import { ADMIN_DEMO_ROUTE, RESERVAR_DEMO_ROUTE } from "@/lib/demo"
+import { DemoHubModal } from "@/components/demo/DemoHubModal"
 
 const NAV_ITEMS = [
   { label: "Beneficios", href: "#beneficios" },
@@ -49,23 +49,7 @@ export function Navbar() {
 
         {/* Acciones demo (desktop/tablet) */}
         <div className="hidden items-center gap-2.5 md:flex">
-          <Link
-            href={RESERVAR_DEMO_ROUTE}
-            className="inline-flex h-9 items-center gap-1.5 rounded-full border border-zinc-200 bg-white px-4 text-sm font-semibold text-zinc-700 transition-colors hover:border-teal-300 hover:bg-teal-50 hover:text-teal-700"
-          >
-            <span aria-hidden="true">🏥</span>
-            Demo Reservas
-          </Link>
-          <Link
-            href={ADMIN_DEMO_ROUTE}
-            className="inline-flex h-9 items-center gap-1.5 rounded-full bg-zinc-900 px-4 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-zinc-700"
-          >
-            <span aria-hidden="true">🖥️</span>
-            Demo Escritorio
-            <span className="rounded-full bg-white/20 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide">
-              Para Clínicas
-            </span>
-          </Link>
+          <DemoHubModal label="Entornos DEMO" />
         </div>
 
         {/* Hamburguesa (mobile) */}
@@ -104,42 +88,10 @@ export function Navbar() {
 
             <span className="my-2 border-t border-dashed border-zinc-200" />
 
-            <Link
-              href={RESERVAR_DEMO_ROUTE}
-              onClick={() => setOpen(false)}
-              className="flex h-12 items-center gap-3 rounded-xl border border-zinc-200 px-4 font-semibold text-zinc-800 transition-colors hover:bg-zinc-50"
-            >
-              <span className="text-xl" aria-hidden="true">
-                🏥
-              </span>
-              <span className="flex flex-col">
-                <span>Demo Reservas</span>
-                <span className="text-xs font-normal text-muted-foreground">
-                  Agenda una cita como paciente
-                </span>
-              </span>
-            </Link>
-
-            <Link
-              href={ADMIN_DEMO_ROUTE}
-              onClick={() => setOpen(false)}
-              className="mt-1 flex h-12 items-center gap-3 rounded-xl bg-zinc-900 px-4 font-semibold text-white transition-colors hover:bg-zinc-700"
-            >
-              <span className="text-xl" aria-hidden="true">
-                🖥️
-              </span>
-              <span className="flex flex-col">
-                <span className="flex items-center gap-2">
-                  Demo Escritorio
-                  <span className="rounded-full bg-white/20 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide">
-                    Para Clínicas
-                  </span>
-                </span>
-                <span className="text-xs font-normal text-zinc-300">
-                  Explora el panel de recepción
-                </span>
-              </span>
-            </Link>
+            <DemoHubModal
+              label="Ver Demos de la Plataforma"
+              className="mt-1 h-12 w-full justify-start rounded-xl bg-zinc-900 px-4 text-base font-semibold text-white hover:bg-zinc-700"
+            />
           </nav>
         </div>
       )}
