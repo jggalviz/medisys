@@ -3,7 +3,13 @@
 /** Formulario de acceso por Cédula + Teléfono (sin contraseña). */
 import { useState, useTransition } from "react"
 import { useRouter } from "next/navigation"
-import { LoaderCircle, ShieldAlert, Smartphone, UserRound } from "lucide-react"
+import {
+  KeyRound,
+  LoaderCircle,
+  ShieldAlert,
+  Smartphone,
+  UserRound,
+} from "lucide-react"
 
 import { loginPortal } from "@/app/actions/portal-auth"
 import { Button } from "@/components/ui/button"
@@ -17,6 +23,8 @@ type Props = {
   titulo: string
   descripcion: string
   rutaDestino: string
+  /** Credenciales demo que autocompletan el formulario con un clic. */
+  datosDemo?: { cedula: string; telefono: string }
 }
 
 export function PortalLoginForm({
@@ -26,6 +34,7 @@ export function PortalLoginForm({
   titulo,
   descripcion,
   rutaDestino,
+  datosDemo,
 }: Props) {
   const router = useRouter()
   const [cedula, setCedula] = useState("")
@@ -103,6 +112,21 @@ export function PortalLoginForm({
             <ShieldAlert className="mt-0.5 size-4 shrink-0" />
             {error}
           </p>
+        )}
+
+        {datosDemo && (
+          <Button
+            type="button"
+            variant="secondary"
+            onClick={() => {
+              setCedula(datosDemo.cedula)
+              setTelefono(datosDemo.telefono)
+            }}
+            className="gap-2"
+          >
+            <KeyRound className="size-4" aria-hidden="true" />
+            Usar datos DEMO
+          </Button>
         )}
 
         <Button type="submit" disabled={isPending} className="h-12 gap-2 text-base">

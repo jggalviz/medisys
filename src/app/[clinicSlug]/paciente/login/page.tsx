@@ -32,6 +32,7 @@ export default async function PacienteLoginPage({ params }: Props) {
         titulo="Portal del Paciente"
         descripcion={`Consulta tus citas, historial médico y pagos en ${tenant.nombre}.`}
         rutaDestino="/paciente/expediente"
+        datosDemo={{ cedula: "87654321", telefono: "04147654321" }}
       />
     </main>
   )

@@ -32,6 +32,7 @@ export default async function EspecialistaLoginPage({ params }: Props) {
         titulo="Portal del Especialista"
         descripcion={`Accede con tu cédula y teléfono para gestionar tus pacientes en ${tenant.nombre}.`}
         rutaDestino="/especialista/dashboard"
+        datosDemo={{ cedula: "12345678", telefono: "04121234567" }}
       />
     </main>
   )

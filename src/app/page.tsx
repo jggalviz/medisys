@@ -14,13 +14,15 @@ import {
   MessageCircle,
   ShieldCheck,
   Smartphone,
+  Stethoscope,
+  UserRound,
 } from "lucide-react"
 import type { LucideIcon } from "lucide-react"
 
 import { cn } from "@/lib/utils"
 import { Navbar } from "@/components/landing/Navbar"
 import { Brand } from "@/components/landing/Brand"
-import { RESERVAR_DEMO_ROUTE } from "@/lib/demo"
+import { RESERVAR_DEMO_ROUTE, DEMO_CLINIC_SLUG } from "@/lib/demo"
 
 /* ------------------------------------------------------------------ */
 /* SEO de la landing page (ruta "/")                                   */
@@ -234,6 +236,24 @@ function HeroSection() {
               />
               Hablar con un asesor
             </a>
+          </div>
+
+          {/* Accesos rápidos a los portales de la demo */}
+          <div className="mt-3 flex flex-wrap gap-2">
+            <Link
+              href={`/${DEMO_CLINIC_SLUG}/especialista/login`}
+              className="inline-flex h-10 items-center gap-2 rounded-lg border border-zinc-200 bg-white/70 px-4 text-sm font-medium text-zinc-700 shadow-sm transition hover:border-teal-300 hover:bg-white"
+            >
+              <Stethoscope className="size-4 text-teal-600" aria-hidden="true" />
+              Portal Especialistas
+            </Link>
+            <Link
+              href={`/${DEMO_CLINIC_SLUG}/paciente/login`}
+              className="inline-flex h-10 items-center gap-2 rounded-lg border border-zinc-200 bg-white/70 px-4 text-sm font-medium text-zinc-700 shadow-sm transition hover:border-teal-300 hover:bg-white"
+            >
+              <UserRound className="size-4 text-teal-600" aria-hidden="true" />
+              Portal Pacientes
+            </Link>
           </div>
 
           <p className="mt-4 text-sm text-zinc-500">
