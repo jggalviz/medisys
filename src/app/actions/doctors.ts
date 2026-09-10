@@ -247,6 +247,38 @@ export async function createEspecialista(
     const errorValidacion = validarInput(input)
     if (errorValidacion) return { ok: false, message: errorValidacion }
 
+    // Regla de negocio por plan: respeta `tenants.max_especialistas`
+    // (y fuerza 1 para el plan 'independiente').
+    const { data: tenantPlan } = await supabase
+      .from("tenants")
+      .select("*")
+      .eq("id", ctx.data.tenantId)
+      .maybeSingle()
+
+    const planRol = tenantPlan as unknown as Record<string, unknown> | null
+    const esIndependiente = planRol?.plan_type === "independiente"
+    const maxPlanRaw = Number(planRol?.max_especialistas)
+    const maxEspecialistas = esIndependiente
+      ? 1
+      : Number.isFinite(maxPlanRaw) && maxPlanRaw > 0
+        ? Math.floor(maxPlanRaw)
+        : 5
+
+    const { count: totalDoctores, error: errCount } = await supabase
+      .from("doctors")
+      .select("id", { count: "exact", head: true })
+      .eq("tenant_id", ctx.data.tenantId)
+    if (errCount) return { ok: false, message: errCount.message }
+
+    if ((totalDoctores ?? 0) >= maxEspecialistas) {
+      return {
+        ok: false,
+        message: esIndependiente
+          ? "Tu plan Independiente solo permite 1 especialista. Actualiza a Plan Clínica para agregar más."
+          : `Tu plan permite un máximo de ${maxEspecialistas} especialistas. Actualiza tu plan para agregar más.`,
+      }
+    }
+
     const partes = partesNombre(input.nombre)
     const activo = input.activo ?? true
     const payload: DoctorInsert = {

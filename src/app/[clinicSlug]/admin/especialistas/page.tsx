@@ -66,7 +66,11 @@ export default async function EspecialistasPage({ params }: Props) {
           Gestiona el equipo médico de {tenant.nombre} y su disponibilidad.
         </p>
 
-        <EspecialistasManager tenantId={tenant.id} />
+        <EspecialistasManager
+          tenantId={tenant.id}
+          planType={tenant.plan_type}
+          maxEspecialistas={tenant.max_especialistas}
+        />
       </div>
     </main>
   )

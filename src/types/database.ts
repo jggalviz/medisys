@@ -105,6 +105,9 @@ export type DatosPagoMovil = {
   instrucciones: string | null
 }
 
+/** Planes comerciales del tenant (definen límites y flujo de reserva). */
+export type PlanTenant = "multi_especialista" | "independiente"
+
 export type Tenant = {
   id: string
   slug: string
@@ -120,6 +123,10 @@ export type Tenant = {
   pago_movil_enabled?: boolean | null
   /** Límite máximo de cupos por turno; null/0 = ilimitado. */
   max_slots_per_shift?: number | null
+  /** Plan comercial: Clínica (N) o Médico Pro (1). Opcional por migración. */
+  plan_type?: PlanTenant | null
+  /** Máximo de especialistas permitidos según el plan. */
+  max_especialistas?: number | null
   is_active: boolean
   datos_pago_movil: DatosPagoMovil | null
   created_at: string

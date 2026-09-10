@@ -10,7 +10,7 @@
  *  3. Al tocar un especialista se guarda la selección y se habilita
  *     «Continuar» hacia el Paso 3 (Fecha y hora).
  */
-import { useEffect, useMemo, useState } from "react"
+import { useEffect, useMemo, useRef, useState } from "react"
 import {
   ArrowLeft,
   BadgeCheck,
@@ -20,7 +20,7 @@ import {
   Stethoscope,
 } from "lucide-react"
 
-import type { Doctor } from "@/types/database"
+import type { Doctor, PlanTenant } from "@/types/database"
 import type { DoctorSchedule, DoctorWithTenant } from "@/types/booking"
 import { getDoctorsByTenant } from "@/app/actions/booking"
 import { doctorNombre, formatUSD, iniciales } from "@/lib/format"
@@ -32,6 +32,8 @@ import { cn } from "@/lib/utils"
 type Props = {
   clinicSlug: string
   selectedDoctor?: Doctor | null
+  /** Plan del tenant: 'independiente' salta la selección de especialista. */
+  planType?: PlanTenant | null
   onContinue: (doctor: Doctor) => void
 }
 
@@ -182,6 +184,7 @@ type DoctorsLoadState =
 export function StepDoctorSelect({
   clinicSlug,
   selectedDoctor,
+  planType,
   onContinue,
 }: Props) {
   const [attempt, setAttempt] = useState(0)
@@ -192,6 +195,8 @@ export function StepDoctorSelect({
   const [activeEsp, setActiveEsp] = useState<string | null>(
     selectedDoctor?.especialidad ?? null
   )
+  /** Evita disparar más de una vez la asignación automática (Plan Pro). */
+  const autoRef = useRef(false)
 
   useEffect(() => {
     let active = true
@@ -209,6 +214,15 @@ export function StepDoctorSelect({
       active = false
     }
   }, [clinicSlug, attempt])
+
+  // Plan Médico Pro ('independiente'): asigna el único especialista y avanza.
+  useEffect(() => {
+    if (planType !== "independiente") return
+    if (load.status !== "ok" || load.doctors.length !== 1) return
+    if (autoRef.current) return
+    autoRef.current = true
+    onContinue(load.doctors[0])
+  }, [planType, load, onContinue])
 
   const loading = load.status === "loading"
   const loadError = load.status === "error" ? load.message : null
@@ -251,6 +265,54 @@ export function StepDoctorSelect({
 
   const pluralEspecialistas = (cantidad: number) =>
     `${cantidad} ${cantidad === 1 ? "especialista" : "especialistas"}`
+
+  // Plan Médico Pro: sin selector. Se muestra un aviso mientras el único
+  // especialista se asigna automáticamente y se avanza al horario.
+  if (planType === "independiente") {
+    return (
+      <div className="flex flex-col gap-5">
+        <header>
+          <h2 className="text-xl font-semibold tracking-tight">
+            Asignando especialista
+          </h2>
+          <p className="mt-1 text-sm text-muted-foreground">
+            Esta clínica trabaja con un especialista único. Te llevamos directo
+            a elegir fecha y horario.
+          </p>
+        </header>
+
+        {loadError ? (
+          <div className="flex flex-col gap-3">
+            <Alert variant="destructive">
+              <AlertTitle>No pudimos cargar la agenda</AlertTitle>
+              <AlertDescription>{loadError}</AlertDescription>
+            </Alert>
+            <Button
+              variant="outline"
+              onClick={() => {
+                setLoad({ status: "loading" })
+                setAttempt((n) => n + 1)
+              }}
+            >
+              Reintentar
+            </Button>
+          </div>
+        ) : !loading && doctors.length === 0 ? (
+          <Alert>
+            <AlertTitle>Aún no hay especialista disponible</AlertTitle>
+            <AlertDescription>
+              La clínica está configurando su agenda. Intenta más tarde.
+            </AlertDescription>
+          </Alert>
+        ) : (
+          <div className="flex flex-col gap-2" aria-busy="true">
+            <Skeleton className="h-16 w-full rounded-2xl" />
+            <Skeleton className="h-16 w-full rounded-2xl" />
+          </div>
+        )}
+      </div>
+    )
+  }
 
   if (loading) {
     return (

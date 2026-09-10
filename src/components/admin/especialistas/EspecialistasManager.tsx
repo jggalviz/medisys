@@ -15,6 +15,7 @@ import {
 } from "lucide-react"
 
 import type { EspecialistaInput, EspecialistaItem } from "@/app/actions/doctors"
+import type { PlanTenant } from "@/types/database"
 import {
   createEspecialista,
   deleteEspecialista,
@@ -61,7 +62,15 @@ function Skeleton() {
   )
 }
 
-export function EspecialistasManager({ tenantId }: { tenantId: string }) {
+export function EspecialistasManager({
+  tenantId,
+  planType,
+  maxEspecialistas,
+}: {
+  tenantId: string
+  planType?: PlanTenant | null
+  maxEspecialistas?: number | null
+}) {
   const [items, setItems] = useState<EspecialistaItem[]>([])
   const [status, setStatus] = useState<"loading" | "error" | "ok">("loading")
   const [error, setError] = useState<string | null>(null)
@@ -109,6 +118,15 @@ export function EspecialistasManager({ tenantId }: { tenantId: string }) {
         item.especialidad.toLowerCase().includes(q)
     )
   }, [items, query])
+
+  /** Reglas del plan del tenant (Clínica N vs Médico Pro 1). */
+  const esIndependiente = planType === "independiente"
+  const cupoPlan = esIndependiente
+    ? 1
+    : typeof maxEspecialistas === "number" && maxEspecialistas > 0
+      ? maxEspecialistas
+      : 5
+  const cupoAlcanzado = items.length >= cupoPlan
 
   function abrirNuevo() {
     setForm(VACIO)
@@ -244,6 +262,21 @@ export function EspecialistasManager({ tenantId }: { tenantId: string }) {
 
     return (
     <div className="mt-6 flex flex-col gap-5">
+      {esIndependiente && (
+        <div
+          role="status"
+          className="flex flex-col gap-2 rounded-2xl border border-amber-300/60 bg-amber-50 p-4 text-sm text-amber-900 dark:border-amber-400/30 dark:bg-amber-400/10 dark:text-amber-200"
+        >
+          <p className="font-semibold">Plan Médico Pro · 1 especialista</p>
+          <p className="text-amber-800/90 dark:text-amber-200/80">
+            Tu plan Independiente solo permite 1 especialista y el
+            agendamiento se asigna automáticamente. Actualiza a{" "}
+            <strong>Plan Clínica</strong> para agregar más médicos y habilitar
+            el selector de especialistas.
+          </p>
+        </div>
+      )}
+
       {/* Toolbar */}
       <div className="flex flex-wrap items-center gap-2">
         <div className="relative min-w-52 flex-1">
@@ -255,11 +288,28 @@ export function EspecialistasManager({ tenantId }: { tenantId: string }) {
             className="pl-9"
           />
         </div>
-        <Button onClick={abrirNuevo} className="gap-1.5">
-          <Plus className="size-4" />
-          Agregar Especialista
-        </Button>
+        {!esIndependiente && (
+          <Button
+            onClick={abrirNuevo}
+            disabled={cupoAlcanzado}
+            className="gap-1.5"
+            title={
+              cupoAlcanzado
+                ? `Tu plan permite ${cupoPlan} especialistas`
+                : undefined
+            }
+          >
+            <Plus className="size-4" />
+            Agregar Especialista
+          </Button>
+        )}
       </div>
+
+      {esIndependiente && cupoAlcanzado && (
+        <p className="text-xs text-muted-foreground">
+          Para cambiar de especialista, edita el existente o actualiza tu plan.
+        </p>
+      )}
 
       {toast && (
         <div

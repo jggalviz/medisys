@@ -344,6 +344,7 @@ export function BookingWizard({ tenant }: Props) {
           <StepDoctorSelect
             clinicSlug={tenant.slug}
             selectedDoctor={doctor}
+            planType={tenant.plan_type}
             onContinue={(next) => {
               setDoctor(next)
               setNotice(null)
