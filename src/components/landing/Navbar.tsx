@@ -13,7 +13,7 @@ import Link from "next/link"
 import { Menu, X } from "lucide-react"
 
 import { Brand } from "./Brand"
-import { DemoHubModal } from "@/components/demo/DemoHubModal"
+import { useDemoHub } from "@/context/DemoHubContext"
 
 const NAV_ITEMS = [
   { label: "Beneficios", href: "#beneficios" },
@@ -23,6 +23,7 @@ const NAV_ITEMS = [
 
 export function Navbar() {
   const [open, setOpen] = useState(false)
+  const { openDemoHub } = useDemoHub()
 
   return (
     <header className="sticky top-0 z-40 border-b border-zinc-200/70 bg-white/85 backdrop-blur-md">
@@ -49,7 +50,15 @@ export function Navbar() {
 
         {/* Acciones demo (desktop/tablet) */}
         <div className="hidden items-center gap-2.5 md:flex">
-          <DemoHubModal label="Entornos DEMO" />
+          <button
+            type="button"
+            onClick={openDemoHub}
+            aria-haspopup="dialog"
+            className="inline-flex h-10 items-center justify-center gap-2 rounded-lg bg-zinc-900 px-4 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-zinc-700"
+          >
+            <span aria-hidden="true">🧪</span>
+            Entornos DEMO
+          </button>
         </div>
 
         {/* Hamburguesa (mobile) */}
@@ -88,10 +97,15 @@ export function Navbar() {
 
             <span className="my-2 border-t border-dashed border-zinc-200" />
 
-            <DemoHubModal
-              label="Ver Demos de la Plataforma"
-              className="mt-1 h-12 w-full justify-start rounded-xl bg-zinc-900 px-4 text-base font-semibold text-white hover:bg-zinc-700"
-            />
+            <button
+              type="button"
+              onClick={openDemoHub}
+              aria-haspopup="dialog"
+              className="mt-1 flex h-12 w-full items-center justify-start gap-2 rounded-xl bg-zinc-900 px-4 text-base font-semibold text-white transition-colors hover:bg-zinc-700"
+            >
+              <span aria-hidden="true">🧪</span>
+              Ver Demos de la Plataforma
+            </button>
           </nav>
         </div>
       )}

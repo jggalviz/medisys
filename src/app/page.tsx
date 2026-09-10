@@ -21,7 +21,7 @@ import { cn } from "@/lib/utils"
 import { Navbar } from "@/components/landing/Navbar"
 import { Brand } from "@/components/landing/Brand"
 import { RESERVAR_DEMO_ROUTE, DEMO_CLINIC_SLUG } from "@/lib/demo"
-import { DemoHubModal } from "@/components/demo/DemoHubModal"
+import { DemoHubTrigger } from "@/components/demo/DemoHubTrigger"
 
 /* ------------------------------------------------------------------ */
 /* SEO de la landing page (ruta "/")                                   */
@@ -239,7 +239,7 @@ function HeroSection() {
 
           {/* Acceso central a los entornos DEMO */}
           <div className="mt-3">
-            <DemoHubModal
+            <DemoHubTrigger
               label="Explorar Todos los Portales DEMO"
               className="border border-zinc-200 bg-white/90 text-zinc-800 shadow-sm hover:bg-white"
             />
