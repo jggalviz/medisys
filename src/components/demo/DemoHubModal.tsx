@@ -108,10 +108,6 @@ const BLOQUES: Bloque[] = [
         href: `/${DEMO_INDEPENDENT_SLUG}/especialista`,
         primario: true,
       },
-      {
-        label: "Ver Reserva Pro en 3 pasos",
-        href: `/${DEMO_INDEPENDENT_SLUG}`,
-      },
     ],
   },
 ]
