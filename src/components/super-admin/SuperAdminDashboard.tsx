@@ -2,6 +2,7 @@
 
 /** Dashboard central del Super Admin: KPIs + tabla de tenants con acciones. */
 import { useState } from "react"
+import Link from "next/link"
 import { Building2, CalendarClock, Check, LoaderCircle, Stethoscope, Users } from "lucide-react"
 
 import {
@@ -131,9 +132,25 @@ export function SuperAdminDashboard({ snapshot }: Props) {
             <tbody>
               {tenants.map((tenant) => (
                 <tr key={tenant.id} className="border-t">
-                  <td className="px-4 py-3 font-medium">{tenant.nombre}</td>
-                  <td className="px-4 py-3 font-mono text-xs text-muted-foreground">
-                    {tenant.slug}
+                  <td className="px-4 py-3">
+                    <Link
+                      href={`/super-admin/clientes/${tenant.id}`}
+                      className="font-medium text-primary hover:underline"
+                      title="Ver ficha completa del cliente"
+                    >
+                      {tenant.nombre}
+                    </Link>
+                  </td>
+                  <td className="px-4 py-3">
+                    <a
+                      href={`/${tenant.slug}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="font-mono text-xs text-muted-foreground underline-offset-2 hover:text-foreground hover:underline"
+                      title="Abrir la página pública en una nueva pestaña"
+                    >
+                      {tenant.slug}
+                    </a>
                   </td>
                   <td className="px-4 py-3">
                     <span
