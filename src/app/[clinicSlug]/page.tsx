@@ -19,7 +19,7 @@ import {
 import { getTenantBySlug } from "@/app/actions/tenant"
 import { getDoctorsByTenant } from "@/app/actions/booking"
 import type { LandingConfig } from "@/types/database"
-import { inicialesTenant, logoMostrable } from "@/lib/branding"
+import { inicialesTenant, imagenMostrable, logoMostrable } from "@/lib/branding"
 import { doctorNombre, formatUSD, iniciales } from "@/lib/format"
 import {
   landingHabilitada,
@@ -33,6 +33,9 @@ import {
  * cada petición, además de los especialistas activos de la tabla `doctors`.
  */
 export const dynamic = "force-dynamic"
+
+/** Sin caché de ruta: siempre lee el estado fresco de `tenants`/`doctors`. */
+export const revalidate = 0
 
 type ClinicLandingProps = {
   params: Promise<{ clinicSlug: string }>
@@ -309,10 +312,10 @@ export default async function ClinicLandingPage({ params }: ClinicLandingProps) 
                   key={doctor.id}
                   className="flex flex-col gap-3 rounded-2xl border bg-card p-5"
                 >
-                  {doctor.foto_url ? (
+                  {imagenMostrable(doctor.foto_url) ? (
                     // eslint-disable-next-line @next/next/no-img-element -- foto del especialista (Storage externo)
                     <img
-                      src={doctor.foto_url}
+                      src={imagenMostrable(doctor.foto_url) as string}
                       alt={doctorNombre(doctor)}
                       className="size-14 rounded-2xl border object-cover"
                     />

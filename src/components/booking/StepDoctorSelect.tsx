@@ -23,6 +23,7 @@ import {
 import type { Doctor, PlanTenant } from "@/types/database"
 import type { DoctorSchedule, DoctorWithTenant } from "@/types/booking"
 import { getDoctorsByTenant } from "@/app/actions/booking"
+import { imagenMostrable } from "@/lib/branding"
 import { doctorNombre, formatUSD, iniciales } from "@/lib/format"
 import { Button } from "@/components/ui/button"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
@@ -72,7 +73,7 @@ function DoctorAvatar({
   className?: string
 }) {
   const [broken, setBroken] = useState(false)
-  const src = doctor.foto_url
+  const src = imagenMostrable(doctor.foto_url)
 
   if (!src || broken) {
     return (
