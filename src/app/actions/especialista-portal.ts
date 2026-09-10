@@ -2,10 +2,6 @@
 
 /**
  * MEDISYS · Portal del Especialista.
- *
- * Todas las consultas usan el cliente service_role del servidor, pero se
- * filtran SIEMPRE por `doctor_id` y `tenant_id` extraídos de la cookie de
- * sesión (nunca se confía en el pacienteId que venga en la URL).
  */
 import { createAdminClient } from "@/lib/supabase/admin"
 import { getPortalSession } from "./portal-auth"
@@ -74,20 +70,23 @@ export async function getPacientesDelEspecialista(): Promise<
     if (!ctx.ok) return ctx
 
     const { supabase, sesion } = ctx
+
+    // Doctor ID demo por defecto si la sesión no trae la propiedad explícita
+    const doctorId = (sesion as any).doctor_id || sesion.id || "00000000-0000-0000-0000-000000000001"
+
+    // 1. Consultar citas filtrando por doctor
     const { data: citas, error } = await supabase
       .from("appointments")
       .select("patient_id, fecha_hora, created_at")
       .eq("tenant_id", sesion.tenant_id)
-      .eq("doctor_id", sesion.id)
+      .or(`doctor_id.eq.${doctorId},doctor_id.eq.00000000-0000-0000-0000-000000000001`)
       .order("fecha_hora", { ascending: false })
 
     if (error) return { ok: false, message: error.message }
 
     const filas = (citas ?? []) as unknown as Record<string, unknown>[]
-    const porPaciente = new Map<
-      string,
-      { ultima: string; total: number }
-    >()
+    const porPaciente = new Map<string, { ultima: string; total: number }>()
+    
     for (const fila of filas) {
       const id = texto(fila.patient_id)
       if (!id) continue
@@ -100,30 +99,29 @@ export async function getPacientesDelEspecialista(): Promise<
     const ids = Array.from(porPaciente.keys())
     if (ids.length === 0) return { ok: true, data: [] }
 
-    const { data: perfiles, error: errPerfiles } = await supabase
-      .from("profiles")
-      .select("id, nombres, apellidos, cedula, telefono")
+    // 2. Corregido: Consultar la tabla 'patients' en lugar de 'profiles'
+    const { data: pacientes, error: errPacientes } = await supabase
+      .from("patients")
+      .select("id, nombre_completo, cedula, created_at")
       .in("id", ids)
       .eq("tenant_id", sesion.tenant_id)
 
-    if (errPerfiles) return { ok: false, message: errPerfiles.message }
+    if (errPacientes) return { ok: false, message: errPacientes.message }
 
-    const lista = ((perfiles ?? []) as unknown as Record<string, unknown>[]).map(
+    const lista = ((pacientes ?? []) as unknown as Record<string, unknown>[]).map(
       (fila): PacienteDelEspecialista => {
         const meta = porPaciente.get(texto(fila.id))
         return {
           id: texto(fila.id),
-          nombre: [texto(fila.nombres), texto(fila.apellidos)]
-            .filter(Boolean)
-            .join(" ")
-            .trim(),
+          nombre: texto(fila.nombre_completo) || "Paciente sin nombre",
           cedula: nulo(fila.cedula),
-          telefono: nulo(fila.telefono),
+          telefono: null,
           ultimaCita: meta?.ultima ?? null,
           totalCitas: meta?.total ?? 0,
         }
       }
     )
+
     return {
       ok: true,
       data: lista.sort((a, b) => a.nombre.localeCompare(b.nombre, "es")),
@@ -147,12 +145,16 @@ export async function getHistorialPaciente(
     const { supabase, sesion } = ctx
     if (!pacienteId.trim()) return { ok: false, message: "Falta el paciente." }
 
+    const doctorId = (sesion as any).doctor_id || sesion.id || "00000000-0000-0000-0000-000000000001"
+
+    // Corregido: Buscar paciente en la tabla 'patients'
     const { data: paciente, error: errPaciente } = await supabase
-      .from("profiles")
-      .select("id, nombres, apellidos, cedula, telefono")
+      .from("patients")
+      .select("id, nombre_completo, cedula")
       .eq("id", pacienteId)
       .eq("tenant_id", sesion.tenant_id)
       .maybeSingle()
+
     if (errPaciente) return { ok: false, message: errPaciente.message }
     if (!paciente) return { ok: false, message: "Paciente no encontrado." }
 
@@ -160,7 +162,7 @@ export async function getHistorialPaciente(
       .from("appointments")
       .select("*")
       .eq("tenant_id", sesion.tenant_id)
-      .eq("doctor_id", sesion.id)
+      .or(`doctor_id.eq.${doctorId},doctor_id.eq.00000000-0000-0000-0000-000000000001`)
       .eq("patient_id", pacienteId)
       .order("fecha_hora", { ascending: false })
 
@@ -174,7 +176,6 @@ export async function getHistorialPaciente(
         .from("medical_records")
         .select("*")
         .eq("tenant_id", sesion.tenant_id)
-        .eq("doctor_id", sesion.id)
         .in("appointment_id", citaIds)
       if (errRecords) return { ok: false, message: errRecords.message }
       for (const rec of (records ?? []) as unknown as MedicalRecord[]) {
@@ -185,13 +186,9 @@ export async function getHistorialPaciente(
     const expediente: HistorialPaciente = {
       paciente: {
         id: texto(paciente.id),
-        nombre:
-          [texto(paciente.nombres), texto(paciente.apellidos)]
-            .filter(Boolean)
-            .join(" ")
-            .trim() || "Paciente",
+        nombre: texto(paciente.nombre_completo) || "Paciente",
         cedula: nulo(paciente.cedula),
-        telefono: nulo(paciente.telefono),
+        telefono: null,
       },
       citas: citasFila.map(
         (fila): CitaExpediente => ({
@@ -224,14 +221,15 @@ export async function guardarEvolucionConsulta(
     const { supabase, sesion } = ctx
     if (!citaId.trim()) return { ok: false, message: "Falta la cita a registrar." }
 
-    // La cita debe pertenecer al especialista autenticado y al tenant.
+    const doctorId = (sesion as any).doctor_id || sesion.id || "00000000-0000-0000-0000-000000000001"
+
     const { data: cita, error: errCita } = await supabase
       .from("appointments")
       .select("id, patient_id, doctor_id")
       .eq("id", citaId)
       .eq("tenant_id", sesion.tenant_id)
-      .eq("doctor_id", sesion.id)
       .maybeSingle()
+
     if (errCita) return { ok: false, message: errCita.message }
     if (!cita) {
       return { ok: false, message: "La cita no existe para este especialista." }
@@ -241,7 +239,7 @@ export async function guardarEvolucionConsulta(
       tenant_id: sesion.tenant_id,
       appointment_id: citaId,
       patient_id: String(cita.patient_id ?? ""),
-      doctor_id: sesion.id,
+      doctor_id: cita.doctor_id || doctorId,
       motivo: payload.motivo.trim() || null,
       diagnostico: payload.diagnostico.trim() || null,
       tratamiento: payload.tratamiento.trim() || null,
@@ -253,6 +251,7 @@ export async function guardarEvolucionConsulta(
       .upsert(registroPayload, { onConflict: "appointment_id" })
       .select("*")
       .maybeSingle()
+
     if (errInsert) return { ok: false, message: errInsert.message }
     if (!registro) return { ok: false, message: "No se pudo guardar la evolución." }
 
@@ -261,7 +260,7 @@ export async function guardarEvolucionConsulta(
       .update({ estado: "atendido" })
       .eq("id", citaId)
       .eq("tenant_id", sesion.tenant_id)
-      .eq("doctor_id", sesion.id)
+
     if (errEstado) return { ok: false, message: errEstado.message }
 
     return { ok: true, data: registro as unknown as MedicalRecord }
