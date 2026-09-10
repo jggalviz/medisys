@@ -78,13 +78,9 @@ const BLOQUES: Bloque[] = [
     ],
     acciones: [
       {
-        label: "Ir al Panel Admin",
+        label: "Ir a escritorio de la Clínica DEMO",
         href: `/${DEMO_CLINIC_SLUG}/admin`,
         primario: true,
-      },
-      {
-        label: "Ir al Portal Especialista",
-        href: `/${DEMO_CLINIC_SLUG}/especialista`,
       },
     ],
   },
@@ -104,8 +100,8 @@ const BLOQUES: Bloque[] = [
     ],
     acciones: [
       {
-        label: "Ir al Portal Médico",
-        href: `/${DEMO_INDEPENDENT_SLUG}/especialista`,
+        label: "Ir a escritorio del Especialista DEMO",
+        href: `/${DEMO_INDEPENDENT_SLUG}/admin`,
         primario: true,
       },
     ],
