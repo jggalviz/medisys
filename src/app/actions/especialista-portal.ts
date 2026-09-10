@@ -2,6 +2,8 @@
 
 /**
  * MEDISYS · Portal del Especialista.
+ *
+ * Consultas con service_role filtradas por doctor_id y tenant_id.
  */
 import { createAdminClient } from "@/lib/supabase/admin"
 import { getPortalSession } from "./portal-auth"
@@ -71,22 +73,25 @@ export async function getPacientesDelEspecialista(): Promise<
 
     const { supabase, sesion } = ctx
 
-    // Doctor ID demo por defecto si la sesión no trae la propiedad explícita
-    const doctorId = (sesion as any).doctor_id || sesion.id || "00000000-0000-0000-0000-000000000001"
+    const sesionAny = sesion as unknown as Record<string, unknown>
+    const doctorId =
+      (typeof sesionAny.doctor_id === "string" ? sesionAny.doctor_id : null) ||
+      (typeof sesionAny.id === "string" ? sesionAny.id : null) ||
+      "00000000-0000-0000-0000-000000000001"
 
-    // 1. Consultar citas filtrando por doctor
+    // 1. Consultar citas asociadas al doctor o al doctor demo
     const { data: citas, error } = await supabase
       .from("appointments")
       .select("patient_id, fecha_hora, created_at")
       .eq("tenant_id", sesion.tenant_id)
-      .or(`doctor_id.eq.${doctorId},doctor_id.eq.00000000-0000-0000-0000-000000000001`)
+      .in("doctor_id", [doctorId, "00000000-0000-0000-0000-000000000001"])
       .order("fecha_hora", { ascending: false })
 
     if (error) return { ok: false, message: error.message }
 
     const filas = (citas ?? []) as unknown as Record<string, unknown>[]
     const porPaciente = new Map<string, { ultima: string; total: number }>()
-    
+
     for (const fila of filas) {
       const id = texto(fila.patient_id)
       if (!id) continue
@@ -99,7 +104,7 @@ export async function getPacientesDelEspecialista(): Promise<
     const ids = Array.from(porPaciente.keys())
     if (ids.length === 0) return { ok: true, data: [] }
 
-    // 2. Corregido: Consultar la tabla 'patients' en lugar de 'profiles'
+    // 2. Consultar la tabla 'patients' con casteo seguro
     const { data: pacientes, error: errPacientes } = await supabase
       .from("patients")
       .select("id, nombre_completo, cedula, created_at")
@@ -108,7 +113,13 @@ export async function getPacientesDelEspecialista(): Promise<
 
     if (errPacientes) return { ok: false, message: errPacientes.message }
 
-    const lista = ((pacientes ?? []) as unknown as Record<string, unknown>[]).map(
+    const filasPacientes = (pacientes ?? []) as unknown as Array<{
+      id: string
+      nombre_completo: string | null
+      cedula: string | null
+    }>
+
+    const lista = filasPacientes.map(
       (fila): PacienteDelEspecialista => {
         const meta = porPaciente.get(texto(fila.id))
         return {
@@ -145,9 +156,13 @@ export async function getHistorialPaciente(
     const { supabase, sesion } = ctx
     if (!pacienteId.trim()) return { ok: false, message: "Falta el paciente." }
 
-    const doctorId = (sesion as any).doctor_id || sesion.id || "00000000-0000-0000-0000-000000000001"
+    const sesionAny = sesion as unknown as Record<string, unknown>
+    const doctorId =
+      (typeof sesionAny.doctor_id === "string" ? sesionAny.doctor_id : null) ||
+      (typeof sesionAny.id === "string" ? sesionAny.id : null) ||
+      "00000000-0000-0000-0000-000000000001"
 
-    // Corregido: Buscar paciente en la tabla 'patients'
+    // 1. Obtener datos del paciente
     const { data: paciente, error: errPaciente } = await supabase
       .from("patients")
       .select("id, nombre_completo, cedula")
@@ -158,11 +173,18 @@ export async function getHistorialPaciente(
     if (errPaciente) return { ok: false, message: errPaciente.message }
     if (!paciente) return { ok: false, message: "Paciente no encontrado." }
 
+    const pacienteObj = paciente as unknown as {
+      id: string
+      nombre_completo: string | null
+      cedula: string | null
+    }
+
+    // 2. Obtener citas del paciente
     const { data: citas, error } = await supabase
       .from("appointments")
       .select("*")
       .eq("tenant_id", sesion.tenant_id)
-      .or(`doctor_id.eq.${doctorId},doctor_id.eq.00000000-0000-0000-0000-000000000001`)
+      .in("doctor_id", [doctorId, "00000000-0000-0000-0000-000000000001"])
       .eq("patient_id", pacienteId)
       .order("fecha_hora", { ascending: false })
 
@@ -185,9 +207,9 @@ export async function getHistorialPaciente(
 
     const expediente: HistorialPaciente = {
       paciente: {
-        id: texto(paciente.id),
-        nombre: texto(paciente.nombre_completo) || "Paciente",
-        cedula: nulo(paciente.cedula),
+        id: texto(pacienteObj.id),
+        nombre: texto(pacienteObj.nombre_completo) || "Paciente",
+        cedula: nulo(pacienteObj.cedula),
         telefono: null,
       },
       citas: citasFila.map(
@@ -221,7 +243,11 @@ export async function guardarEvolucionConsulta(
     const { supabase, sesion } = ctx
     if (!citaId.trim()) return { ok: false, message: "Falta la cita a registrar." }
 
-    const doctorId = (sesion as any).doctor_id || sesion.id || "00000000-0000-0000-0000-000000000001"
+    const sesionAny = sesion as unknown as Record<string, unknown>
+    const doctorId =
+      (typeof sesionAny.doctor_id === "string" ? sesionAny.doctor_id : null) ||
+      (typeof sesionAny.id === "string" ? sesionAny.id : null) ||
+      "00000000-0000-0000-0000-000000000001"
 
     const { data: cita, error: errCita } = await supabase
       .from("appointments")
@@ -235,11 +261,17 @@ export async function guardarEvolucionConsulta(
       return { ok: false, message: "La cita no existe para este especialista." }
     }
 
+    const citaObj = cita as unknown as {
+      id: string
+      patient_id: string | null
+      doctor_id: string | null
+    }
+
     const registroPayload = {
       tenant_id: sesion.tenant_id,
       appointment_id: citaId,
-      patient_id: String(cita.patient_id ?? ""),
-      doctor_id: cita.doctor_id || doctorId,
+      patient_id: String(citaObj.patient_id ?? ""),
+      doctor_id: citaObj.doctor_id || doctorId,
       motivo: payload.motivo.trim() || null,
       diagnostico: payload.diagnostico.trim() || null,
       tratamiento: payload.tratamiento.trim() || null,
