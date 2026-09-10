@@ -20,7 +20,7 @@ import type { LucideIcon } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { Navbar } from "@/components/landing/Navbar"
 import { Brand } from "@/components/landing/Brand"
-import { RESERVAR_DEMO_ROUTE } from "@/lib/demo"
+import { RESERVAR_DEMO_ROUTE, DEMO_CLINIC_SLUG } from "@/lib/demo"
 import { DemoHubModal } from "@/components/demo/DemoHubModal"
 
 /* ------------------------------------------------------------------ */
@@ -182,14 +182,14 @@ function HeroSection() {
       <Container className="grid items-center gap-14 py-14 sm:py-20 lg:grid-cols-12 lg:gap-10 lg:py-24">
         <div className="max-w-2xl lg:col-span-6">
           <Link
-            href={DEMO_ROUTE}
-            className="group inline-flex items-center gap-2.5 rounded-full border border-teal-200 bg-teal-50/80 py-1 pl-2.5 pr-3.5 text-sm font-medium text-teal-700 transition-colors hover:border-teal-300 hover:bg-teal-50"
+            href={`/${DEMO_CLINIC_SLUG}`}
+            className="group inline-flex items-center gap-2.5 rounded-full border border-teal-200 bg-teal-50/80 py-1 pl-3 pr-3.5 text-sm font-medium text-teal-700 transition-colors hover:border-teal-300 hover:bg-teal-50"
           >
             <span className="relative flex size-2 shrink-0">
               <span className="absolute inline-flex size-full animate-ping rounded-full bg-emerald-400 opacity-75" />
               <span className="relative inline-flex size-2 rounded-full bg-emerald-500" />
             </span>
-            Demo en vivo: Clínica DEMO
+            Agendar Cita de Prueba
             <ArrowRight
               className="size-3.5 transition-transform group-hover:translate-x-0.5"
               aria-hidden="true"
@@ -217,10 +217,10 @@ function HeroSection() {
 
           <div className="mt-8 flex w-full flex-col gap-3 sm:w-auto sm:flex-row">
             <Link
-              href={DEMO_ROUTE}
+              href={`/${DEMO_CLINIC_SLUG}`}
               className="inline-flex h-12 items-center justify-center gap-2 rounded-xl bg-linear-to-r from-teal-600 to-cyan-600 px-6 text-base font-semibold text-white shadow-lg shadow-teal-600/25 transition hover:shadow-xl hover:brightness-110 active:scale-[0.99]"
             >
-              Probar la demo en vivo
+              Agendar Cita DEMO
               <ArrowRight className="size-4" aria-hidden="true" />
             </Link>
             <a
@@ -240,14 +240,14 @@ function HeroSection() {
           {/* Acceso central a los entornos DEMO */}
           <div className="mt-3">
             <DemoHubModal
-              label="Explorar Demos de la Plataforma"
+              label="Explorar Todos los Portales DEMO"
               className="border border-zinc-200 bg-white/90 text-zinc-800 shadow-sm hover:bg-white"
             />
           </div>
 
           <p className="mt-4 text-sm text-zinc-500">
-            Demo real del flujo completo: agenda una cita de prueba en 4 pasos,
-            sin crear cuenta.
+            Prueba el agendamiento público en 4 pasos o explora los paneles
+            administrativos.
           </p>
 
           <ul className="mt-8 flex flex-wrap gap-x-6 gap-y-2 text-sm font-medium text-zinc-700">
