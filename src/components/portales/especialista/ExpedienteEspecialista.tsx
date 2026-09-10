@@ -3,7 +3,7 @@
 /** Expediente del paciente + formulario de evolución clínica. */
 import { useEffect, useState } from "react"
 import Link from "next/link"
-import { ArrowLeft, ClipboardList, LoaderCircle, LogOut, Save } from "lucide-react"
+import { ArrowLeft, ClipboardList, LoaderCircle, LogOut, Save, Pencil } from "lucide-react"
 
 import {
   getHistorialPaciente,
@@ -39,7 +39,7 @@ function formatoFecha(iso: string): string {
 export function ExpedienteEspecialista({ pacienteId, clinicSlug }: Props) {
   const [datos, setDatos] = useState<Estado>({ estado: "cargando" })
   const [intento, setIntento] = useState(0)
-  const [citaActiva, setCitaActiva] = useState<CitaExpediente | null>(null)
+  const [citaAEditar, setCitaAEditar] = useState<CitaExpediente | null>(null)
   const [form, setForm] = useState({ motivo: "", diagnostico: "", tratamiento: "", notas: "" })
   const [guardando, setGuardando] = useState(false)
   const [aviso, setAviso] = useState<string | null>(null)
@@ -50,13 +50,6 @@ export function ExpedienteEspecialista({ pacienteId, clinicSlug }: Props) {
       if (!activo) return
       if (resultado.ok) {
         setDatos({ estado: "ok", historial: resultado.data })
-        const activa = resultado.data.citas.find(
-          (c) =>
-            c.estado !== "atendido" &&
-            c.estado !== "cancelada" &&
-            c.estado !== "expirada"
-        )
-        setCitaActiva(activa ?? null)
       } else {
         setDatos({ estado: "error", mensaje: resultado.message })
       }
@@ -66,6 +59,33 @@ export function ExpedienteEspecialista({ pacienteId, clinicSlug }: Props) {
     }
   }, [pacienteId, intento])
 
+  // Cita activa: si hay una seleccionada manualmente para editar la usa, si no busca la primera no finalizada
+  const citaActiva =
+    citaAEditar ??
+    (datos.estado === "ok" && datos.historial
+      ? datos.historial.citas.find(
+          (c) =>
+            c.estado !== "atendido" &&
+            c.estado !== "cancelada" &&
+            c.estado !== "expirada"
+        ) ?? null
+      : null)
+
+  // Cargar datos en los inputs del formulario al seleccionar o cambiar la cita activa
+  useEffect(() => {
+    if (citaActiva?.registro) {
+      setForm({
+        motivo: citaActiva.registro.motivo ?? "",
+        diagnostico: citaActiva.registro.diagnostico ?? "",
+        tratamiento: citaActiva.registro.tratamiento ?? "",
+        notas: citaActiva.registro.notas ?? "",
+      })
+    } else {
+      setForm({ motivo: "", diagnostico: "", tratamiento: "", notas: "" })
+    }
+    setAviso(null)
+  }, [citaActiva])
+
   async function guardarEvolucion() {
     if (!citaActiva || guardando) return
     setGuardando(true)
@@ -74,7 +94,12 @@ export function ExpedienteEspecialista({ pacienteId, clinicSlug }: Props) {
     setGuardando(false)
     if (resultado.ok) {
       setForm({ motivo: "", diagnostico: "", tratamiento: "", notas: "" })
-      setAviso("Evolución guardada · Cita marcada como Atendida ✓")
+      setAviso(
+        citaAEditar
+          ? "Evolución actualizada correctamente ✓"
+          : "Evolución guardada · Cita marcada como Atendida ✓"
+      )
+      setCitaAEditar(null)
       setIntento((n) => n + 1)
     } else {
       setAviso(resultado.message)
@@ -141,15 +166,29 @@ export function ExpedienteEspecialista({ pacienteId, clinicSlug }: Props) {
           </section>
 
           {/* Evolución de la consulta del día */}
-          <section className="rounded-2xl border bg-card p-4">
-            <h2 className="flex items-center gap-2 font-semibold">
-              <ClipboardList className="size-4 text-primary" />
-              Evolución de la consulta
-            </h2>
+          <section id="seccion-evolucion" className="rounded-2xl border bg-card p-4">
+            <div className="flex items-center justify-between">
+              <h2 className="flex items-center gap-2 font-semibold">
+                <ClipboardList className="size-4 text-primary" />
+                Evolución de la consulta
+              </h2>
+              {citaAEditar && (
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  className="h-auto p-0 text-xs text-destructive hover:bg-transparent"
+                  onClick={() => setCitaAEditar(null)}
+                >
+                  Cancelar edición
+                </Button>
+              )}
+            </div>
+
             {citaActiva ? (
               <div className="mt-3 flex flex-col gap-3">
                 <p className="rounded-xl bg-muted/60 px-3 py-2 text-xs text-muted-foreground">
-                  Registrando la cita del{" "}
+                  {citaAEditar ? "Editando " : "Registrando "} la cita del{" "}
                   <strong>{formatoFecha(citaActiva.fecha_hora)}</strong>
                 </p>
                 <div className="flex flex-col gap-1.5">
@@ -201,7 +240,7 @@ export function ExpedienteEspecialista({ pacienteId, clinicSlug }: Props) {
                 >
                   {guardando && <LoaderCircle className="size-4 animate-spin" />}
                   <Save className="size-4" />
-                  Guardar evolución y marcar como Atendida
+                  {citaAEditar ? "Actualizar evolución" : "Guardar evolución y marcar como Atendida"}
                 </Button>
                 {aviso && <p className="text-sm">{aviso}</p>}
               </div>
@@ -211,6 +250,7 @@ export function ExpedienteEspecialista({ pacienteId, clinicSlug }: Props) {
               </p>
             )}
           </section>
+
           {/* Línea de tiempo */}
           <section className="flex flex-col gap-2">
             <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
@@ -223,49 +263,74 @@ export function ExpedienteEspecialista({ pacienteId, clinicSlug }: Props) {
             ) : (
               <ol className="relative flex flex-col gap-3">
                 {datos.historial.citas.map((cita) => (
-                  <li key={cita.id} className="relative flex gap-3 rounded-2xl border bg-card p-3">
-                    <span
-                      className={cn(
-                        "mt-1 size-3 shrink-0 rounded-full",
-                        cita.estado === "atendido" ? "bg-emerald-500" : "bg-sky-500"
-                      )}
-                    />
-                    <div className="w-full">
-                      <div className="flex flex-wrap items-center justify-between gap-2">
-                        <p className="text-sm font-semibold">
-                          {formatoFecha(cita.fecha_hora)}
-                        </p>
-                        <span className="rounded-full bg-muted px-2 py-0.5 text-[11px] capitalize text-muted-foreground">
-                          {cita.estado}
-                        </span>
+                  <li key={cita.id} className="relative flex flex-col sm:flex-row items-start justify-between gap-3 rounded-2xl border bg-card p-3">
+                    <div className="flex gap-3 w-full">
+                      <span
+                        className={cn(
+                          "mt-1 size-3 shrink-0 rounded-full",
+                          cita.estado === "atendido" ? "bg-emerald-500" : "bg-sky-500"
+                        )}
+                      />
+                      <div className="w-full">
+                        <div className="flex flex-wrap items-center justify-between gap-2">
+                          <p className="text-sm font-semibold">
+                            {formatoFecha(cita.fecha_hora)}
+                          </p>
+                          <span className="rounded-full bg-muted px-2 py-0.5 text-[11px] capitalize text-muted-foreground">
+                            {cita.estado}
+                          </span>
+                        </div>
+                        {cita.registro ? (
+                          <dl className="mt-2 grid gap-1 text-sm sm:grid-cols-2">
+                            {cita.registro.motivo && (
+                              <>
+                                <dt className="font-medium">Motivo</dt>
+                                <dd>{cita.registro.motivo}</dd>
+                              </>
+                            )}
+                            {cita.registro.diagnostico && (
+                              <>
+                                <dt className="font-medium">Diagnóstico</dt>
+                                <dd>{cita.registro.diagnostico}</dd>
+                              </>
+                            )}
+                            {cita.registro.tratamiento && (
+                              <>
+                                <dt className="font-medium">Indicaciones</dt>
+                                <dd>{cita.registro.tratamiento}</dd>
+                              </>
+                            )}
+                            {cita.registro.notas && (
+                              <>
+                                <dt className="font-medium">Notas</dt>
+                                <dd>{cita.registro.notas}</dd>
+                              </>
+                            )}
+                          </dl>
+                        ) : (
+                          <p className="mt-1 text-xs text-muted-foreground">
+                            Sin evolución registrada.
+                          </p>
+                        )}
                       </div>
-                      {cita.registro ? (
-                        <dl className="mt-2 grid gap-1 text-sm sm:grid-cols-2">
-                          {cita.registro.motivo && (
-                            <>
-                              <dt className="font-medium">Motivo</dt>
-                              <dd>{cita.registro.motivo}</dd>
-                            </>
-                          )}
-                          {cita.registro.diagnostico && (
-                            <>
-                              <dt className="font-medium">Diagnóstico</dt>
-                              <dd>{cita.registro.diagnostico}</dd>
-                            </>
-                          )}
-                          {cita.registro.tratamiento && (
-                            <>
-                              <dt className="font-medium">Indicaciones</dt>
-                              <dd>{cita.registro.tratamiento}</dd>
-                            </>
-                          )}
-                        </dl>
-                      ) : (
-                        <p className="mt-1 text-xs text-muted-foreground">
-                          Sin evolución registrada.
-                        </p>
-                      )}
                     </div>
+
+                    {/* Botón para editar la consulta desde el historial */}
+                    {cita.registro && (
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        className="gap-1.5 self-end sm:self-start shrink-0 text-xs"
+                        onClick={() => {
+                          setCitaAEditar(cita)
+                          document.getElementById("seccion-evolucion")?.scrollIntoView({ behavior: "smooth" })
+                        }}
+                      >
+                        <Pencil className="size-3.5" />
+                        Editar
+                      </Button>
+                    )}
                   </li>
                 ))}
               </ol>
