@@ -116,6 +116,18 @@ export type LandingServicio = {
   descripcion: string
 }
 
+/** Pregunta frecuente del perfil público. */
+export type LandingFaq = {
+  pregunta: string
+  respuesta: string
+}
+
+/** Badges de autoridad/atención mostrados en el Hero. */
+export type LandingBadges = {
+  emergencias: boolean
+  telemedicina: boolean
+}
+
 /** Contenido editable de la Landing Page (tenant.landing_config). */
 export type LandingConfig = {
   hero_titulo: string | null
@@ -124,7 +136,24 @@ export type LandingConfig = {
   horarios: string | null
   instagram: string | null
   facebook: string | null
+  /** Subespecialidades o enfoque clínico. */
+  subespecialidades: string | null
+  /** N° MPPS / Registro Sanitario. */
+  mpps: string | null
+  /** N° de Colegio Médico. */
+  colegio_medico: string | null
+  /** Universidad / institución de egreso. */
+  universidad: string | null
+  /** Badges opcionales de atención. */
+  badges: LandingBadges
+  /** Dirección detallada del consultorio (piso, oficina, edificio). */
+  direccion_detallada: string | null
+  /** Punto de referencia de la ubicación. */
+  punto_referencia: string | null
+  /** Métodos de pago aceptados. */
+  metodos_pago: string[]
   servicios: LandingServicio[]
+  faq: LandingFaq[]
 }
 
 export type Tenant = {

@@ -5,7 +5,13 @@
  * null o con campos parciales. `normalizarLandingConfig` siempre devuelve una
  * estructura completa para que la vista pública y el editor no fallen.
  */
-import type { LandingConfig, LandingServicio, Tenant } from "@/types/database"
+import type {
+  LandingBadges,
+  LandingConfig,
+  LandingFaq,
+  LandingServicio,
+  Tenant,
+} from "@/types/database"
 
 export const LANDING_VACIA: LandingConfig = {
   hero_titulo: null,
@@ -14,8 +20,28 @@ export const LANDING_VACIA: LandingConfig = {
   horarios: null,
   instagram: null,
   facebook: null,
+  subespecialidades: null,
+  mpps: null,
+  colegio_medico: null,
+  universidad: null,
+  badges: { emergencias: false, telemedicina: false },
+  direccion_detallada: null,
+  punto_referencia: null,
+  metodos_pago: [],
   servicios: [],
+  faq: [],
 }
+
+/** Métodos de pago sugeridos en el editor (se pueden elegir varios). */
+export const METODOS_PAGO = [
+  "Pago Móvil",
+  "Transferencia",
+  "Zelle",
+  "Efectivo",
+  "Tarjeta (débito/crédito)",
+  "Pago en recepción",
+  "Punto de venta",
+] as const
 
 /** Límites de longitud para evitar payloads abusivos desde el editor. */
 export const LANDING_LIMITES = {
@@ -23,6 +49,8 @@ export const LANDING_LIMITES = {
   medio: 400,
   largo: 2000,
   servicios: 12,
+  faq: 10,
+  metodosPago: 8,
 } as const
 
 function texto(value: unknown): string | null {
@@ -54,6 +82,53 @@ function normalizarServicios(value: unknown): LandingServicio[] {
   return lista
 }
 
+/** Normaliza una lista de textos cortos (métodos de pago, etc.). */
+function normalizarListaTexto(
+  value: unknown,
+  maxItems: number,
+  maxLen: number
+): string[] {
+  if (!Array.isArray(value)) return []
+  const lista: string[] = []
+  for (const item of value) {
+    const limpio = textoLimitado(item, maxLen)
+    if (!limpio || lista.includes(limpio)) continue
+    lista.push(limpio)
+    if (lista.length >= maxItems) break
+  }
+  return lista
+}
+
+/** Normaliza los badges de atención (emergencias / telemedicina). */
+function normalizarBadges(value: unknown): LandingBadges {
+  if (!value || typeof value !== "object") {
+    return { emergencias: false, telemedicina: false }
+  }
+  const fila = value as Record<string, unknown>
+  return {
+    emergencias: fila.emergencias === true,
+    telemedicina: fila.telemedicina === true,
+  }
+}
+
+/** Normaliza el módulo dinámico de preguntas frecuentes. */
+function normalizarFaq(value: unknown): LandingFaq[] {
+  if (!Array.isArray(value)) return []
+  const lista: LandingFaq[] = []
+  for (const item of value) {
+    if (!item || typeof item !== "object") continue
+    const fila = item as Record<string, unknown>
+    const pregunta = textoLimitado(fila.pregunta, LANDING_LIMITES.medio)
+    if (!pregunta) continue
+    lista.push({
+      pregunta,
+      respuesta: textoLimitado(fila.respuesta, LANDING_LIMITES.largo) ?? "",
+    })
+    if (lista.length >= LANDING_LIMITES.faq) break
+  }
+  return lista
+}
+
 /** Normaliza cualquier forma de `landing_config` a un `LandingConfig` completo. */
 export function normalizarLandingConfig(raw: unknown): LandingConfig {
   let datos: unknown = raw
@@ -75,7 +150,20 @@ export function normalizarLandingConfig(raw: unknown): LandingConfig {
     horarios: textoLimitado(fila.horarios, LANDING_LIMITES.medio),
     instagram: textoLimitado(fila.instagram, LANDING_LIMITES.corto),
     facebook: textoLimitado(fila.facebook, LANDING_LIMITES.corto),
+    subespecialidades: textoLimitado(fila.subespecialidades, LANDING_LIMITES.medio),
+    mpps: textoLimitado(fila.mpps, LANDING_LIMITES.corto),
+    colegio_medico: textoLimitado(fila.colegio_medico, LANDING_LIMITES.corto),
+    universidad: textoLimitado(fila.universidad, LANDING_LIMITES.medio),
+    badges: normalizarBadges(fila.badges),
+    direccion_detallada: textoLimitado(fila.direccion_detallada, LANDING_LIMITES.medio),
+    punto_referencia: textoLimitado(fila.punto_referencia, LANDING_LIMITES.medio),
+    metodos_pago: normalizarListaTexto(
+      fila.metodos_pago,
+      LANDING_LIMITES.metodosPago,
+      LANDING_LIMITES.corto
+    ),
     servicios: normalizarServicios(fila.servicios),
+    faq: normalizarFaq(fila.faq),
   }
 }
 

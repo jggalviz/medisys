@@ -2,16 +2,23 @@ import { notFound } from "next/navigation"
 import type { Metadata } from "next"
 import {
   AtSign,
+  BadgeCheck,
   CalendarCheck,
   Clock,
+  CreditCard,
   Globe,
+  GraduationCap,
+  IdCard,
   MapPin,
   Phone,
+  ShieldCheck,
+  Sparkles,
   Stethoscope,
 } from "lucide-react"
 
 import { getTenantBySlug } from "@/app/actions/tenant"
 import { getDoctorsByTenant } from "@/app/actions/booking"
+import type { LandingConfig } from "@/types/database"
 import { doctorNombre, formatUSD, iniciales } from "@/lib/format"
 import {
   landingHabilitada,
@@ -119,6 +126,7 @@ export default async function ClinicLandingPage({ params }: ClinicLandingProps) 
                   {config.hero_subtitulo}
                 </p>
               )}
+              <Autoridad config={config} />
             </div>
           </div>
 
@@ -183,13 +191,21 @@ export default async function ClinicLandingPage({ params }: ClinicLandingProps) 
       </header>
 
       <div className="mx-auto flex w-full max-w-5xl flex-col gap-10 px-4 py-10 sm:px-6 sm:py-14">
-        {/* Sobre nosotros */}
-        {config.sobre_nosotros && (
+        {/* Sobre mí */}
+        {(config.sobre_nosotros || config.subespecialidades) && (
           <section className="flex flex-col gap-3">
-            <h2 className="text-xl font-bold tracking-tight">Sobre nosotros</h2>
-            <p className="whitespace-pre-line text-base leading-relaxed text-muted-foreground">
-              {config.sobre_nosotros}
-            </p>
+            <h2 className="text-xl font-bold tracking-tight">Sobre mí</h2>
+            {config.subespecialidades && (
+              <p className="flex items-center gap-2 text-sm font-medium text-primary">
+                <Stethoscope className="size-4" />
+                {config.subespecialidades}
+              </p>
+            )}
+            {config.sobre_nosotros && (
+              <p className="whitespace-pre-line text-base leading-relaxed text-muted-foreground">
+                {config.sobre_nosotros}
+              </p>
+            )}
           </section>
         )}
 
@@ -231,22 +247,46 @@ export default async function ClinicLandingPage({ params }: ClinicLandingProps) 
                 <p className="whitespace-pre-line text-sm leading-relaxed">
                   {config.horarios}
                 </p>
-                {(tenant.direccion || tenant.telefono) && (
-                  <dl className="mt-1 flex flex-col gap-2 border-t pt-3 text-sm">
-                    {tenant.direccion && (
-                      <div className="flex items-start gap-2 text-muted-foreground">
-                        <MapPin className="mt-0.5 size-4 shrink-0 text-primary" />
-                        <span>{tenant.direccion}</span>
-                      </div>
-                    )}
-                    {tenant.telefono && (
-                      <div className="flex items-center gap-2 text-muted-foreground">
-                        <Phone className="size-4 shrink-0 text-primary" />
-                        <span>{tenant.telefono}</span>
-                      </div>
-                    )}
-                  </dl>
-                )}
+                <dl className="mt-1 flex flex-col gap-2.5 border-t pt-3 text-sm">
+                  {(config.direccion_detallada || tenant.direccion) && (
+                    <div className="flex items-start gap-2">
+                      <MapPin className="mt-0.5 size-4 shrink-0 text-primary" />
+                      <span>
+                        {config.direccion_detallada ?? tenant.direccion}
+                      </span>
+                    </div>
+                  )}
+                  {config.punto_referencia && (
+                    <div className="flex items-start gap-2 text-muted-foreground">
+                      <MapPin className="mt-0.5 size-4 shrink-0 text-primary/60" />
+                      <span className="italic">{config.punto_referencia}</span>
+                    </div>
+                  )}
+                  {tenant.telefono && (
+                    <div className="flex items-center gap-2 text-muted-foreground">
+                      <Phone className="size-4 shrink-0 text-primary" />
+                      <span>{tenant.telefono}</span>
+                    </div>
+                  )}
+                  {config.metodos_pago.length > 0 && (
+                    <div className="flex flex-col gap-1.5 pt-1">
+                      <dt className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                        <CreditCard className="size-3.5 text-primary" />
+                        Métodos de pago
+                      </dt>
+                      <dd className="flex flex-wrap gap-1.5">
+                        {config.metodos_pago.map((metodo) => (
+                          <span
+                            key={metodo}
+                            className="rounded-full border bg-background px-2.5 py-0.5 text-[11px] font-medium text-muted-foreground"
+                          >
+                            {metodo}
+                          </span>
+                        ))}
+                      </dd>
+                    </div>
+                  )}
+                </dl>
               </aside>
             )}
           </section>
@@ -294,6 +334,36 @@ export default async function ClinicLandingPage({ params }: ClinicLandingProps) 
                 </li>
               ))}
             </ul>
+          </section>
+        )}
+
+        {/* Preguntas frecuentes */}
+        {config.faq.length > 0 && (
+          <section className="flex flex-col gap-3">
+            <h2 className="text-xl font-bold tracking-tight">
+              Preguntas frecuentes
+            </h2>
+            <div className="flex flex-col gap-2">
+              {config.faq.map((item) => (
+                <details
+                  key={item.pregunta}
+                  className="group rounded-2xl border bg-card px-4 py-3"
+                >
+                  <summary className="flex cursor-pointer list-none items-center justify-between gap-3 text-sm font-semibold">
+                    {item.pregunta}
+                    <span
+                      aria-hidden="true"
+                      className="text-lg leading-none text-primary transition-transform group-open:rotate-45"
+                    >
+                      +
+                    </span>
+                  </summary>
+                  <p className="mt-2 whitespace-pre-line text-sm leading-relaxed text-muted-foreground">
+                    {item.respuesta}
+                  </p>
+                </details>
+              ))}
+            </div>
           </section>
         )}
 
@@ -362,6 +432,59 @@ function Mantenimiento({
         )}
       </div>
     </main>
+  )
+}
+
+/** Fila de autoridad médica + badges del Hero (universidad, MPPS, colegio). */
+function Autoridad({ config }: { config: LandingConfig }) {
+  const hayDatos = Boolean(
+    config.universidad || config.mpps || config.colegio_medico
+  )
+  const hayBadges = config.badges.emergencias || config.badges.telemedicina
+  if (!hayDatos && !hayBadges) return null
+
+  return (
+    <div className="flex flex-col gap-2.5">
+      {hayDatos && (
+        <ul className="flex flex-wrap gap-x-4 gap-y-1.5 text-xs text-muted-foreground">
+          {config.universidad && (
+            <li className="inline-flex items-center gap-1.5">
+              <GraduationCap className="size-3.5 text-primary" />
+              {config.universidad}
+            </li>
+          )}
+          {config.mpps && (
+            <li className="inline-flex items-center gap-1.5">
+              <IdCard className="size-3.5 text-primary" />
+              MPPS: {config.mpps}
+            </li>
+          )}
+          {config.colegio_medico && (
+            <li className="inline-flex items-center gap-1.5">
+              <BadgeCheck className="size-3.5 text-primary" />
+              Colegio Médico: {config.colegio_medico}
+            </li>
+          )}
+        </ul>
+      )}
+
+      {hayBadges && (
+        <div className="flex flex-wrap gap-2">
+          {config.badges.emergencias && (
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-500/15 px-3 py-1 text-xs font-semibold text-emerald-700 dark:text-emerald-400">
+              <ShieldCheck className="size-3.5" />
+              Atención de emergencias
+            </span>
+          )}
+          {config.badges.telemedicina && (
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-sky-500/15 px-3 py-1 text-xs font-semibold text-sky-700 dark:text-sky-400">
+              <Sparkles className="size-3.5" />
+              Telemedicina / consulta online
+            </span>
+          )}
+        </div>
+      )}
+    </div>
   )
 }
 

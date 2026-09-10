@@ -5,11 +5,32 @@
  * Switch de publicación + campos preestablecidos + servicios destacados.
  */
 import { useState } from "react"
-import { ExternalLink, LoaderCircle, Plus, Save, Trash2 } from "lucide-react"
+import {
+  AtSign,
+  BadgeCheck,
+  CreditCard,
+  ExternalLink,
+  GraduationCap,
+  IdCard,
+  LoaderCircle,
+  MapPin,
+  MessageCircle,
+  Plus,
+  Save,
+  ShieldCheck,
+  Sparkles,
+  Trash2,
+} from "lucide-react"
 
 import { updateTenantLandingConfig } from "@/app/actions/landing"
-import type { LandingConfig, LandingServicio } from "@/types/database"
-import { LANDING_LIMITES } from "@/lib/landing"
+import type {
+  LandingConfig,
+  LandingFaq,
+  LandingServicio,
+  PlanTenant,
+} from "@/types/database"
+import { LANDING_LIMITES, METODOS_PAGO } from "@/lib/landing"
+import { formatBs, formatUSD } from "@/lib/format"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -19,20 +40,66 @@ type Props = {
   tenantId: string
   clinicSlug: string
   nombre: string
+  planType: PlanTenant | null
+  precioConsultaBase: number | null
+  tasaBCV: number
   inicial: { enabled: boolean; config: LandingConfig }
 }
 
 type Feedback = { tipo: "ok" | "error"; mensaje: string } | null
 
-export function LandingManager({ tenantId, clinicSlug, nombre, inicial }: Props) {
+const METODO_ICONO: Record<string, typeof CreditCard> = {
+  "Pago Móvil": CreditCard,
+  Transferencia: CreditCard,
+  Zelle: CreditCard,
+  Efectivo: CreditCard,
+  "Tarjeta (débito/crédito)": CreditCard,
+  "Pago en recepción": CreditCard,
+  "Punto de venta": CreditCard,
+}
+
+export function LandingManager({
+  tenantId,
+  clinicSlug,
+  nombre,
+  planType,
+  precioConsultaBase,
+  tasaBCV,
+  inicial,
+}: Props) {
   const [enabled, setEnabled] = useState(inicial.enabled)
   const [config, setConfig] = useState<LandingConfig>(inicial.config)
   const [servicios, setServicios] = useState<LandingServicio[]>(inicial.config.servicios)
+  const [faq, setFaq] = useState<LandingFaq[]>(inicial.config.faq)
   const [guardando, setGuardando] = useState(false)
   const [feedback, setFeedback] = useState<Feedback>(null)
 
+  const metodosPago = config.metodos_pago
+
   function patch(parcial: Partial<LandingConfig>) {
     setConfig((prev) => ({ ...prev, ...parcial }))
+  }
+
+  function alternarMetodo(metodo: string) {
+    const activo = metodosPago.includes(metodo)
+    patch({
+      metodos_pago: activo
+        ? metodosPago.filter((m) => m !== metodo)
+        : [...metodosPago, metodo].slice(0, LANDING_LIMITES.metodosPago),
+    })
+  }
+
+  function actualizarFaq(index: number, parcial: Partial<LandingFaq>) {
+    setFaq((prev) => prev.map((f, i) => (i === index ? { ...f, ...parcial } : f)))
+  }
+
+  function agregarFaq() {
+    if (faq.length >= LANDING_LIMITES.faq) return
+    setFaq((prev) => [...prev, { pregunta: "", respuesta: "" }])
+  }
+
+  function quitarFaq(index: number) {
+    setFaq((prev) => prev.filter((_, i) => i !== index))
   }
 
   function actualizarServicio(index: number, parcial: Partial<LandingServicio>) {
@@ -62,6 +129,7 @@ export function LandingManager({ tenantId, clinicSlug, nombre, inicial }: Props)
       config: {
         ...config,
         servicios: servicios.filter((s) => s.titulo.trim().length > 0),
+        faq: faq.filter((f) => f.pregunta.trim().length > 0),
       },
     })
 
@@ -71,6 +139,7 @@ export function LandingManager({ tenantId, clinicSlug, nombre, inicial }: Props)
       return
     }
     setServicios(resultado.data.landing_config.servicios)
+    setFaq(resultado.data.landing_config.faq)
     setConfig(resultado.data.landing_config)
     setEnabled(resultado.data.landing_enabled)
     setFeedback({ tipo: "ok", mensaje: "Landing actualizada correctamente ✓" })
@@ -117,14 +186,14 @@ export function LandingManager({ tenantId, clinicSlug, nombre, inicial }: Props)
           className="inline-flex h-9 items-center gap-2 rounded-lg border px-3 text-sm font-medium transition-colors hover:bg-muted/50"
         >
           <ExternalLink className="size-4" />
-          Ver landing
+          Ver mi perfil público
         </a>
       </section>
 
       {/* Hero */}
       <section className="grid gap-3 rounded-2xl border bg-card p-4">
         <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
-          Bienvenida (Hero)
+          Encabezado del perfil (Hero)
         </h2>
         <div className="flex flex-col gap-1.5">
           <Label htmlFor="ln-hero">Título principal</Label>
@@ -148,30 +217,155 @@ export function LandingManager({ tenantId, clinicSlug, nombre, inicial }: Props)
         </div>
       </section>
 
-      {/* Sobre nosotros */}
+      {/* Información profesional y autoridad */}
+      <section className="grid gap-3 rounded-2xl border bg-card p-4">
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
+            Información profesional y autoridad
+          </h2>
+          {planType && (
+            <span className="rounded-full bg-primary/10 px-2 py-0.5 text-[11px] font-semibold text-primary">
+              {planType === "PRO" ? "Plan PRO" : "Plan Clínica"}
+            </span>
+          )}
+        </div>
+
+        <div className="flex flex-col gap-1.5">
+          <Label htmlFor="ln-subesp">Subespecialidades o enfoque clínico</Label>
+          <Input
+            id="ln-subesp"
+            value={config.subespecialidades ?? ""}
+            maxLength={LANDING_LIMITES.medio}
+            placeholder="Ej.: Cardiología intervencionista, ecocardiografía"
+            onChange={(e) => patch({ subespecialidades: e.target.value })}
+          />
+        </div>
+
+        <div className="grid gap-3 sm:grid-cols-2">
+          <div className="flex flex-col gap-1.5">
+            <Label htmlFor="ln-mpps">
+              <span className="inline-flex items-center gap-1.5">
+                <IdCard className="size-3.5 text-primary" /> N° MPPS / Registro Sanitario
+              </span>
+            </Label>
+            <Input
+              id="ln-mpps"
+              value={config.mpps ?? ""}
+              maxLength={LANDING_LIMITES.corto}
+              placeholder="Ej.: MPPS 123456"
+              onChange={(e) => patch({ mpps: e.target.value })}
+            />
+          </div>
+          <div className="flex flex-col gap-1.5">
+            <Label htmlFor="ln-colegio">
+              <span className="inline-flex items-center gap-1.5">
+                <BadgeCheck className="size-3.5 text-primary" /> N° Colegio Médico
+              </span>
+            </Label>
+            <Input
+              id="ln-colegio"
+              value={config.colegio_medico ?? ""}
+              maxLength={LANDING_LIMITES.corto}
+              placeholder="Ej.: CM 98765"
+              onChange={(e) => patch({ colegio_medico: e.target.value })}
+            />
+          </div>
+        </div>
+
+        <div className="flex flex-col gap-1.5">
+          <Label htmlFor="ln-universidad">
+            <span className="inline-flex items-center gap-1.5">
+              <GraduationCap className="size-3.5 text-primary" /> Universidad / institución de egreso
+            </span>
+          </Label>
+          <Input
+            id="ln-universidad"
+            value={config.universidad ?? ""}
+            maxLength={LANDING_LIMITES.medio}
+            placeholder="Ej.: Universidad Central de Venezuela (UCV)"
+            onChange={(e) => patch({ universidad: e.target.value })}
+          />
+        </div>
+
+        <div className="flex flex-col gap-2">
+          <Label>Badges de atención (opcional)</Label>
+          <div className="flex flex-wrap gap-4">
+            <label className="inline-flex items-center gap-2 text-sm">
+              <input
+                type="checkbox"
+                checked={config.badges.emergencias}
+                onChange={(e) =>
+                  patch({
+                    badges: { ...config.badges, emergencias: e.target.checked },
+                  })
+                }
+                className="size-4 accent-[var(--primary)]"
+              />
+              <ShieldCheck className="size-4 text-primary" />
+              Atención de emergencias
+            </label>
+            <label className="inline-flex items-center gap-2 text-sm">
+              <input
+                type="checkbox"
+                checked={config.badges.telemedicina}
+                onChange={(e) =>
+                  patch({
+                    badges: { ...config.badges, telemedicina: e.target.checked },
+                  })
+                }
+                className="size-4 accent-[var(--primary)]"
+              />
+              <Sparkles className="size-4 text-primary" />
+              Consulta online / Telemedicina
+            </label>
+          </div>
+        </div>
+      </section>
+
       <section className="grid gap-3 rounded-2xl border bg-card p-4">
         <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
-          Sobre nosotros
+          Biografía / Presentación médica (Sobre mí)
         </h2>
         <div className="flex flex-col gap-1.5">
-          <Label htmlFor="ln-sobre">Presentación / misión / biografía</Label>
+          <Label htmlFor="ln-sobre">Sobre mí</Label>
           <textarea
             id="ln-sobre"
             rows={5}
             value={config.sobre_nosotros ?? ""}
             maxLength={LANDING_LIMITES.largo}
-            placeholder="Cuenta quiénes son, su misión y la experiencia del equipo médico…"
+            placeholder="Describe tu formación, experiencia y enfoque de atención…"
             onChange={(e) => patch({ sobre_nosotros: e.target.value })}
             className="rounded-lg border border-input bg-transparent px-3 py-2 text-sm outline-none focus-visible:ring-2 focus-visible:ring-ring/50"
           />
         </div>
       </section>
 
-      {/* Horarios y redes */}
+      {/* Ubicación, horarios y logística */}
       <section className="grid gap-3 rounded-2xl border bg-card p-4">
-        <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
-          Horarios y redes sociales
+        <h2 className="flex items-center gap-2 text-sm font-semibold uppercase tracking-wide text-muted-foreground">
+          <MapPin className="size-4 text-primary" />
+          Ubicación, horarios y logística
         </h2>
+        <div className="flex flex-col gap-1.5">
+          <Label htmlFor="ln-dir">Dirección detallada del consultorio</Label>
+          <Input
+            id="ln-dir"
+            value={config.direccion_detallada ?? ""}
+            maxLength={LANDING_LIMITES.medio}
+            placeholder="Av. Principal, Torre Médica, Piso 3, Oficina 3-B"
+            onChange={(e) => patch({ direccion_detallada: e.target.value })}
+          />
+        </div>
+        <div className="flex flex-col gap-1.5">
+          <Label htmlFor="ln-ref">Punto de referencia</Label>
+          <Input
+            id="ln-ref"
+            value={config.punto_referencia ?? ""}
+            maxLength={LANDING_LIMITES.medio}
+            placeholder="Frente al Centro Médico, al lado de la farmacia…"
+            onChange={(e) => patch({ punto_referencia: e.target.value })}
+          />
+        </div>
         <div className="flex flex-col gap-1.5">
           <Label htmlFor="ln-horarios">Horarios de atención visibles</Label>
           <textarea
@@ -179,11 +373,45 @@ export function LandingManager({ tenantId, clinicSlug, nombre, inicial }: Props)
             rows={3}
             value={config.horarios ?? ""}
             maxLength={LANDING_LIMITES.medio}
-            placeholder="Lunes a viernes: 8:00 am – 5:00 pm · Sábados: 8:00 am – 12:00 m"
+            placeholder="Lunes a Viernes 8:00 AM - 1:00 PM · Sábados 8:00 AM - 12:00 M"
             onChange={(e) => patch({ horarios: e.target.value })}
             className="rounded-lg border border-input bg-transparent px-3 py-2 text-sm outline-none focus-visible:ring-2 focus-visible:ring-ring/50"
           />
         </div>
+        <div className="flex flex-col gap-2">
+          <Label>Métodos de pago aceptados</Label>
+          <div className="flex flex-wrap gap-2">
+            {Array.from(new Set([...METODOS_PAGO, ...metodosPago])).map((metodo) => {
+              const activo = metodosPago.includes(metodo)
+              const Icono = METODO_ICONO[metodo] ?? CreditCard
+              return (
+                <button
+                  key={metodo}
+                  type="button"
+                  aria-pressed={activo}
+                  onClick={() => alternarMetodo(metodo)}
+                  className={cn(
+                    "inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-medium transition-colors",
+                    activo
+                      ? "border-primary bg-primary/10 text-primary"
+                      : "text-muted-foreground hover:bg-muted/50"
+                  )}
+                >
+                  <Icono className="size-3.5" />
+                  {metodo}
+                </button>
+              )
+            })}
+          </div>
+        </div>
+      </section>
+
+      {/* Redes sociales */}
+      <section className="grid gap-3 rounded-2xl border bg-card p-4">
+        <h2 className="flex items-center gap-2 text-sm font-semibold uppercase tracking-wide text-muted-foreground">
+          <AtSign className="size-4 text-primary" />
+          Redes sociales
+        </h2>
         <div className="grid gap-3 sm:grid-cols-2">
           <div className="flex flex-col gap-1.5">
             <Label htmlFor="ln-ig">Instagram</Label>
@@ -208,6 +436,71 @@ export function LandingManager({ tenantId, clinicSlug, nombre, inicial }: Props)
         </div>
       </section>
 
+      {/* Preguntas frecuentes */}
+      <section className="flex flex-col gap-3 rounded-2xl border bg-card p-4">
+        <div className="flex items-center justify-between gap-3">
+          <h2 className="flex items-center gap-2 text-sm font-semibold uppercase tracking-wide text-muted-foreground">
+            <MessageCircle className="size-4 text-primary" />
+            Preguntas frecuentes (FAQ)
+          </h2>
+          <Button
+            type="button"
+            size="sm"
+            variant="outline"
+            className="gap-1.5"
+            disabled={faq.length >= LANDING_LIMITES.faq}
+            onClick={agregarFaq}
+          >
+            <Plus className="size-4" />
+            Añadir
+          </Button>
+        </div>
+
+        {faq.length === 0 ? (
+          <p className="rounded-xl border border-dashed px-3 py-4 text-center text-sm text-muted-foreground">
+            Aún no hay preguntas. Añade las dudas más comunes de tus pacientes.
+          </p>
+        ) : (
+          <ul className="flex flex-col gap-3">
+            {faq.map((item, index) => (
+              <li
+                key={index}
+                className="flex flex-col gap-2 rounded-xl border bg-background p-3"
+              >
+                <div className="flex items-center gap-2">
+                  <Input
+                    value={item.pregunta}
+                    maxLength={LANDING_LIMITES.medio}
+                    placeholder="¿Qué debo llevar a mi primera consulta?"
+                    aria-label={`Pregunta ${index + 1}`}
+                    onChange={(e) => actualizarFaq(index, { pregunta: e.target.value })}
+                    className="flex-1"
+                  />
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    aria-label={`Quitar pregunta ${index + 1}`}
+                    onClick={() => quitarFaq(index)}
+                  >
+                    <Trash2 className="size-4 text-destructive" />
+                  </Button>
+                </div>
+                <textarea
+                  rows={2}
+                  value={item.respuesta}
+                  maxLength={LANDING_LIMITES.largo}
+                  placeholder="Respuesta breve…"
+                  aria-label={`Respuesta ${index + 1}`}
+                  onChange={(e) => actualizarFaq(index, { respuesta: e.target.value })}
+                  className="rounded-lg border border-input bg-transparent px-3 py-2 text-sm outline-none focus-visible:ring-2 focus-visible:ring-ring/50"
+                />
+              </li>
+            ))}
+          </ul>
+        )}
+      </section>
+
       {/* Servicios destacados */}
       <section className="flex flex-col gap-3 rounded-2xl border bg-card p-4">
         <div className="flex items-center justify-between gap-3">
@@ -226,6 +519,29 @@ export function LandingManager({ tenantId, clinicSlug, nombre, inicial }: Props)
             Añadir
           </Button>
         </div>
+
+        {/* Costo de consulta (referencial) */}
+        <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-dashed bg-background px-4 py-3">
+          <span className="flex items-center gap-2 text-sm font-medium">
+            <CreditCard className="size-4 text-primary" />
+            Costo base de la consulta
+          </span>
+          <div className="flex flex-wrap items-center gap-3 text-sm">
+            <span className="rounded-full bg-primary/10 px-2.5 py-0.5 font-semibold text-primary">
+              {precioConsultaBase != null ? formatUSD(precioConsultaBase) : "No definido"}
+            </span>
+            <span className="text-muted-foreground">
+              Tasa BCV referencial: {tasaBCV.toFixed(2)} Bs./USD
+              {precioConsultaBase != null
+                ? ` · ≈ ${formatBs(precioConsultaBase * tasaBCV)}`
+                : ""}
+            </span>
+          </div>
+        </div>
+        <p className="text-xs text-muted-foreground">
+          El monto proviene del módulo de Especialistas. Actualízalo allí para
+          reflejarlo aquí y en el flujo de reserva.
+        </p>
 
         {servicios.length === 0 ? (
           <p className="rounded-xl border border-dashed px-3 py-4 text-center text-sm text-muted-foreground">

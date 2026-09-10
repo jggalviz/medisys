@@ -9,6 +9,7 @@ import { getStaffForSlug } from "@/lib/staff"
 import { getTenantBySlug } from "@/app/actions/tenant"
 import { LandingManager } from "@/components/admin/landing/LandingManager"
 import { normalizarLandingConfig } from "@/lib/landing"
+import { getLatestBcvRate } from "@/lib/bcv"
 
 /** Lee la sesión del admin y la landing actual en cada petición. */
 export const dynamic = "force-dynamic"
@@ -30,7 +31,6 @@ export default async function LandingPageAdmin({ params }: Props) {
   const supabase = await createClient()
   const staff = await getStaffForSlug(supabase, clinicSlug)
   if (!staff) redirect(`/${clinicSlug}/login`)
-
   if (staff.role !== "admin") {
     return (
       <main className="min-h-dvh bg-muted/30">
@@ -54,6 +54,18 @@ export default async function LandingPageAdmin({ params }: Props) {
     )
   }
 
+  const { data: doctores } = await supabase
+    .from("doctors")
+    .select("precio_consulta")
+    .eq("tenant_id", tenant.id)
+
+  const precioConsultaBase =
+    ((doctores ?? []) as unknown as { precio_consulta?: unknown }[])
+      .map((doctor) => Number(doctor.precio_consulta))
+      .find((valor) => Number.isFinite(valor) && valor > 0) ?? null
+
+  const tasaBCV = await getLatestBcvRate(supabase)
+
   return (
     <main className="min-h-dvh bg-muted/30">
       <div className="mx-auto w-full max-w-3xl px-4 py-8 sm:px-6">
@@ -72,6 +84,9 @@ export default async function LandingPageAdmin({ params }: Props) {
           tenantId={tenant.id}
           clinicSlug={clinicSlug}
           nombre={tenant.nombre}
+          planType={tenant.plan_type ?? null}
+          precioConsultaBase={precioConsultaBase}
+          tasaBCV={tasaBCV}
           inicial={{
             enabled: tenant.landing_enabled !== false,
             config: normalizarLandingConfig(tenant.landing_config),
