@@ -14,6 +14,10 @@ import { redirect } from "next/navigation"
 
 import { createAdminClient } from "@/lib/supabase/admin"
 import {
+  normalizarCedula,
+  normalizarTelefono,
+} from "@/lib/portal-identidad"
+import {
   clearPortalCookie,
   getPortalSession as leerPortalSession,
   setPortalCookie,
@@ -26,16 +30,9 @@ export type PortalLoginResult =
 
 export type { PortalSession } from "@/lib/portal-session"
 
-function limpiarCedula(valor: string): string {
-  // "V-12.345.678" → "12345678"; "V12345678" → "12345678"
-  return valor.toUpperCase().replace(/\D/g, "")
-}
-
-function limpiarTelefono(valor: string): string {
-  const digitos = valor.replace(/\D/g, "")
-  // Normaliza prefijo 58/+58: comparamos los últimos 10 dígitos.
-  return digitos.length > 10 ? digitos.slice(-10) : digitos
-}
+/** Alias internos (los normalizadores viven en `@/lib/portal-identidad`). */
+const limpiarCedula = normalizarCedula
+const limpiarTelefono = normalizarTelefono
 
 /** Compara cédula/teléfono de una fila cruda contra la entrada limpia. */
 function coincide(
@@ -125,6 +122,82 @@ export async function loginPortal(
 /** Helper de servidor: devuelve la sesión activa verificada o null. */
 export async function getPortalSession(): Promise<PortalSession | null> {
   return leerPortalSession()
+}
+
+export type CredencialesDemoResult =
+  | { ok: true; data: { cedula: string; telefono: string; nombre: string } }
+  | { ok: false; message: string }
+
+function texto(valor: unknown): string {
+  return typeof valor === "string" ? valor : ""
+}
+
+/**
+ * Credenciales DEMO dinámicas del tenant: la cédula y el teléfono del primer
+ * especialista activo (rol 'especialista') o del primer perfil registrado
+ * (rol 'paciente'). Sirve para autocompletar el acceso del portal sin datos
+ * estáticos — funciona igual para Plan PRO o Plan Clínica.
+ */
+export async function getCredencialesDemoPortal(
+  tenantId: string,
+  rol: "especialista" | "paciente"
+): Promise<CredencialesDemoResult> {
+  if (!tenantId?.trim()) {
+    return { ok: false, message: "Clínica no válida." }
+  }
+
+  try {
+    const supabase = createAdminClient()
+    const tabla = rol === "paciente" ? "profiles" : "doctors"
+    const { data, error } = await supabase
+      .from(tabla)
+      .select("*")
+      .eq("tenant_id", tenantId)
+      .limit(50)
+
+    if (error) {
+      console.error("[getCredencialesDemoPortal] Error consultando registros:", error)
+      return { ok: false, message: "No se pudieron obtener los datos DEMO." }
+    }
+
+    const filas = (data ?? []) as unknown as Record<string, unknown>[]
+    const candidatas = filas
+      .filter((fila) => {
+        if (rol === "paciente") return true
+        return fila.activo !== false && fila.is_active !== false
+      })
+      .filter((fila) => {
+        const cedula = limpiarCedula(texto(fila.cedula))
+        const telefono = limpiarTelefono(texto(fila.telefono))
+        return cedula.length >= 6 && telefono.length >= 7
+      })
+      .sort((a, b) =>
+        texto(a.created_at).localeCompare(texto(b.created_at))
+      )
+
+    const elegida = candidatas.at(0)
+    if (!elegida) {
+      return {
+        ok: false,
+        message: "Aún no hay registros con cédula y teléfono para la DEMO.",
+      }
+    }
+
+    return {
+      ok: true,
+      data: {
+        cedula: limpiarCedula(texto(elegida.cedula)),
+        telefono: limpiarTelefono(texto(elegida.telefono)),
+        nombre: nombreDe(elegida),
+      },
+    }
+  } catch (cause) {
+    return {
+      ok: false,
+      message:
+        cause instanceof Error ? cause.message : "Error al obtener los datos DEMO.",
+    }
+  }
 }
 
 /** Cierra la sesión del portal y redirige al login del rol. */

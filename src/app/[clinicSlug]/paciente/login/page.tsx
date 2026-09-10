@@ -3,6 +3,7 @@ import { notFound, redirect } from "next/navigation"
 
 import { PortalLoginForm } from "@/components/portales/PortalLoginForm"
 import { getTenantBySlug } from "@/app/actions/tenant"
+import { getCredencialesDemoPortal } from "@/app/actions/portal-auth"
 import { getPortalSession } from "@/lib/portal-session"
 
 type Props = { params: Promise<{ clinicSlug: string }> }
@@ -16,6 +17,9 @@ export default async function PacienteLoginPage({ params }: Props) {
   if (sesion?.rol === "paciente" && sesion.tenant_id === tenant.id) {
     redirect(`/${clinicSlug}/paciente/expediente`)
   }
+
+  // Datos DEMO del tenant actual (primer perfil registrado) como respaldo.
+  const demo = await getCredencialesDemoPortal(tenant.id, "paciente")
 
   return (
     <main className="flex min-h-dvh flex-col items-center justify-center gap-6 bg-muted/40 px-4 py-10">
@@ -32,7 +36,12 @@ export default async function PacienteLoginPage({ params }: Props) {
         titulo="Portal del Paciente"
         descripcion={`Consulta tus citas, historial médico y pagos en ${tenant.nombre}.`}
         rutaDestino="/paciente/expediente"
-        datosDemo={{ cedula: "87654321", telefono: "04147654321" }}
+        datosDemo={
+          demo.ok
+            ? { cedula: demo.data.cedula, telefono: demo.data.telefono }
+            : null
+        }
+        mostrarDemo
       />
     </main>
   )

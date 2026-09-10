@@ -11,7 +11,7 @@ import {
   UserRound,
 } from "lucide-react"
 
-import { loginPortal } from "@/app/actions/portal-auth"
+import { loginPortal, getCredencialesDemoPortal } from "@/app/actions/portal-auth"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -23,8 +23,10 @@ type Props = {
   titulo: string
   descripcion: string
   rutaDestino: string
-  /** Credenciales demo que autocompletan el formulario con un clic. */
-  datosDemo?: { cedula: string; telefono: string }
+  /** Credenciales DEMO de respaldo (se recargan del tenant al pulsar el botón). */
+  datosDemo?: { cedula: string; telefono: string } | null
+  /** Muestra el botón "Usar datos DEMO" (por defecto, si hay datos de respaldo). */
+  mostrarDemo?: boolean
 }
 
 export function PortalLoginForm({
@@ -35,12 +37,41 @@ export function PortalLoginForm({
   descripcion,
   rutaDestino,
   datosDemo,
+  mostrarDemo,
 }: Props) {
   const router = useRouter()
   const [cedula, setCedula] = useState("")
   const [telefono, setTelefono] = useState("")
   const [error, setError] = useState<string | null>(null)
+  const [cargandoDemo, setCargandoDemo] = useState(false)
   const [isPending, startTransition] = useTransition()
+
+  /**
+   * Autocompleta con el primer especialista/perfil ACTIVO del tenant actual
+   * (consulta dinámica). Si falla, usa el respaldo recibido del servidor.
+   */
+  async function usarDatosDemo() {
+    if (cargandoDemo) return
+    setError(null)
+    setCargandoDemo(true)
+
+    const resultado = await getCredencialesDemoPortal(tenantId, rol)
+    setCargandoDemo(false)
+
+    if (resultado.ok) {
+      setCedula(resultado.data.cedula)
+      setTelefono(resultado.data.telefono)
+      return
+    }
+
+    if (datosDemo) {
+      setCedula(datosDemo.cedula)
+      setTelefono(datosDemo.telefono)
+      return
+    }
+
+    setError(resultado.message)
+  }
 
   function enviar(event: React.FormEvent) {
     event.preventDefault()
@@ -114,18 +145,20 @@ export function PortalLoginForm({
           </p>
         )}
 
-        {datosDemo && (
+        {(mostrarDemo ?? Boolean(datosDemo)) && (
           <Button
             type="button"
             variant="secondary"
-            onClick={() => {
-              setCedula(datosDemo.cedula)
-              setTelefono(datosDemo.telefono)
-            }}
+            disabled={cargandoDemo}
+            onClick={() => void usarDatosDemo()}
             className="gap-2"
           >
-            <KeyRound className="size-4" aria-hidden="true" />
-            Usar datos DEMO
+            {cargandoDemo ? (
+              <LoaderCircle className="size-4 animate-spin" aria-hidden="true" />
+            ) : (
+              <KeyRound className="size-4" aria-hidden="true" />
+            )}
+            {cargandoDemo ? "Cargando datos…" : "Usar datos DEMO"}
           </Button>
         )}
 
