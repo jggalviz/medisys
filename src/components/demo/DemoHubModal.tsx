@@ -1,75 +1,120 @@
 "use client"
 
 /**
- * DemoHubModal · Renderiza UN único modal global vía React Portal.
- * El estado proviene de `DemoHubContext` (ver `src/context/DemoHubContext.tsx`).
- * No incluye botón trigger: los botones llaman `openDemoHub()`.
+ * DemoHubModal · Modal global con 3 bloques DEMO según el modelo de negocio:
+ *  1. Reserva Pública (Paciente)
+ *  2. Clínica (Multi-Especialista)
+ *  3. Especialista Independiente (Plan Pro)
+ *
+ * El estado proviene de `DemoHubContext`; se monta una única vez vía portal.
  */
 import { createPortal } from "react-dom"
 import Link from "next/link"
 import {
   CalendarCheck,
-  LayoutDashboard,
+  Building2,
   Stethoscope,
-  UserRound,
   X,
 } from "lucide-react"
 
-import { DEMO_CLINIC_SLUG, DEMO_CREDENCIALES } from "@/lib/demo"
-import { cn } from "@/lib/utils"
+import {
+  DEMO_CLINIC_SLUG,
+  DEMO_INDEPENDENT_SLUG,
+  DEMO_CREDENCIALES,
+  DEMO_ESPECIALISTA,
+  DEMO_ESPECIALISTA_INDEPENDIENTE,
+} from "@/lib/demo"
 import { useDemoHub } from "@/context/DemoHubContext"
+import { cn } from "@/lib/utils"
 
-const ACCESOS = [
+type Accion = { label: string; href: string; primario?: boolean }
+type Credencial = { etiqueta: string; valor: string }
+
+type Bloque = {
+  id: string
+  badge: string
+  titulo: string
+  descripcion: string
+  icono: React.ReactNode
+  color: string
+  credenciales: Credencial[]
+  acciones: Accion[]
+}
+
+const BLOQUES: Bloque[] = [
   {
-    id: "reservar",
-    titulo: "Agendamiento Público",
-    descripcion: "Reserva en 4 pasos sin crear cuenta.",
-    href: `/${DEMO_CLINIC_SLUG}`,
+    id: "reserva",
+    badge: "DEMO Reserva Pública",
+    titulo: "Agendamiento de Citas (Paciente)",
+    descripcion: "Portal de reserva directa en línea sin registro.",
     icono: <CalendarCheck className="size-5" aria-hidden="true" />,
-    rol: "Paciente",
-    credenciales: [{ etiqueta: "Acceso", valor: "Sin credenciales" }],
     color: "bg-sky-500/10 text-sky-600 dark:text-sky-400",
+    credenciales: [{ etiqueta: "Acceso", valor: "Sin credenciales requeridas" }],
+    acciones: [
+      {
+        label: "Agendar cita de prueba",
+        href: `/${DEMO_CLINIC_SLUG}`,
+        primario: true,
+      },
+    ],
   },
   {
-    id: "especialista",
-    titulo: "Portal de Especialistas",
-    descripcion: "Pacientes, expedientes y evolución de consultas.",
-    href: `/${DEMO_CLINIC_SLUG}/especialista/login`,
-    icono: <Stethoscope className="size-5" aria-hidden="true" />,
-    rol: "Especialista",
-    credenciales: [
-      { etiqueta: "C.I.", valor: "12345678" },
-      { etiqueta: "Teléfono", valor: "0412-1234567" },
-    ],
+    id: "clinica",
+    badge: "DEMO Clínica · Multi-Especialista",
+    titulo: "Portal Clínica / Centro Médico",
+    descripcion:
+      "Gestión administrativa multi-médico, recepción, gestión de personal y agenda grupal.",
+    icono: <Building2 className="size-5" aria-hidden="true" />,
     color: "bg-primary/10 text-primary",
+    credenciales: [
+      {
+        etiqueta: "Admin / Recepción",
+        valor: `${DEMO_CREDENCIALES.email} · ${DEMO_CREDENCIALES.password}`,
+      },
+      {
+        etiqueta: "Especialista de plantilla",
+        valor: `C.I. ${DEMO_ESPECIALISTA.cedula} · Tel. ${DEMO_ESPECIALISTA.telefono}`,
+      },
+    ],
+    acciones: [
+      {
+        label: "Ir al Panel Admin",
+        href: `/${DEMO_CLINIC_SLUG}/admin`,
+        primario: true,
+      },
+      {
+        label: "Ir al Portal Especialista",
+        href: `/${DEMO_CLINIC_SLUG}/especialista`,
+      },
+    ],
   },
   {
-    id: "paciente",
-    titulo: "Portal de Pacientes",
-    descripcion: "Citas, historial médico y estatus de pagos.",
-    href: `/${DEMO_CLINIC_SLUG}/paciente/login`,
-    icono: <UserRound className="size-5" aria-hidden="true" />,
-    rol: "Paciente",
-    credenciales: [
-      { etiqueta: "C.I.", valor: "87654321" },
-      { etiqueta: "Teléfono", valor: "0414-7654321" },
-    ],
+    id: "pro",
+    badge: "DEMO Especialista Independiente · Plan Pro",
+    titulo: "Portal Especialista Independiente",
+    descripcion:
+      "Agenda personal, gestión de expedientes e historial médico para un único especialista.",
+    icono: <Stethoscope className="size-5" aria-hidden="true" />,
     color: "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400",
-  },
-  {
-    id: "admin",
-    titulo: "Panel de Recepción / Administración",
-    descripcion: "Recepción, pagos, especialistas y configuración.",
-    href: `/${DEMO_CLINIC_SLUG}/login`,
-    icono: <LayoutDashboard className="size-5" aria-hidden="true" />,
-    rol: "Staff",
     credenciales: [
-      { etiqueta: "Correo", valor: DEMO_CREDENCIALES.email },
-      { etiqueta: "Clave", valor: DEMO_CREDENCIALES.password },
+      {
+        etiqueta: "Especialista Plan Pro",
+        valor: `C.I. ${DEMO_ESPECIALISTA_INDEPENDIENTE.cedula} · Tel. ${DEMO_ESPECIALISTA_INDEPENDIENTE.telefono}`,
+      },
     ],
-    color: "bg-zinc-500/10 text-zinc-600 dark:text-zinc-400",
+    acciones: [
+      {
+        label: "Ir al Portal Médico",
+        href: `/${DEMO_INDEPENDENT_SLUG}/especialista`,
+        primario: true,
+      },
+      {
+        label: "Ver Reserva Pro en 3 pasos",
+        href: `/${DEMO_INDEPENDENT_SLUG}`,
+      },
+    ],
   },
-] as const
+]
 
 export function DemoHubModal() {
   const { isOpen, closeDemoHub } = useDemoHub()
@@ -91,7 +136,7 @@ export function DemoHubModal() {
           <div className="flex flex-col">
             <span className="text-sm font-semibold">🧪 Entornos DEMO</span>
             <span className="text-xs text-muted-foreground">
-              Explora cada portal con las credenciales sugeridas.
+              Tres experiencias según el modelo de negocio.
             </span>
           </div>
           <button
@@ -104,44 +149,64 @@ export function DemoHubModal() {
           </button>
         </div>
 
-        <div className="mt-5 flex flex-col gap-3">
-          {ACCESOS.map((acceso) => (
-            <Link
-              key={acceso.id}
-              href={acceso.href}
-              onClick={closeDemoHub}
-              className="group flex items-start gap-3 rounded-2xl border bg-card p-3.5 text-left transition-colors hover:bg-muted/40"
+        <div className="mt-5 flex flex-col gap-4">
+          {BLOQUES.map((bloque) => (
+            <section
+              key={bloque.id}
+              className="flex flex-col gap-3 rounded-2xl border bg-card p-4"
             >
-              <span
-                className={cn(
-                  "flex size-11 shrink-0 items-center justify-center rounded-xl",
-                  acceso.color
-                )}
-              >
-                {acceso.icono}
-              </span>
-              <span className="flex min-w-0 flex-1 flex-col gap-0.5">
-                <span className="flex flex-wrap items-center gap-2">
-                  <span className="font-semibold">{acceso.titulo}</span>
-                  <span className="rounded-full bg-muted px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
-                    {acceso.rol}
+              <div className="flex items-start gap-3">
+                <span
+                  className={cn(
+                    "flex size-11 shrink-0 items-center justify-center rounded-xl",
+                    bloque.color
+                  )}
+                >
+                  {bloque.icono}
+                </span>
+                <div className="flex min-w-0 flex-1 flex-col gap-1">
+                  <span className="w-fit rounded-full bg-muted px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-muted-foreground">
+                    {bloque.badge}
                   </span>
-                </span>
-                <span className="text-xs text-muted-foreground">
-                  {acceso.descripcion}
-                </span>
-                <span className="mt-1 flex flex-wrap gap-1.5">
-                  {acceso.credenciales.map((cred) => (
-                    <span
-                      key={cred.etiqueta}
-                      className="rounded-full border border-dashed bg-background px-2 py-0.5 text-[11px] font-medium"
-                    >
-                      {cred.etiqueta}: <strong>{cred.valor}</strong>
+                  <span className="font-semibold">{bloque.titulo}</span>
+                  <span className="text-xs text-muted-foreground">
+                    {bloque.descripcion}
+                  </span>
+                </div>
+              </div>
+
+              <div className="flex flex-col gap-1">
+                {bloque.credenciales.map((cred) => (
+                  <div
+                    key={cred.etiqueta}
+                    className="flex flex-wrap items-center gap-2 rounded-xl border border-dashed bg-background px-3 py-1.5 text-[12px]"
+                  >
+                    <span className="text-muted-foreground">
+                      {cred.etiqueta}:
                     </span>
-                  ))}
-                </span>
-              </span>
-            </Link>
+                    <strong className="font-mono">{cred.valor}</strong>
+                  </div>
+                ))}
+              </div>
+
+              <div className="flex flex-wrap gap-2">
+                {bloque.acciones.map((accion) => (
+                  <Link
+                    key={accion.href + accion.label}
+                    href={accion.href}
+                    onClick={closeDemoHub}
+                    className={cn(
+                      "inline-flex h-10 items-center justify-center gap-2 rounded-lg px-4 text-sm font-semibold transition-colors",
+                      accion.primario
+                        ? "bg-linear-to-r from-teal-600 to-cyan-600 text-white shadow-sm hover:brightness-110"
+                        : "border border-zinc-200 bg-white text-zinc-700 hover:bg-zinc-50"
+                    )}
+                  >
+                    {accion.label}
+                  </Link>
+                ))}
+              </div>
+            </section>
           ))}
         </div>
       </div>
