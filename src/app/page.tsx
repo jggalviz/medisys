@@ -164,10 +164,10 @@ const PLANES_LANDING: readonly PlanLanding[] = [
     nombre: "Plan Especialista Pro",
     descripcion:
       "Ideal para médicos independientes que manejan su propio consultorio y agenda personal.",
-    precio: "$30",
-    precioDetalle: "USD / mes · tasa BCV",
-    precioTachado: "$60",
-    promo: "50% OFF el 1er mes → $15 + 7 días gratis",
+    precio: "$15",
+    precioDetalle: "USD / mes (1er mes)",
+    precioTachado: "$30",
+    promo: "50% OFF el 1er mes (luego $30/mes) + 7 días gratis",
     features: [
       "1 Especialista activo",
       "Agendamiento automatizado en 3 pasos",
@@ -184,9 +184,10 @@ const PLANES_LANDING: readonly PlanLanding[] = [
     nombre: "Plan Clínica / Centro Médico",
     descripcion:
       "Diseñado para centros médicos, clínicas y consultorios con múltiples especialistas.",
-    precio: "$100",
-    precioDetalle: "USD / mes · sede principal",
-    promo: "50% OFF el 1er mes + 7 días gratis",
+    precio: "$50",
+    precioDetalle: "USD / mes (1er mes · sede principal)",
+    precioTachado: "$100",
+    promo: "50% OFF el 1er mes (luego $100/mes) + 7 días gratis",
     multisede: "$100/mes sede principal + $60/mes por sede adicional",
     destacado: true,
     features: [
