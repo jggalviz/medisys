@@ -5,6 +5,7 @@
  * Botón llamativo que abre un modal con 4 tarjetas de acceso y credenciales.
  */
 import { useState } from "react"
+import { createPortal } from "react-dom"
 import Link from "next/link"
 import {
   CalendarCheck,
@@ -94,17 +95,19 @@ export function DemoHubModal({ label = "Entornos DEMO", className }: Props) {
         {label}
       </button>
 
-      {open && (
-        <div
-          role="dialog"
-          aria-modal="true"
-          aria-label="Entornos DEMO de Medisys"
-          className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-black/60 p-4 backdrop-blur-sm sm:p-6"
-          onClick={(event) => {
-            if (event.target === event.currentTarget) setOpen(false)
-          }}
-        >
-          <div className="relative my-auto w-full max-w-2xl max-h-[90vh] overflow-y-auto rounded-2xl bg-white p-6 shadow-2xl">
+      {open &&
+        typeof document !== "undefined" &&
+        createPortal(
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-label="Entornos DEMO de Medisys"
+            className="fixed inset-0 z-[9999] flex items-center justify-center overflow-y-auto bg-black/60 p-4 backdrop-blur-sm sm:p-6"
+            onClick={(event) => {
+              if (event.target === event.currentTarget) setOpen(false)
+            }}
+          >
+            <div className="relative z-[10000] my-auto w-full max-w-2xl max-h-[85vh] overflow-y-auto rounded-2xl bg-white p-6 shadow-2xl">
             <div className="flex items-center justify-between gap-3">
               <div className="flex flex-col">
                 <span className="text-sm font-semibold">
@@ -165,8 +168,9 @@ export function DemoHubModal({ label = "Entornos DEMO", className }: Props) {
               ))}
             </div>
           </div>
-        </div>
-      )}
+          </div>,
+          document.body
+        )}
     </>
   )
 }
