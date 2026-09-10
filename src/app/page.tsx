@@ -167,7 +167,7 @@ const PLANES_LANDING: readonly PlanLanding[] = [
     precio: "$15",
     precioDetalle: "USD / mes (1er mes)",
     precioTachado: "$30",
-    promo: "50% OFF el 1er mes (luego $30/mes) + 7 días gratis",
+    promo: "50% DE DESCUENTO el 1er mes (luego $30/mes) + 7 días gratis",
     features: [
       "1 Especialista activo",
       "Agendamiento automatizado en 3 pasos",
@@ -189,7 +189,7 @@ const PLANES_LANDING: readonly PlanLanding[] = [
     precio: "$50",
     precioDetalle: "USD / mes (1er mes · sede principal)",
     precioTachado: "$100",
-    promo: "50% OFF el 1er mes (luego $100/mes) + 7 días gratis",
+    promo: "50% DE DESCUENTO el 1er mes (luego $100/mes) + 7 días gratis",
     multisede: "$100/mes sede principal + $60/mes por sede adicional",
     destacado: true,
     features: [
@@ -592,7 +592,7 @@ function PricingSection() {
 
         <div className="mx-auto mt-8 flex w-fit items-center gap-2 rounded-full border border-orange-200 bg-orange-50 px-4 py-2 text-sm font-bold text-orange-700 shadow-sm">
           <span aria-hidden="true">🔥</span>
-          7 DÍAS GRATIS + 50% OFF EN TU PRIMER MES
+          7 DÍAS GRATIS + 50% DE DESCUENTO EN TU PRIMER MES
         </div>
 
         <div className="mx-auto mt-10 grid max-w-5xl gap-6 md:grid-cols-2">
