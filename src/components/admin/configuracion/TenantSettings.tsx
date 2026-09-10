@@ -23,6 +23,21 @@ import { cn } from "@/lib/utils"
 
 type TabId = "general" | "pago" | "branding" | "capacidad"
 
+/** Mensajes claros y accionables para errores de subida del logo. */
+function mensajeAmigableLogo(detalle: string | null | undefined): string {
+  const texto = (detalle ?? "").trim()
+  if (/bucket|almacenamiento|storage/i.test(texto)) {
+    return "No se pudo subir el logo: el almacenamiento de la plataforma no está disponible. Reintenta en unos minutos o contacta a soporte."
+  }
+  if (/permis|policy|authoriz|unauthorized|not allowed/i.test(texto)) {
+    return "No se pudo subir el logo: tu usuario no tiene permisos para subir archivos en esta clínica."
+  }
+  if (/3 ?MB|tama|size|too large/i.test(texto)) {
+    return "El logo debe pesar menos de 3 MB."
+  }
+  return texto || "No se pudo subir el logo. Intenta de nuevo."
+}
+
 type Toast = { tipo: "ok" | "error"; mensaje: string } | null
 
 const TABS: { id: TabId; label: string }[] = [
@@ -170,17 +185,37 @@ export function TenantSettings({ tenant }: { tenant: Tenant }) {
   function subirLogo() {
     if (!logoFile || isUploading) return
     startUploading(async () => {
-      const formData = new FormData()
-      formData.append("logo", logoFile)
-      const resultado = await uploadTenantLogo(tenant.id, formData)
-      if (resultado.ok) {
-        setLogoUrl(resultado.data.logoUrl)
-        setLogoFile(null)
-        // Re-ejecuta el Server Component para persistir logo_url en la prop.
-        router.refresh()
-        setToast({ tipo: "ok", mensaje: "Logo actualizado ✓" })
-      } else {
-        setToast({ tipo: "error", mensaje: resultado.message })
+      try {
+        const formData = new FormData()
+        formData.append("logo", logoFile)
+        const resultado = await uploadTenantLogo(tenant.id, formData)
+
+        if (resultado.ok) {
+          setLogoUrl(resultado.data.logoUrl)
+          setLogoFile(null)
+          if (previewObjectUrl) {
+            URL.revokeObjectURL(previewObjectUrl)
+            setPreviewObjectUrl(null)
+          }
+          // Re-ejecuta el Server Component para persistir logo_url en la prop.
+          router.refresh()
+          setToast({ tipo: "ok", mensaje: "Logo actualizado ✓" })
+          return
+        }
+
+        // Error controlado: se conserva la imagen y la vista previa para que el
+        // usuario pueda reintentar sin perder su selección.
+        setToast({
+          tipo: "error",
+          mensaje: mensajeAmigableLogo(resultado.message),
+        })
+      } catch (cause) {
+        setToast({
+          tipo: "error",
+          mensaje: mensajeAmigableLogo(
+            cause instanceof Error ? cause.message : null
+          ),
+        })
       }
     })
   }

@@ -20,6 +20,8 @@ import type {
   UpdateTenantSettingsInput,
 } from "@/types/admin"
 import { createClient } from "@/lib/supabase/server"
+import { createAdminClient } from "@/lib/supabase/admin"
+import { asegurarBucketPublico, BUCKET_BRANDING } from "@/lib/supabase/storage"
 import { getStaffForSlug } from "@/lib/staff"
 
 /**
@@ -287,6 +289,23 @@ function extensionDeImagen(contentType: string): string {
 }
 
 /**
+ * Traduce los errores de Supabase Storage a mensajes accionables para la UI.
+ */
+function mensajeErrorSubida(detalle: string): string {
+  const base = "No se pudo subir el logo."
+  if (/bucket/i.test(detalle)) {
+    return `${base} El almacenamiento 'branding' no está disponible en el servidor. Reintenta en unos minutos o contacta a soporte.`
+  }
+  if (/policy|row-level|permission|unauthorized|not allowed/i.test(detalle)) {
+    return `${base} Tu usuario no tiene permisos para subir archivos en esta clínica.`
+  }
+  if (/size|too large|exceed/i.test(detalle)) {
+    return `${base} La imagen supera el tamaño permitido (3 MB).`
+  }
+  return `${base} ${detalle}`
+}
+
+/**
  * Sube el logo oficial de la clínica al bucket 'branding' y actualiza
  * `tenants.logo_url`. Solo rol 'admin'.
  */
@@ -326,25 +345,42 @@ export async function uploadTenantLogo(
     }
 
     const extension = extensionDeImagen(file.type)
-    const path = `branding/${tenantId}/${Date.now()}-logo.${extension}`
+    // Bucket 'branding': si no existe se crea automáticamente (public: true).
+    const bucket = await asegurarBucketPublico(BUCKET_BRANDING)
+    if (!bucket.ok) return { ok: false, message: bucket.message }
+
+    // El primer nivel del path es el tenant_id (lo usan las políticas de RLS).
+    const path = `${tenantId}/${Date.now()}-logo.${extension}`
     const bytes = new Uint8Array(await file.arrayBuffer())
+    const opcionesSubida = {
+      contentType: file.type,
+      cacheControl: "31536000",
+      upsert: false,
+    }
 
-    const { error: uploadError } = await supabase.storage
-      .from("branding")
-      .upload(path, bytes, {
-        contentType: file.type,
-        cacheControl: "31536000",
-        upsert: false,
-      })
+    let subida = await supabase.storage
+      .from(BUCKET_BRANDING)
+      .upload(path, bytes, opcionesSubida)
 
-    if (uploadError) {
-      return {
-        ok: false,
-        message: `No se pudo subir el logo: ${uploadError.message}. Verifica que exista el bucket público 'branding'.`,
+    // Reintento con service_role: cubre instalaciones sin políticas de Storage.
+    if (subida.error) {
+      try {
+        const admin = createAdminClient()
+        subida = await admin.storage
+          .from(BUCKET_BRANDING)
+          .upload(path, bytes, opcionesSubida)
+      } catch {
+        // Se conserva el error original para construir el mensaje.
       }
     }
 
-    const { data: urlData } = supabase.storage.from("branding").getPublicUrl(path)
+    if (subida.error) {
+      return { ok: false, message: mensajeErrorSubida(subida.error.message) }
+    }
+
+    const { data: urlData } = supabase.storage
+      .from(BUCKET_BRANDING)
+      .getPublicUrl(path)
     const logoUrl = urlData.publicUrl
 
     const { data: tenant, error: updateError } = await supabase
