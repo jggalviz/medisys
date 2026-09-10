@@ -1,0 +1,23 @@
+/** Bancos venezolanos para el selector de banco de origen. */
+export const BANCOS_VENEZUELA = [
+  "Banesco",
+  "Mercantil Banco Universal",
+  "Banco de Venezuela",
+  "Provincial (BBVA)",
+  "Bancamiga",
+  "Banco Nacional de Crédito (BNC)",
+  "Banco Exterior",
+  "Bancaribe",
+  "Banco Bicentenario",
+  "Banco del Tesoro",
+  "Banco Occidental de Descuento (BOD)",
+  "Banplus",
+  "Banco Activo",
+  "Venezolano de Crédito",
+  "Banco Sofitasa",
+  "Banco Caroní",
+  "DelSur",
+  "Mi Banco",
+  "Banco Plaza",
+  "Otro banco",
+] as const

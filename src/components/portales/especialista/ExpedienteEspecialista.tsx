@@ -71,20 +71,21 @@ export function ExpedienteEspecialista({ pacienteId, clinicSlug }: Props) {
         ) ?? null
       : null)
 
-  // Cargar datos en los inputs del formulario al seleccionar o cambiar la cita activa
-  useEffect(() => {
-    if (citaActiva?.registro) {
-      setForm({
-        motivo: citaActiva.registro.motivo ?? "",
-        diagnostico: citaActiva.registro.diagnostico ?? "",
-        tratamiento: citaActiva.registro.tratamiento ?? "",
-        notas: citaActiva.registro.notas ?? "",
-      })
-    } else {
-      setForm({ motivo: "", diagnostico: "", tratamiento: "", notas: "" })
-    }
+  // Cargar los inputs al cambiar la cita activa. Se usa el patrón "ajustar
+  // estado en render" (sin setState dentro de un efecto) recomendado por el repo.
+  const citaActivaId = citaActiva?.id ?? null
+  const [citaFormId, setCitaFormId] = useState<string | null>(citaActivaId)
+  if (citaFormId !== citaActivaId) {
+    setCitaFormId(citaActivaId)
+    const registro = citaActiva?.registro
+    setForm({
+      motivo: registro?.motivo ?? "",
+      diagnostico: registro?.diagnostico ?? "",
+      tratamiento: registro?.tratamiento ?? "",
+      notas: registro?.notas ?? "",
+    })
     setAviso(null)
-  }, [citaActiva])
+  }
 
   async function guardarEvolucion() {
     if (!citaActiva || guardando) return

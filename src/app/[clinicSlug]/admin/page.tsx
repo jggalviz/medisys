@@ -22,6 +22,8 @@ import { getDashboardKpis } from "@/app/actions/dashboard"
 import { getDailyAppointments } from "@/app/actions/admin"
 import { getTenantBySlug } from "@/app/actions/tenant"
 import { TarjetaRecaudacion } from "@/components/admin/dashboard/TarjetaRecaudacion"
+import { BannerMembresia } from "@/components/admin/suscripcion/BannerMembresia"
+import { evaluarMembresia, nombrePlan } from "@/lib/suscripcion"
 import { createClient } from "@/lib/supabase/server"
 import { getStaffForSlug } from "@/lib/staff"
 import { toISODate } from "@/lib/date"
@@ -222,6 +224,8 @@ export default async function AdminPage({ params }: AdminPageProps) {
     },
   ]
 
+  const membresia = evaluarMembresia(tenant.suscripcion_vence_at)
+
   return (
     <main className="mx-auto flex min-h-dvh w-full max-w-5xl flex-col gap-6 px-4 py-6 sm:px-6">
       {/* Encabezado */}
@@ -248,6 +252,16 @@ export default async function AdminPage({ params }: AdminPageProps) {
           Abrir recepción
         </Link>
       </header>
+
+      {membresia.debeAvisar && (
+        <BannerMembresia
+          clinicSlug={clinicSlug}
+          planLabel={nombrePlan(tenant.plan_type)}
+          venceAt={tenant.suscripcion_vence_at ?? null}
+          dias={membresia.dias}
+          vencida={membresia.vencida}
+        />
+      )}
 
       {(errorKpis || errorCitas) && (
         <section

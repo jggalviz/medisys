@@ -127,6 +127,8 @@ export type Tenant = {
   plan_type?: PlanTenant | null
   /** Máximo de especialistas permitidos según el plan. */
   max_especialistas?: number | null
+  /** Fecha/hora de vencimiento de la membresía (suscripción del SaaS). */
+  suscripcion_vence_at?: string | null
   is_active: boolean
   datos_pago_movil: DatosPagoMovil | null
   created_at: string
@@ -301,6 +303,47 @@ export type BcvRateInsert = Omit<BcvRate, "id" | "fetched_at"> & {
 }
 
 /* ------------------------------------------------------------------ */
+/* saas_subscription_payments (cobro de la membresía del SaaS)         */
+/* ------------------------------------------------------------------ */
+
+export type SubscriptionPaymentStatus = "PENDIENTE" | "APROBADO" | "RECHAZADO"
+
+export type SaasSubscriptionPayment = {
+  id: string
+  tenant_id: string
+  plan_type: PlanTenant
+  monto_usd: number
+  monto_ves: number
+  tasa_bcv: number
+  banco_origen: string | null
+  referencia_pago: string
+  telefono_emisor: string | null
+  comprobante_url: string | null
+  estado: SubscriptionPaymentStatus
+  nota: string | null
+  aprobado_por: string | null
+  aprobado_at: string | null
+  created_at: string
+  updated_at: string
+}
+
+export type SaasSubscriptionPaymentInsert = Omit<
+  SaasSubscriptionPayment,
+  "id" | "created_at" | "updated_at" | "estado" | "nota" | "aprobado_por" | "aprobado_at"
+> & {
+  id?: string
+  created_at?: string
+  updated_at?: string
+  estado?: SubscriptionPaymentStatus
+  nota?: string | null
+  aprobado_por?: string | null
+  aprobado_at?: string | null
+}
+
+export type SaasSubscriptionPaymentUpdate =
+  Partial<SaasSubscriptionPaymentInsert>
+
+/* ------------------------------------------------------------------ */
 /* appointments (reservas + lock de 15 min)                            */
 /* ------------------------------------------------------------------ */
 
@@ -433,6 +476,12 @@ export type Database = {
         Row: MedicalRecord
         Insert: MedicalRecordInsert
         Update: MedicalRecordUpdate
+        Relationships: []
+      }
+      saas_subscription_payments: {
+        Row: SaasSubscriptionPayment
+        Insert: SaasSubscriptionPaymentInsert
+        Update: SaasSubscriptionPaymentUpdate
         Relationships: []
       }
     }
