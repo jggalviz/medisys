@@ -302,3 +302,97 @@ El equipo de Medisys valida el reporte y suma **+30 días** a tu vencimiento, re
 $md$
   )
 on conflict (slug) do nothing;
+
+insert into public.guide_pages (slug, title, category, order_index, content_markdown)
+values
+  (
+    'gestion-de-citas-y-recepcion',
+    'Gestión de citas y recepción',
+    'Operación',
+    1,
+    $md$# Gestión de citas y recepción
+
+El módulo de **Recepción** es el centro de operaciones del día: controla la cola de pacientes, valida pagos y cobra en caja.
+
+## Flujo diario recomendado
+1. Abre **Recepción** y revisa la agenda de hoy (ordenada por hora).
+2. Marca la **llegada** del paciente (pasa a *En espera*).
+3. Cobra en caja cuando corresponda: **efectivo**, **punto de venta** o **pago móvil en sitio**.
+4. Mueve la cita a *En consulta* al entrar al consultorio y a *Atendido* al finalizar.
+
+## Validar pagos en línea
+- En **Pagos** revisa los comprobantes con estado *Por validar*.
+- Compara referencia, teléfono emisor y monto; luego **Aprobar** o **Rechazar**.
+
+## Estados de una cita
+
+| Estado | Significado |
+| --- | --- |
+| pendiente | Cupo bloqueado, sin pago registrado |
+| pendiente_validacion | Pago móvil en línea reportado |
+| confirmada | Pago validado por la clínica |
+| en_espera | Paciente presente en sala |
+| en_consulta | En atención médica |
+| atendido | Consulta finalizada |
+
+> **Tip:** si un paciente cancela, usa *Cancelada* en lugar de eliminarla: mantiene el historial y libera el cupo.
+$md$
+  ),
+  (
+    'crm-historico-de-pacientes',
+    'CRM e histórico de pacientes',
+    'Operación',
+    2,
+    $md$# CRM e histórico de pacientes
+
+Cada paciente guarda su ficha, sus familiares y todas sus consultas anteriores.
+
+## Perfiles y familiares
+- En la reserva el paciente puede registrarse **con nombre, cédula y teléfono**.
+- Un mismo titular puede tener **familiares/menores** asociados (útil para pediatría).
+
+## Historial clínico
+- Cada consulta atendida puede cerrarse con **motivo, diagnóstico, tratamiento y notas**.
+- El especialista lo completa desde su **Portal del Especialista** (cédula + teléfono).
+- El paciente puede consultar su **expediente** en el **Portal del Paciente**.
+
+## Qué permite el histórico
+- Ver la evolución del paciente entre consultas.
+- Reutilizar sus datos en la siguiente cita (menos tiempo en recepción).
+- Adjuntar el comprobante de pago de cada cita.
+
+> **Nota:** el expediente clínico solo se muestra al paciente dueño y al especialista que atendió la consulta.
+$md$
+  ),
+  (
+    'roles-y-seguridad',
+    'Roles y seguridad de acceso',
+    'Primeros Pasos',
+    2,
+    $md$# Roles y seguridad de acceso
+
+Medisys separa los accesos por **rol**, con sesiones independientes por canal.
+
+## Roles del panel administrativo
+
+| Rol | Puede |
+| --- | --- |
+| Administrador | Configuración, especialistas, landing, pagos, recepción |
+| Recepción | Recepción, validación de pagos, agenda del día |
+| Especialista | Solo sus pacientes y expedientes (portal propio) |
+
+## Canales de acceso
+- **Panel de staff** → `/{tu-slug}/login` con correo y contraseña (Supabase Auth).
+- **Portal del Especialista** → `/{tu-slug}/especialista/login` con **cédula + teléfono** registrados.
+- **Portal del Paciente** → `/{tu-slug}/paciente/login` con **cédula + teléfono**.
+
+## Buenas prácticas
+- Asigna permisos mínimos: la mayoría del personal solo necesita *Recepción*.
+- Revisa periódicamente quién tiene rol *Administrador*.
+- Todas las consultas se filtran por la clínica del usuario en sesión (multi-tenant).
+
+> **Nota:** los portales usan una cookie firmada con HMAC y expiran automáticamente.
+$md$
+  )
+on conflict (slug) do nothing;
+

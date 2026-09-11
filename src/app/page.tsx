@@ -26,6 +26,8 @@ import {
   DEMO_CLINIC_SLUG,
 } from "@/lib/demo"
 import { DemoHubTrigger } from "@/components/demo/DemoHubTrigger"
+import { GuiasSection } from "@/components/landing/GuiasSection"
+import { listarGuiasPublicas } from "@/lib/guias-publicas"
 
 /* ------------------------------------------------------------------ */
 /* SEO de la landing page (ruta "/")                                   */
@@ -45,6 +47,12 @@ export const metadata: Metadata = {
     type: "website",
   },
 }
+
+/**
+ * ISR: el bloque de guías se refresca cada 5 minutos sin volver dinámica la
+ * landing (la lectura de guías usa el cliente service_role, sin cookies).
+ */
+export const revalidate = 300
 
 /* ------------------------------------------------------------------ */
 /* Datos comerciales (placeholders centralizados)                      */
@@ -849,13 +857,16 @@ function SiteFooter() {
 /* Página                                                              */
 /* ================================================================== */
 
-export default function Home() {
+export default async function Home() {
+  const guias = await listarGuiasPublicas()
+
   return (
     <div className="flex min-h-dvh flex-col bg-white">
       <Navbar />
       <main className="flex-1">
         <HeroSection />
         <StepsSection />
+        <GuiasSection guias={guias} />
         <BenefitsSection />
         <PricingSection />
       </main>

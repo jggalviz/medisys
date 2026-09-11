@@ -154,6 +154,62 @@ async function verificarTabla(admin) {
   return { ok: true, message: null, filas: data ?? [] }
 }
 
+/**
+ * Extrae las guías semilla del archivo SQL (slug, título, categoría, orden y
+ * el markdown entre `$md$…$md$`). Permite sembrar por REST sin permisos DDL.
+ */
+function extraerSemillas(sql) {
+  const patron =
+    /'([a-z0-9-]+)',\s*'([^']*)',\s*'([^']*)',\s*(\d+),\s*\$md\$([\s\S]*?)\$md\$/g
+  const semillas = []
+  for (const coincidencia of sql.matchAll(patron)) {
+    semillas.push({
+      slug: coincidencia[1],
+      title: coincidencia[2],
+      category: coincidencia[3],
+      order_index: Number(coincidencia[4]),
+      content_markdown: coincidencia[5],
+    })
+  }
+  return semillas
+}
+
+/**
+ * Siembra las guías faltantes con el cliente service_role (INSERT es DML, sí
+ * permitido por REST). Idempotente: usa upsert por `slug`.
+ */
+async function sembrarGuias(admin, semillas) {
+  if (semillas.length === 0) {
+    console.log("• Semilla: no se detectaron guías en el archivo SQL.")
+    return
+  }
+
+  const { data: existentes, error } = await admin.from("guide_pages").select("slug")
+  if (error) {
+    console.log(`• Semilla: omitida (${error.message})`)
+    return
+  }
+
+  const yaEstan = new Set((existentes ?? []).map((fila) => fila.slug))
+  const faltantes = semillas.filter((semilla) => !yaEstan.has(semilla.slug))
+
+  if (faltantes.length === 0) {
+    console.log(`• Semilla: las ${semillas.length} guías ya estaban presentes.`)
+    return
+  }
+
+  const { error: errorUpsert } = await admin
+    .from("guide_pages")
+    .upsert(faltantes.map((g) => ({ ...g, is_published: true })), { onConflict: "slug" })
+
+  if (errorUpsert) {
+    console.log(`• Semilla: error al insertar → ${errorUpsert.message}`)
+    return
+  }
+  console.log(`• Semilla: ${faltantes.length} guía(s) insertadas por REST:`)
+  for (const guia of faltantes) console.log(`   + ${guia.slug}`)
+}
+
 function imprimirInstrucciones(sql) {
   console.log("\n── Sin credenciales DDL ─────────────────────────────────────────────")
   console.log("El `SERVICE_ROLE_KEY` no permite ejecutar DDL por REST. Para aplicar")
@@ -230,7 +286,10 @@ async function main() {
     imprimirInstrucciones(sql)
   }
 
-  // 3) Verificación de lectura.
+  // 3) Semilla por REST (funciona aunque no haya permisos DDL).
+  await sembrarGuias(admin, extraerSemillas(sql))
+
+  // 4) Verificación de lectura.
   const verificacion = await verificarTabla(admin)
   console.log("── Verificación de lectura de `guide_pages` ────────────────────────")
   if (!verificacion.ok) {

@@ -18,11 +18,23 @@ import { cn } from "@/lib/utils"
 type Props = {
   paginas: GuidePage[]
   canEdit: boolean
+  /** Término de búsqueda inicial (p. ej. `?q=`). */
+  consultaInicial?: string
+  /** Slug de la página que debe abrirse por defecto. */
+  slugInicial?: string
 }
 
-export function CentroAyuda({ paginas, canEdit }: Props) {
-  const [consulta, setConsulta] = useState("")
-  const [seleccionId, setSeleccionId] = useState<string | null>(paginas[0]?.id ?? null)
+export function CentroAyuda({
+  paginas,
+  canEdit,
+  consultaInicial,
+  slugInicial,
+}: Props) {
+  const [consulta, setConsulta] = useState(consultaInicial?.trim() ?? "")
+  const [seleccionId, setSeleccionId] = useState<string | null>(
+    () =>
+      paginas.find((p) => p.slug === slugInicial)?.id ?? paginas[0]?.id ?? null
+  )
 
   const filtradas = useMemo(() => {
     const termino = consulta.trim().toLowerCase()
