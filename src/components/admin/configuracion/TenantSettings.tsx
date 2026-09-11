@@ -7,9 +7,9 @@
  */
 import { useEffect, useState, useTransition } from "react"
 import { useRouter } from "next/navigation"
-import { CheckCircle2, ImageUp, LoaderCircle, ShieldAlert } from "lucide-react"
+import { Check, CheckCircle2, ImageUp, LoaderCircle, Palette, ShieldAlert } from "lucide-react"
 
-import type { CuentaCobro, Tenant } from "@/types/database"
+import type { CuentaCobro, Tenant, ThemeConfig } from "@/types/database"
 import type { TenantSettingsData } from "@/types/admin"
 import {
   updateTenantSettings,
@@ -19,9 +19,14 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { logoMostrable } from "@/lib/branding"
+import {
+  CAMPOS_TEMA,
+  PRESETS_TEMA,
+  normalizarThemeConfig,
+} from "@/lib/theme"
 import { cn } from "@/lib/utils"
 
-type TabId = "general" | "pago" | "branding" | "capacidad"
+type TabId = "general" | "pago" | "branding" | "apariencia" | "capacidad"
 
 /** Mensajes claros y accionables para errores de subida del logo. */
 function mensajeAmigableLogo(detalle: string | null | undefined): string {
@@ -44,6 +49,7 @@ const TABS: { id: TabId; label: string }[] = [
   { id: "general", label: "Información General" },
   { id: "pago", label: "Pago Móvil" },
   { id: "branding", label: "Branding" },
+  { id: "apariencia", label: "Apariencia" },
   { id: "capacidad", label: "Capacidad" },
 ]
 
@@ -61,6 +67,7 @@ function inicialDatos(tenant: Tenant): TenantSettingsData {
       cuentas,
       instrucciones: tenant.datos_pago_movil?.instrucciones ?? "",
     },
+    theme_config: normalizarThemeConfig(tenant.theme_config),
   }
 }
 
@@ -91,8 +98,22 @@ export function TenantSettings({ tenant }: { tenant: Tenant }) {
 
   const cuentas = form.datos_pago_movil?.cuentas ?? []
 
+  /** Paleta actual del formulario (para los pickers y la vista previa). */
+  const tema = form.theme_config
+
   function patch(payload: Partial<TenantSettingsData>) {
     setForm((prev) => ({ ...prev, ...payload }))
+  }
+
+  function patchTema(campo: keyof ThemeConfig, valor: string) {
+    setForm((prev) => ({
+      ...prev,
+      theme_config: { ...prev.theme_config, [campo]: valor },
+    }))
+  }
+
+  function aplicarPreset(colores: ThemeConfig) {
+    setForm((prev) => ({ ...prev, theme_config: { ...colores } }))
   }
 
   function updateCuenta(index: number, patchCuenta: Partial<CuentaCobro>) {
@@ -494,6 +515,140 @@ export function TenantSettings({ tenant }: { tenant: Tenant }) {
               }}
             />
           </Campo>
+        </section>
+      )}
+
+      {tab === "apariencia" && (
+        <section className="flex flex-col gap-5 rounded-2xl border bg-card p-5">
+          <div className="flex items-start gap-3">
+            <span className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
+              <Palette className="size-5" />
+            </span>
+            <div className="flex flex-col">
+              <h2 className="font-semibold">Apariencia del perfil público</h2>
+              <p className="text-sm text-muted-foreground">
+                Personaliza los colores de /{tenant.slug}. Los cambios se aplican
+                al guardar.
+              </p>
+            </div>
+          </div>
+
+          {/* Paletas recomendadas (1 clic) */}
+          <div className="flex flex-col gap-2">
+            <Label className="text-sm font-medium">Paletas recomendadas</Label>
+            <div className="grid gap-3 sm:grid-cols-3">
+              {PRESETS_TEMA.map((preset) => {
+                const activo =
+                  tema.primaryColor === preset.colores.primaryColor &&
+                  tema.secondaryColor === preset.colores.secondaryColor &&
+                  tema.backgroundColor === preset.colores.backgroundColor &&
+                  tema.cardBackgroundColor === preset.colores.cardBackgroundColor &&
+                  tema.buttonTextColor === preset.colores.buttonTextColor
+                return (
+                  <button
+                    key={preset.id}
+                    type="button"
+                    aria-pressed={activo}
+                    onClick={() => aplicarPreset(preset.colores)}
+                    className={cn(
+                      "flex flex-col gap-2 rounded-xl border p-3 text-left transition-all",
+                      activo ? "border-primary ring-2 ring-primary/25" : "hover:bg-muted/40"
+                    )}
+                  >
+                    <span className="flex items-center gap-1.5">
+                      {[preset.colores.primaryColor, preset.colores.secondaryColor, preset.colores.backgroundColor, preset.colores.cardBackgroundColor].map(
+                        (color) => (
+                          <span
+                            key={color}
+                            className="size-5 rounded-full border"
+                            style={{ backgroundColor: color }}
+                          />
+                        )
+                      )}
+                      {activo && <Check className="size-3.5 text-primary" />}
+                    </span>
+                    <span className="text-sm font-semibold">{preset.nombre}</span>
+                    <span className="text-xs text-muted-foreground">
+                      {preset.descripcion}
+                    </span>
+                  </button>
+                )
+              })}
+            </div>
+          </div>
+
+          {/* Pickers por variable */}
+          <div className="grid gap-3 sm:grid-cols-2">
+            {CAMPOS_TEMA.map(({ campo, label, ayuda }) => (
+              <div
+                key={campo}
+                className="flex items-center gap-3 rounded-xl border bg-background p-3"
+              >
+                <input
+                  type="color"
+                  aria-label={label}
+                  value={tema[campo]}
+                  onChange={(e) => patchTema(campo, e.target.value)}
+                  className="size-10 shrink-0 cursor-pointer appearance-none rounded-full border bg-transparent"
+                />
+                <div className="flex min-w-0 flex-1 flex-col">
+                  <Label
+                    htmlFor={`tema-${campo}`}
+                    className="text-sm font-medium"
+                  >
+                    {label}
+                  </Label>
+                  <span className="text-[11px] text-muted-foreground">{ayuda}</span>
+                </div>
+                <Input
+                  id={`tema-${campo}`}
+                  value={tema[campo]}
+                  maxLength={7}
+                  onChange={(e) => patchTema(campo, e.target.value)}
+                  className="h-8 w-24 font-mono text-xs uppercase"
+                />
+              </div>
+            ))}
+          </div>
+
+          {/* Vista previa rápida */}
+          <div
+            className="rounded-2xl border p-4"
+            style={{ backgroundColor: tema.backgroundColor }}
+          >
+            <span className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
+              Vista previa
+            </span>
+            <div
+              className="mt-2 rounded-xl border p-4"
+              style={{ backgroundColor: tema.cardBackgroundColor }}
+            >
+              <p className="text-sm font-semibold">Dr. Ejemplo · Cardiología</p>
+              <p className="mt-1 text-xs text-muted-foreground">
+                Así se verán tus tarjetas y botones.
+              </p>
+              <div className="mt-3 flex flex-wrap items-center gap-2">
+                <span
+                  className="inline-flex h-9 items-center rounded-lg px-4 text-sm font-semibold"
+                  style={{
+                    backgroundColor: tema.primaryColor,
+                    color: tema.buttonTextColor,
+                  }}
+                >
+                  Reservar Cita
+                </span>
+                <span
+                  className="inline-flex items-center rounded-full px-2.5 py-1 text-[11px] font-semibold"
+                  style={{
+                    backgroundColor: tema.secondaryColor,
+                    color: tema.primaryColor,
+                  }}
+                >
+                  Cardiología
+                </span>
+              </div>
+            </div>
+          </div>
         </section>
       )}
 

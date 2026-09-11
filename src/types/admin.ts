@@ -3,7 +3,7 @@
  * DTOs compartidos entre las Server Actions de `src/app/actions/admin.ts`
  * y la UI de `src/app/[clinicSlug]/admin/*`.
  */
-import type { Appointment, AppointmentStatus, DatosPagoMovil, Doctor, Profile, Tenant } from "./database"
+import type { Appointment, AppointmentStatus, DatosPagoMovil, Doctor, Profile, Tenant, ThemeConfig } from "./database"
 import type { TurnoSeleccionado } from "./booking"
 
 /* -------------------- Resultado de Server Action -------------------- */
@@ -112,6 +112,8 @@ export type TenantSettingsData = {
   /** Límite por turno; null o 0 = ilimitado. */
   max_slots_per_shift: number | null
   datos_pago_movil: DatosPagoMovil | null
+  /** Paleta del perfil público (colores). */
+  theme_config: ThemeConfig
 }
 
 export type UpdateTenantSettingsInput = {

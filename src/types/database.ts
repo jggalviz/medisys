@@ -156,6 +156,20 @@ export type LandingConfig = {
   faq: LandingFaq[]
 }
 
+/** Configuración de tema/apariencia del perfil público (tenant.theme_config). */
+export type ThemeConfig = {
+  /** Color primario / acciones. */
+  primaryColor: string
+  /** Color secundario / badges. */
+  secondaryColor: string
+  /** Fondo de la página pública. */
+  backgroundColor: string
+  /** Fondo de tarjetas/módulos. */
+  cardBackgroundColor: string
+  /** Texto dentro de los botones principales. */
+  buttonTextColor: string
+}
+
 export type Tenant = {
   id: string
   slug: string
@@ -181,6 +195,8 @@ export type Tenant = {
   landing_enabled?: boolean | null
   /** Contenido editable de la Landing Page. */
   landing_config?: LandingConfig | null
+  /** Apariencia del perfil público (colores). */
+  theme_config?: ThemeConfig | null
   is_active: boolean
   datos_pago_movil: DatosPagoMovil | null
   created_at: string

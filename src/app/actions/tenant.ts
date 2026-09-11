@@ -20,6 +20,7 @@ import type {
   UpdateTenantSettingsInput,
 } from "@/types/admin"
 import { createClient } from "@/lib/supabase/server"
+import { normalizarThemeConfig } from "@/lib/theme"
 import { createAdminClient } from "@/lib/supabase/admin"
 import { asegurarBucketPublico, BUCKET_BRANDING } from "@/lib/supabase/storage"
 import { getStaffForSlug } from "@/lib/staff"
@@ -229,16 +230,38 @@ export async function updateTenantSettings(
       pago_movil_enabled: Boolean(data.pago_movil_enabled),
       max_slots_per_shift: maxSlots,
       datos_pago_movil: datosPago,
+      theme_config: normalizarThemeConfig(data.theme_config),
     }
 
     console.log("[updateTenantSettings] Payload enviado a PostgreSQL:", payloadCompleto)
 
-    const resultado = await supabase
+    const resultadoInicial = await supabase
       .from("tenants")
       .update(payloadCompleto)
       .eq("id", meta.id)
       .select("*")
       .maybeSingle()
+
+    // Tolerancia de esquema: si `theme_config` aún no existe en la BD (migración
+    // 0014 sin aplicar), se reintenta sin el tema para no bloquear el guardado.
+    let resultado = resultadoInicial
+    if (
+      resultadoInicial.error &&
+      /theme_config|PGRST204|schema cache/i.test(resultadoInicial.error.message ?? "")
+    ) {
+      console.warn(
+        "[updateTenantSettings] Reintentando sin theme_config (columna ausente):",
+        resultadoInicial.error.message
+      )
+      const payloadSinTema = { ...payloadCompleto }
+      delete payloadSinTema.theme_config
+      resultado = await supabase
+        .from("tenants")
+        .update(payloadSinTema)
+        .eq("id", meta.id)
+        .select("*")
+        .maybeSingle()
+    }
 
     if (resultado.error) {
       console.error("[updateTenantSettings] ERROR DE SUPABASE AL ACTUALIZAR:", resultado.error)

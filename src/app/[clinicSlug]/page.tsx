@@ -1,4 +1,5 @@
 import { notFound } from "next/navigation"
+import type { CSSProperties } from "react"
 import type { Metadata } from "next"
 import {
   AtSign,
@@ -26,6 +27,7 @@ import {
   normalizarLandingConfig,
   urlRedSocial,
 } from "@/lib/landing"
+import { normalizarThemeConfig, temaCssVars } from "@/lib/theme"
 
 /**
  * Landing Page / Perfil Profesional del tenant: /[clinicSlug].
@@ -88,6 +90,12 @@ export default async function ClinicLandingPage({ params }: ClinicLandingProps) 
 
   const config = normalizarLandingConfig(tenant.landing_config)
   const logo = logoMostrable(tenant.logo_url)
+  // Tema/apariencia configurada por la clínica (con defaults neutros).
+  const tema = normalizarThemeConfig(tenant.theme_config)
+  const estiloTema = {
+    ...temaCssVars(tema),
+    backgroundColor: tema.backgroundColor,
+  } as CSSProperties
   const resultado = await getDoctorsByTenant(clinicSlug)
   const doctores = resultado.ok ? [...resultado.data] : []
 
@@ -105,8 +113,11 @@ export default async function ClinicLandingPage({ params }: ClinicLandingProps) 
   const facebook = urlRedSocial(config.facebook, "facebook")
 
   return (
-    <main className="min-h-dvh bg-muted/30">
-      <header className="border-b bg-gradient-to-b from-primary/10 via-background to-background">
+    <main className="min-h-dvh" style={estiloTema}>
+      <header
+        className="border-b"
+        style={{ backgroundColor: tema.cardBackgroundColor }}
+      >
         <div className="mx-auto flex w-full max-w-5xl flex-col gap-6 px-4 py-10 sm:px-6 sm:py-14">
           <div className="flex flex-col items-start gap-5 sm:flex-row sm:items-center">
             {logo ? (
@@ -145,7 +156,11 @@ export default async function ClinicLandingPage({ params }: ClinicLandingProps) 
               {especialidades.map((esp) => (
                 <li
                   key={esp}
-                  className="rounded-full border bg-background px-3 py-1 text-xs font-medium text-muted-foreground"
+                  className="rounded-full border border-transparent px-3 py-1 text-xs font-semibold"
+                  style={{
+                    backgroundColor: tema.secondaryColor,
+                    color: tema.primaryColor,
+                  }}
                 >
                   {esp}
                 </li>
@@ -156,7 +171,11 @@ export default async function ClinicLandingPage({ params }: ClinicLandingProps) 
           <div className="flex flex-wrap items-center gap-3">
             <a
               href={reservarHref}
-              className="inline-flex h-12 items-center justify-center gap-2 rounded-xl bg-primary px-6 text-base font-semibold text-primary-foreground transition-opacity hover:opacity-90"
+              className="inline-flex h-12 items-center justify-center gap-2 rounded-xl px-6 text-base font-semibold transition-opacity hover:opacity-90"
+              style={{
+                backgroundColor: tema.primaryColor,
+                color: tema.buttonTextColor,
+              }}
             >
               <CalendarCheck className="size-5" />
               Reservar Cita
@@ -206,7 +225,10 @@ export default async function ClinicLandingPage({ params }: ClinicLandingProps) 
           <section className="flex flex-col gap-3">
             <h2 className="text-xl font-bold tracking-tight">Sobre mí</h2>
             {config.subespecialidades && (
-              <p className="flex items-center gap-2 text-sm font-medium text-primary">
+              <p
+                className="flex items-center gap-2 text-sm font-medium"
+                style={{ color: tema.primaryColor }}
+              >
                 <Stethoscope className="size-4" />
                 {config.subespecialidades}
               </p>
@@ -231,10 +253,14 @@ export default async function ClinicLandingPage({ params }: ClinicLandingProps) 
                   {config.servicios.map((servicio) => (
                     <li
                       key={servicio.titulo}
-                      className="flex flex-col gap-1 rounded-2xl border bg-card p-4"
+                      className="flex flex-col gap-1 rounded-2xl border p-4"
+                      style={{ backgroundColor: tema.cardBackgroundColor }}
                     >
                       <span className="flex items-center gap-2 font-semibold">
-                        <Stethoscope className="size-4 text-primary" />
+                        <Stethoscope
+                          className="size-4"
+                          style={{ color: tema.primaryColor }}
+                        />
                         {servicio.titulo}
                       </span>
                       {servicio.descripcion && (
@@ -249,9 +275,12 @@ export default async function ClinicLandingPage({ params }: ClinicLandingProps) 
             )}
 
             {config.horarios && (
-              <aside className="flex flex-col gap-3 rounded-2xl border bg-card p-5">
+              <aside
+                className="flex flex-col gap-3 rounded-2xl border p-5"
+                style={{ backgroundColor: tema.cardBackgroundColor }}
+              >
                 <h3 className="flex items-center gap-2 text-sm font-semibold uppercase tracking-wide text-muted-foreground">
-                  <Clock className="size-4 text-primary" />
+                  <Clock className="size-4" style={{ color: tema.primaryColor }} />
                   Horarios de atención
                 </h3>
                 <p className="whitespace-pre-line text-sm leading-relaxed">
@@ -260,7 +289,10 @@ export default async function ClinicLandingPage({ params }: ClinicLandingProps) 
                 <dl className="mt-1 flex flex-col gap-2.5 border-t pt-3 text-sm">
                   {(config.direccion_detallada || tenant.direccion) && (
                     <div className="flex items-start gap-2">
-                      <MapPin className="mt-0.5 size-4 shrink-0 text-primary" />
+                      <MapPin
+                        className="mt-0.5 size-4 shrink-0"
+                        style={{ color: tema.primaryColor }}
+                      />
                       <span>
                         {config.direccion_detallada ?? tenant.direccion}
                       </span>
@@ -310,7 +342,8 @@ export default async function ClinicLandingPage({ params }: ClinicLandingProps) 
               {doctores.map((doctor) => (
                 <li
                   key={doctor.id}
-                  className="flex flex-col gap-3 rounded-2xl border bg-card p-5"
+                  className="flex flex-col gap-3 rounded-2xl border p-5"
+                  style={{ backgroundColor: tema.cardBackgroundColor }}
                 >
                   {imagenMostrable(doctor.foto_url) ? (
                     // eslint-disable-next-line @next/next/no-img-element -- foto del especialista (Storage externo)
@@ -330,7 +363,10 @@ export default async function ClinicLandingPage({ params }: ClinicLandingProps) 
                       {doctor.especialidad}
                     </span>
                     {doctor.precio_consulta > 0 && (
-                      <span className="text-sm font-semibold text-teal-700">
+                      <span
+                        className="text-sm font-semibold"
+                        style={{ color: tema.primaryColor }}
+                      >
                         {formatUSD(doctor.precio_consulta)}
                       </span>
                     )}
@@ -338,6 +374,7 @@ export default async function ClinicLandingPage({ params }: ClinicLandingProps) 
                   <a
                     href={reservarHref}
                     className="mt-auto inline-flex h-10 items-center justify-center rounded-xl border text-sm font-medium transition-colors hover:bg-muted/50"
+                    style={{ color: tema.primaryColor }}
                   >
                     Reservar con este especialista
                   </a>
@@ -357,13 +394,15 @@ export default async function ClinicLandingPage({ params }: ClinicLandingProps) 
               {config.faq.map((item) => (
                 <details
                   key={item.pregunta}
-                  className="group rounded-2xl border bg-card px-4 py-3"
+                  className="group rounded-2xl border px-4 py-3"
+                  style={{ backgroundColor: tema.cardBackgroundColor }}
                 >
                   <summary className="flex cursor-pointer list-none items-center justify-between gap-3 text-sm font-semibold">
                     {item.pregunta}
                     <span
                       aria-hidden="true"
-                      className="text-lg leading-none text-primary transition-transform group-open:rotate-45"
+                      className="text-lg leading-none transition-transform group-open:rotate-45"
+                      style={{ color: tema.primaryColor }}
                     >
                       +
                     </span>
@@ -378,8 +417,14 @@ export default async function ClinicLandingPage({ params }: ClinicLandingProps) 
         )}
 
         {/* CTA final */}
-        <section className="flex flex-col items-center gap-4 rounded-3xl border bg-primary/5 px-6 py-10 text-center">
-          <h2 className="text-2xl font-bold tracking-tight">
+        <section
+          className="flex flex-col items-center gap-4 rounded-3xl border px-6 py-10 text-center"
+          style={{ backgroundColor: tema.secondaryColor }}
+        >
+          <h2
+            className="text-2xl font-bold tracking-tight"
+            style={{ color: tema.primaryColor }}
+          >
             Agenda tu cita en minutos
           </h2>
           <p className="max-w-xl text-sm text-muted-foreground">
@@ -388,7 +433,11 @@ export default async function ClinicLandingPage({ params }: ClinicLandingProps) 
           </p>
           <a
             href={reservarHref}
-            className="inline-flex h-12 items-center justify-center gap-2 rounded-xl bg-primary px-8 text-base font-semibold text-primary-foreground transition-opacity hover:opacity-90"
+            className="inline-flex h-12 items-center justify-center gap-2 rounded-xl px-8 text-base font-semibold transition-opacity hover:opacity-90"
+            style={{
+              backgroundColor: tema.primaryColor,
+              color: tema.buttonTextColor,
+            }}
           >
             <CalendarCheck className="size-5" />
             Reservar Cita
