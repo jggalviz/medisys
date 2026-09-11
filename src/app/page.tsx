@@ -309,14 +309,17 @@ function HeroSection() {
           {/* Announcement badge: nuevo módulo de Facturación Integrada */}
           <a
             href="#facturacion"
-            className="inline-flex flex-wrap items-center gap-2 rounded-full border border-teal-400/40 bg-zinc-900 px-3.5 py-1.5 text-[11px] font-bold uppercase tracking-wide text-teal-200 shadow-lg shadow-teal-950/20 transition hover:border-teal-300 hover:bg-zinc-800 sm:text-xs"
+            className="mb-4 inline-flex flex-wrap items-center gap-2 rounded-full border border-teal-200/80 bg-teal-50/80 px-3.5 py-1.5 text-[11px] font-bold uppercase tracking-wide text-teal-900 shadow-sm backdrop-blur transition-colors hover:border-teal-300 hover:bg-teal-50 sm:text-xs dark:border-teal-500/40 dark:bg-teal-950/30 dark:text-teal-100"
           >
-            <Zap className="size-3.5 shrink-0 text-amber-300" aria-hidden="true" />
+            <Zap
+              className="size-3.5 shrink-0 text-amber-500"
+              aria-hidden="true"
+            />
             Próximamente: Módulo de Facturación Integrada · Tras la nueva
             normativa del SENIAT
           </a>
 
-          <div className="mt-3">
+          <div>
             <a
               href="#precios"
               className="group inline-flex items-center gap-2.5 rounded-full border border-teal-200 bg-teal-50/80 py-1 pl-3 pr-3.5 text-sm font-medium text-teal-700 transition-colors hover:border-teal-300 hover:bg-teal-50"
