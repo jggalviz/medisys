@@ -18,6 +18,7 @@ import { useDemoHub } from "@/context/DemoHubContext"
 const NAV_ITEMS = [
   { label: "Beneficios", href: "#beneficios" },
   { label: "Cómo funciona", href: "#como-funciona" },
+  { label: "Facturación", href: "#facturacion" },
   { label: "Centro de Ayuda", href: "#conocimiento" },
   { label: "Precios", href: "#precios" },
 ] as const

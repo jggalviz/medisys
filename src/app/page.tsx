@@ -11,8 +11,10 @@ import {
   Check,
   LayoutDashboard,
   MessageCircle,
+  Rocket,
   ShieldCheck,
   Smartphone,
+  Zap,
 } from "lucide-react"
 import type { LucideIcon } from "lucide-react"
 
@@ -63,6 +65,11 @@ const CTA_PLANES = "Comenzar gratis · Pagas al llegar a 30 reservas"
 /** CTA del Plan Gratuito (freemium): hasta 30 citas al mes, sin compromiso. */
 const WHATSAPP_FREE_URL = `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(
   "Hola Medisys 👋, quiero comenzar gratis con el Plan Gratuito (hasta 30 reservas al mes; pago al llegar a 30 reservas)."
+)}`
+
+/** CTA del módulo de Facturación Integrada (acceso anticipado). */
+const WHATSAPP_FACTURACION_URL = `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(
+  "Hola Medisys 👋, quiero acceso anticipado al módulo de Facturación Integrada (Agenda + Expedientes + Facturación)."
 )}`
 
 /**
@@ -299,20 +306,32 @@ function HeroSection() {
 
       <Container className="grid items-center gap-14 py-14 sm:py-20 lg:grid-cols-12 lg:gap-10 lg:py-24">
         <div className="max-w-2xl lg:col-span-6">
+          {/* Announcement badge: nuevo módulo de Facturación Integrada */}
           <a
-            href="#precios"
-            className="group inline-flex items-center gap-2.5 rounded-full border border-teal-200 bg-teal-50/80 py-1 pl-3 pr-3.5 text-sm font-medium text-teal-700 transition-colors hover:border-teal-300 hover:bg-teal-50"
+            href="#facturacion"
+            className="inline-flex flex-wrap items-center gap-2 rounded-full border border-teal-400/40 bg-zinc-900 px-3.5 py-1.5 text-[11px] font-bold uppercase tracking-wide text-teal-200 shadow-lg shadow-teal-950/20 transition hover:border-teal-300 hover:bg-zinc-800 sm:text-xs"
           >
-            <span className="relative flex size-2 shrink-0">
-              <span className="absolute inline-flex size-full animate-ping rounded-full bg-emerald-400 opacity-75" />
-              <span className="relative inline-flex size-2 rounded-full bg-emerald-500" />
-            </span>
-            Plan Gratuito: hasta 30 citas/mes
-            <ArrowRight
-              className="size-3.5 transition-transform group-hover:translate-x-0.5"
-              aria-hidden="true"
-            />
+            <Zap className="size-3.5 shrink-0 text-amber-300" aria-hidden="true" />
+            Próximamente: Módulo de Facturación Integrada · Tras la nueva
+            normativa del SENIAT
           </a>
+
+          <div className="mt-3">
+            <a
+              href="#precios"
+              className="group inline-flex items-center gap-2.5 rounded-full border border-teal-200 bg-teal-50/80 py-1 pl-3 pr-3.5 text-sm font-medium text-teal-700 transition-colors hover:border-teal-300 hover:bg-teal-50"
+            >
+              <span className="relative flex size-2 shrink-0">
+                <span className="absolute inline-flex size-full animate-ping rounded-full bg-emerald-400 opacity-75" />
+                <span className="relative inline-flex size-2 rounded-full bg-emerald-500" />
+              </span>
+              Plan Gratuito: hasta 30 citas/mes
+              <ArrowRight
+                className="size-3.5 transition-transform group-hover:translate-x-0.5"
+                aria-hidden="true"
+              />
+            </a>
+          </div>
 
           <h1 className="mt-6 text-balance text-4xl font-extrabold leading-[1.08] tracking-tight text-zinc-900 sm:text-5xl xl:text-[3.4rem]">
             Automatiza las citas de tu clínica y verifica cada{" "}
@@ -372,6 +391,7 @@ function HeroSection() {
             {[
               "Plan Gratuito: hasta 30 citas/mes",
               "Sin compromiso",
+              "Agenda + Expedientes + Facturación",
               "Pago Móvil + Zelle",
             ].map(
               (item) => (
@@ -528,6 +548,112 @@ function SectionHeading({
         </p>
       )}
     </div>
+  )
+}
+
+/* ================================================================== */
+/* Sección Facturación Integrada (próximamente)                        */
+/* ================================================================== */
+
+const PUNTOS_FACTURACION = [
+  {
+    emoji: "🧾",
+    titulo: "Facturación sin trabas",
+    texto:
+      "Emisión directa adaptada a las normativas tributarias vigentes sin intermediarios complejos.",
+  },
+  {
+    emoji: "🔗",
+    titulo: "Sincronización Total",
+    texto:
+      "Factura generada automáticamente al confirmar la reserva de la cita médica.",
+  },
+  {
+    emoji: "🇻🇪",
+    titulo: "Cumplimiento Tributario",
+    texto:
+      "Cálculos exactos en Bolívares y USD con integración a la tasa oficial BCV.",
+  },
+] as const
+
+function FacturacionSection() {
+  return (
+    <section id="facturacion" className="scroll-mt-20">
+      <Container className="py-12 sm:py-16">
+        <div className="relative overflow-hidden rounded-3xl border border-teal-500/30 bg-zinc-950 px-6 py-10 shadow-2xl sm:px-10 sm:py-14">
+          <div
+            className="pointer-events-none absolute inset-0 bg-[radial-gradient(65%_60%_at_12%_0%,rgba(20,184,166,0.30),transparent_65%)]"
+            aria-hidden="true"
+          />
+          <div
+            className="pointer-events-none absolute -right-24 -top-24 size-[26rem] rounded-full bg-cyan-500/20 blur-3xl"
+            aria-hidden="true"
+          />
+
+          <div className="relative flex flex-col gap-8">
+            <div className="flex flex-col gap-4">
+              <span className="inline-flex w-fit items-center gap-2 rounded-full border border-amber-300/40 bg-amber-400/10 px-3 py-1 text-[11px] font-bold uppercase tracking-wide text-amber-300">
+                <Rocket className="size-3.5" aria-hidden="true" />
+                Próximamente · En desarrollo
+              </span>
+              <h2 className="max-w-3xl text-3xl font-extrabold leading-tight tracking-tight text-white sm:text-4xl">
+                El nuevo pilar de Medisys: Agenda + Facturación Integrada
+              </h2>
+              <p className="max-w-3xl text-base leading-7 text-zinc-300">
+                Aprovecha la derogación de la homologación de sistemas del
+                SENIAT. Estamos construyendo el módulo de facturación médica sin
+                complicaciones para que emitas tus comprobantes fiscales y
+                gestiones tus cobros desde la misma plataforma.
+              </p>
+            </div>
+
+            <ul className="grid gap-4 sm:grid-cols-3">
+              {PUNTOS_FACTURACION.map((punto) => (
+                <li
+                  key={punto.titulo}
+                  className="flex h-full flex-col gap-2 rounded-2xl border border-white/10 bg-white/5 p-5"
+                >
+                  <span className="text-2xl" aria-hidden="true">
+                    {punto.emoji}
+                  </span>
+                  <h3 className="text-base font-bold text-white">
+                    {punto.titulo}
+                  </h3>
+                  <p className="text-sm leading-6 text-zinc-300">{punto.texto}</p>
+                </li>
+              ))}
+            </ul>
+
+            <div className="flex flex-col gap-4 rounded-2xl border border-teal-400/25 bg-teal-400/5 p-5 sm:flex-row sm:items-center sm:justify-between">
+              <div className="flex flex-col gap-2">
+                <div className="flex flex-wrap items-center gap-2">
+                  {["Agenda", "Expedientes", "Facturación"].map((pilar) => (
+                    <span
+                      key={pilar}
+                      className="rounded-full border border-teal-300/40 bg-teal-400/10 px-3 py-1 text-xs font-semibold text-teal-200"
+                    >
+                      {pilar}
+                    </span>
+                  ))}
+                </div>
+                <span className="text-sm font-semibold text-white">
+                  El ecosistema completo de tu clínica en una sola plataforma.
+                </span>
+              </div>
+              <a
+                href={WHATSAPP_FACTURACION_URL}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex h-11 shrink-0 items-center justify-center gap-2 rounded-xl bg-linear-to-r from-teal-500 to-cyan-500 px-5 text-sm font-semibold text-white shadow-lg shadow-teal-900/30 transition hover:brightness-110"
+              >
+                Quiero acceso anticipado
+                <ArrowRight className="size-4" aria-hidden="true" />
+              </a>
+            </div>
+          </div>
+        </div>
+      </Container>
+    </section>
   )
 }
 
@@ -924,6 +1050,7 @@ export default async function Home() {
       <Navbar />
       <main className="flex-1">
         <HeroSection />
+        <FacturacionSection />
         <StepsSection />
         <GuiasSection guias={guias} />
         <BenefitsSection />
