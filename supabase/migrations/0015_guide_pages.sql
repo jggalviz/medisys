@@ -509,3 +509,73 @@ $md$
   )
 on conflict (slug) do nothing;
 
+
+insert into public.guide_pages (slug, title, category, order_index, content_markdown)
+values
+  (
+    'confirmacion-automatica-pago-movil',
+    'Confirmación Automática de Pago Móvil (SMS Gateway)',
+    'Finanzas',
+    4,
+    $md$# Confirmación Automática de Pago Móvil (SMS Gateway)
+
+Convierte el teléfono de recepción en un **gateway de conciliación**: cada SMS bancario que llega al equipo se lee automáticamente y la cita pasa de *Por validar* a *Confirmada* sin intervención manual.
+
+## ¿Cómo funciona?
+1. Un **teléfono Android dedicado** (con la SIM que recibe los SMS del banco) queda en recepción.
+2. La app **Android Gateway** detecta cada SMS bancario y lo reenvía por **Webhook** a la plataforma.
+3. Medisys **lee la referencia**, valida el **monto** y busca la cita pendiente que coincide.
+4. La cita se confirma **en tiempo real** y se registra la **auditoría** (remitente, texto, hora, referencia).
+
+> **Tip:** no hay comisiones por transacción: el cobro sigue siendo un Pago Móvil normal, solo se automatiza la *lectura* del mensaje.
+
+## Requisitos
+- **Teléfono Android** dedicado (versión 8 o superior) que permanezca encendido, cargando y con señal.
+- **SIM** con la línea que **recibe los SMS bancarios** de la clínica (la misma del Pago Móvil configurado).
+- Conexión **Wi-Fi o datos** estable en el teléfono.
+- Los **datos de Pago Móvil** cargados en **Configuración → Pago Móvil**.
+
+## Pasos de configuración
+1. **Instala la app Android Gateway** en el teléfono de recepción y concédele el permiso de *Lectura de SMS*.
+2. En la app, abre **Ajustes → Webhook** y pega la **URL de la plataforma** que te entrega Medisys:
+   - Formato: `https://<tu-dominio>/api/pagos/sms-webhook`
+3. Copia el **token de seguridad** de tu clínica y pégalo en la app (se envía como cabecera `Authorization: Bearer …`).
+4. Configura el **filtro de emisores bancarios** para ignorar SMS personales. Ejemplos de remitentes:
+
+| Banco / Servicio | Remitente típico |
+| --- | --- |
+| Banesco | 2652 |
+| Mercantil | 2383 |
+| Banco de Venezuela | 0102 |
+| Provincial (BBVA) | 2654 |
+
+5. Guarda y envía un **SMS de prueba** desde el teléfono para verificar la conexión (la app debe responder `200 OK`).
+
+> **Nota:** si el webhook responde con error, revisa que el token esté completo y que el teléfono tenga salida a internet.
+
+## Flujo de conciliación
+1. El paciente reporta su Pago Móvil desde la reserva (referencia, teléfono emisor y comprobante).
+2. La cita queda en estado **Por validar**.
+3. Llega el SMS del banco al teléfono de recepción → la app lo reenvía al webhook.
+4. El sistema **extrae la referencia** y **valida el monto** contra el precio de la consulta.
+5. Si coincide, la cita pasa automáticamente a **Confirmada** y se guarda el **registro de auditoría**.
+6. Si no coincide (monto distinto, referencia repetida o SMS de otro emisor), la cita se mantiene en **Por validar** para revisión manual.
+
+## Manual vs. Automática por SMS
+
+| Criterio | Verificación manual | Automática por SMS |
+| --- | --- | --- |
+| Tiempo de confirmación | Minutos u horas (depende del personal) | Segundos, en tiempo real |
+| Errores de transcripción | Posibles (referencia/teléfono) | Sin transcripción manual |
+| Cobertura fuera de horario | Limitada al horario de recepción | 24/7 mientras el teléfono esté activo |
+| Costo por transacción | — | Sin comisiones adicionales |
+| Requisito | Conexión a internet | Teléfono Android + SIM dedicados |
+| Auditoría | Manual en el panel | Automática (SMS, remitente, hora, referencia) |
+
+> **Tip:** en Android, desactiva la **optimización de batería** para la app Gateway (Ajustes → Batería → Sin restricciones) y bloquearla en apps recientes. Si el sistema la suspende, los SMS no se reenviarán hasta que vuelvas a abrirla.
+
+> **Nota:** Medisys no almacena el SMS completo más allá de lo necesario para la conciliación; se conserva la referencia, el monto y la marca de tiempo para la auditoría de la cita.
+$md$
+  )
+on conflict (slug) do nothing;
+
