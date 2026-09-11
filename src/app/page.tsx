@@ -74,7 +74,7 @@ const WHATSAPP_TRIAL_URL = `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURICom
 
 /** CTA del Plan Gratuito (freemium): hasta 30 citas al mes, sin tarjeta. */
 const WHATSAPP_FREE_URL = `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(
-  "Hola Medisys 👋, quiero empezar con el Plan Gratuito (hasta 30 citas al mes, sin tarjeta de crédito)."
+  "Hola Medisys 👋, quiero comenzar gratis con el Plan Gratuito (hasta 30 reservas al mes; pago al llegar a 30 reservas)."
 )}`
 
 /**
@@ -187,7 +187,7 @@ const PLANES_LANDING: readonly PlanLanding[] = [
     precio: "$0",
     precioDetalle: "USD / mes",
     perfiles: "Hasta 30 reservas al mes",
-    cta: "Empieza Gratis Ahora",
+    cta: "Comenzar gratis · Pagas al llegar a 30 reservas",
     features: [
       "Hasta 30 reservas al mes",
       "1 Médico",
@@ -728,10 +728,10 @@ function PricingSection() {
                   href={plan.id === "free" ? WHATSAPP_FREE_URL : WHATSAPP_TRIAL_URL}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="inline-flex h-12 items-center justify-center gap-2 rounded-xl bg-linear-to-r from-teal-600 to-cyan-600 px-6 text-base font-semibold text-white shadow-lg shadow-teal-600/25 transition hover:shadow-xl hover:brightness-110 active:scale-[0.99]"
+                  className="inline-flex h-auto min-h-12 items-center justify-center gap-2 whitespace-normal rounded-xl bg-linear-to-r from-teal-600 to-cyan-600 px-5 py-3 text-center text-sm font-semibold leading-snug text-white shadow-lg shadow-teal-600/25 transition hover:shadow-xl hover:brightness-110 active:scale-[0.99]"
                 >
                   {plan.cta ?? "Probar 7 Días Gratis"}
-                  <ArrowRight className="size-4" aria-hidden="true" />
+                  <ArrowRight className="size-4 shrink-0" aria-hidden="true" />
                 </a>
                 <Link
                   href={plan.demoHref}
