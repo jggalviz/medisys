@@ -728,9 +728,9 @@ function PricingSection() {
                   href={plan.id === "free" ? WHATSAPP_FREE_URL : WHATSAPP_TRIAL_URL}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="inline-flex h-auto min-h-12 flex-col justify-center gap-1 whitespace-normal rounded-xl bg-linear-to-r from-teal-600 to-cyan-600 px-5 py-3 text-center text-sm font-semibold leading-snug text-white shadow-lg shadow-teal-600/25 transition hover:shadow-xl hover:brightness-110 active:scale-[0.99]"
+                  className="inline-flex h-auto min-h-12 items-center justify-center gap-2 whitespace-normal rounded-xl bg-linear-to-r from-teal-600 to-cyan-600 px-5 py-3 text-center text-sm font-semibold leading-snug text-white shadow-lg shadow-teal-600/25 transition hover:shadow-xl hover:brightness-110 active:scale-[0.99]"
                 >
-                  <span className="whitespace-normal text-balance">
+                  <span className="whitespace-normal text-balance text-center text-sm font-semibold leading-snug">
                     {CTA_PLANES}
                   </span>
                   <ArrowRight
