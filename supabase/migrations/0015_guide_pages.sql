@@ -396,3 +396,116 @@ $md$
   )
 on conflict (slug) do nothing;
 
+
+insert into public.guide_pages (slug, title, category, order_index, content_markdown)
+values
+  (
+    'pago-movil-y-metodos-de-pago',
+    'Pago Móvil y métodos de pago',
+    'Finanzas',
+    3,
+    $md$# Pago Móvil y métodos de pago
+
+Configura cómo y dónde te paga el paciente. Medisys soporta **Pago Móvil**, **Zelle**, **Transferencia**, **Efectivo**, **Punto de Venta** y **Pago en recepción**.
+
+## 1. Configurar el Pago Móvil
+1. Ve a **Configuración → Pago Móvil**.
+2. Pulsa **+ Agregar cuenta** y completa los datos oficiales:
+
+| Campo | Ejemplo | Notas |
+| --- | --- | --- |
+| Banco | Banesco | Selección de la lista de bancos venezolanos |
+| Cédula / RIF | V-12345678 · J-40555123-7 | Puede ser personal o jurídico |
+| Teléfono | 0414-1234567 | Debe estar afiliado al Pago Móvil |
+| Titular | Clínica Demo C.A. | Nombre que verá el paciente |
+
+3. Activa el switch **Pago Móvil en línea** para que aparezca en la reserva.
+4. Guarda con **Guardar cambios**.
+
+> **Nota:** el switch *Pago Móvil en línea* es independiente de los demás métodos. Si lo desactivas, el paciente solo verá las demás opciones.
+
+## 2. Activar Zelle, transferencia, efectivo y punto de venta
+- En la misma pestaña agrega las cuentas que aceptes; para **Zelle** indica el correo y el titular.
+- El método **Efectivo** y **Punto de Venta** se cobran en **Recepción** el día de la cita.
+- El paciente puede elegir **pagar en recepción** cuando no quiera transferir antes.
+
+## 3. Qué ve el paciente en la reserva
+1. Elige paciente, especialista y turno.
+2. En el paso **Pago** ve tus datos oficiales con el desglose en **USD** y **Bs.** (tasa BCV del día).
+3. Si paga en línea, completa:
+   - **Banco de origen** (obligatorio)
+   - **Referencia** de la transferencia (4 a 6 dígitos)
+   - **Teléfono emisor**
+   - **Comprobante** (foto o PDF, opcional pero recomendado)
+4. Al enviar, la cita queda en **Por validar** hasta que recepción la apruebe.
+
+> **Tip:** adjuntar el comprobante acelera la validación y evita llamadas al paciente.
+$md$
+  ),
+  (
+    'capacidad-y-cupos-por-turno',
+    'Capacidad y cupos por turno',
+    'Operación',
+    3,
+    $md$# Capacidad y cupos por turno
+
+Controla cuántas citas acepta el sistema para evitar sobre-agendamiento y mantener la calidad de atención.
+
+## Dónde se configura
+1. Ve a **Configuración → Capacidad**.
+2. Define el **Máximo de reservas por turno (mañana/tarde)**.
+3. Guarda con **Guardar cambios**.
+
+## Ilimitado vs. restringido
+
+| Configuración | Comportamiento | Cuándo usarla |
+| --- | --- | --- |
+| Vacío o `0` | Reservas **ilimitadas** por turno | Consultorio con agenda flexible |
+| `1` a `N` | Bloquea nuevas reservas al alcanzar el tope | Clínicas con cupos fijos |
+
+## Cómo interactúan los límites
+- El tope se evalúa **por turno** (mañana y tarde por separado), no por día completo.
+- Los horarios por especialista (`schedules`) siguen definiendo los cupos de tiempo de cada médico.
+- Cuando el turno se llena, el wizard deja de ofrecer ese turno y sugiere el siguiente disponible.
+
+> **Tip:** si una jornada se llena siempre, considera ampliar el horario del especialista en **Especialistas → Horarios** antes de subir el tope global.
+
+> **Nota:** las citas *canceladas* o *expiradas* liberan su cupo automáticamente.
+$md$
+  ),
+  (
+    'notificaciones-y-confirmaciones',
+    'Notificaciones y confirmaciones',
+    'Operación',
+    4,
+    $md$# Notificaciones y confirmaciones
+
+Así se comunica Medisys con el paciente para que no se pierda ninguna cita.
+
+## Confirmación de la cita
+- Al reservar, el paciente ve en pantalla el **resumen** de su cita (especialista, fecha, turno y estado).
+- El estado evoluciona de forma transparente:
+
+| Estado | Lo que significa para el paciente |
+| --- | --- |
+| Por validar | Enviamos tu pago a revisión |
+| Confirmada | Tu pago fue validado, la cita está reservada |
+| En espera | Ya estás registrado en sala |
+| Atendido | Tu consulta finalizó |
+
+## Comprobante digital
+- Desde el resumen de la cita el paciente puede **descargar el comprobante en PDF**.
+- Incluye logo de la clínica, datos del paciente, especialista, fecha/turno y estado del pago.
+- También puede **compartir los detalles por WhatsApp** al número de la clínica.
+
+## Recordatorios
+- El paciente puede volver a entrar a la misma URL de reserva desde su móvil para revisar su cita.
+- La recepción puede contactarlo con un clic usando el teléfono registrado en su ficha.
+
+> **Nota:** Medisys no envía SMS por defecto; todas las confirmaciones quedan visibles en la pantalla de la reserva y en el comprobante descargable.
+
+> **Tip:** mantén un teléfono/WhatsApp actualizado en **Configuración → Información General**: se usa para el contacto y los enlaces de compartir.
+$md$
+  )
+on conflict (slug) do nothing;
+

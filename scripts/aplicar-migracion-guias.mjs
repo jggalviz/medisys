@@ -194,7 +194,9 @@ async function sembrarGuias(admin, semillas) {
   const faltantes = semillas.filter((semilla) => !yaEstan.has(semilla.slug))
 
   if (faltantes.length === 0) {
-    console.log(`• Semilla: las ${semillas.length} guías ya estaban presentes.`)
+    console.log(
+      `• Semilla: ${semillas.length}/${semillas.length} guías del archivo ya estaban presentes.`
+    )
     return
   }
 
@@ -208,6 +210,9 @@ async function sembrarGuias(admin, semillas) {
   }
   console.log(`• Semilla: ${faltantes.length} guía(s) insertadas por REST:`)
   for (const guia of faltantes) console.log(`   + ${guia.slug}`)
+  console.log(
+    `• Semilla: cobertura ${semillas.length}/${semillas.length} guías del archivo.`
+  )
 }
 
 function imprimirInstrucciones(sql) {
