@@ -72,6 +72,9 @@ const WHATSAPP_TRIAL_URL = `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURICom
   "Hola Medisys 👋, quiero comenzar la prueba gratuita de 7 días para mi consultorio o clínica."
 )}`
 
+/** CTA unificado de la tabla de precios (freemium: pagas al llegar a 30). */
+const CTA_PLANES = "Comenzar gratis · Pagas al llegar a 30 reservas"
+
 /** CTA del Plan Gratuito (freemium): hasta 30 citas al mes, sin tarjeta. */
 const WHATSAPP_FREE_URL = `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(
   "Hola Medisys 👋, quiero comenzar gratis con el Plan Gratuito (hasta 30 reservas al mes; pago al llegar a 30 reservas)."
@@ -171,8 +174,6 @@ type PlanLanding = {
   /** Resumen de perfiles/sedes incluidos en el plan. */
   perfiles: string
   destacado?: boolean
-  /** Etiqueta del botón principal (por defecto: prueba de 7 días). */
-  cta?: string
   features: readonly string[]
   demoHref: string
 }
@@ -187,7 +188,6 @@ const PLANES_LANDING: readonly PlanLanding[] = [
     precio: "$0",
     precioDetalle: "USD / mes",
     perfiles: "Hasta 30 reservas al mes",
-    cta: "Comenzar gratis · Pagas al llegar a 30 reservas",
     features: [
       "Hasta 30 reservas al mes",
       "1 Médico",
@@ -728,10 +728,15 @@ function PricingSection() {
                   href={plan.id === "free" ? WHATSAPP_FREE_URL : WHATSAPP_TRIAL_URL}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="inline-flex h-auto min-h-12 items-center justify-center gap-2 whitespace-normal rounded-xl bg-linear-to-r from-teal-600 to-cyan-600 px-5 py-3 text-center text-sm font-semibold leading-snug text-white shadow-lg shadow-teal-600/25 transition hover:shadow-xl hover:brightness-110 active:scale-[0.99]"
+                  className="inline-flex h-auto min-h-12 flex-col justify-center gap-1 whitespace-normal rounded-xl bg-linear-to-r from-teal-600 to-cyan-600 px-5 py-3 text-center text-sm font-semibold leading-snug text-white shadow-lg shadow-teal-600/25 transition hover:shadow-xl hover:brightness-110 active:scale-[0.99]"
                 >
-                  {plan.cta ?? "Probar 7 Días Gratis"}
-                  <ArrowRight className="size-4 shrink-0" aria-hidden="true" />
+                  <span className="whitespace-normal text-balance">
+                    {CTA_PLANES}
+                  </span>
+                  <ArrowRight
+                    className="size-4 shrink-0"
+                    aria-hidden="true"
+                  />
                 </a>
                 <Link
                   href={plan.demoHref}
