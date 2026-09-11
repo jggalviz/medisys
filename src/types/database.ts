@@ -492,6 +492,36 @@ export type TenantUserInsert = Omit<TenantUser, "id" | "created_at"> & {
 export type TenantUserUpdate = Partial<TenantUserInsert>
 
 /* ------------------------------------------------------------------ */
+/* guide_pages (Guía de Uso y Configuración / Base de conocimiento)   */
+/* ------------------------------------------------------------------ */
+
+export type GuidePage = {
+  id: string
+  slug: string
+  title: string
+  category: string
+  order_index: number
+  content_markdown: string
+  is_published: boolean
+  created_at: string
+  updated_at: string
+}
+
+export type GuidePageInsert = Omit<
+  GuidePage,
+  "id" | "created_at" | "updated_at" | "is_published" | "order_index" | "category"
+> & {
+  id?: string
+  created_at?: string
+  updated_at?: string
+  is_published?: boolean
+  order_index?: number
+  category?: string
+}
+
+export type GuidePageUpdate = Partial<GuidePageInsert>
+
+/* ------------------------------------------------------------------ */
 /* Tipado del cliente Supabase (createClient<Database>)                */
 /* ------------------------------------------------------------------ */
 
@@ -550,6 +580,12 @@ export type Database = {
         Row: SaasSubscriptionPayment
         Insert: SaasSubscriptionPaymentInsert
         Update: SaasSubscriptionPaymentUpdate
+        Relationships: []
+      }
+      guide_pages: {
+        Row: GuidePage
+        Insert: GuidePageInsert
+        Update: GuidePageUpdate
         Relationships: []
       }
     }

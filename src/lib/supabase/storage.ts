@@ -10,6 +10,7 @@ import { createAdminClient } from "@/lib/supabase/admin"
 /** Buckets usados por la plataforma. */
 export const BUCKET_BRANDING = "branding"
 export const BUCKET_COMPROBANTES = "comprobantes"
+export const BUCKET_GUIDES = "guides"
 
 export type AsegurarBucketResult =
   | { ok: true; creado: boolean }

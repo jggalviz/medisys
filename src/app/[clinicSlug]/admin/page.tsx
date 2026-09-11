@@ -5,6 +5,7 @@ import type { Metadata } from "next"
 import {
   ArrowLeft,
   ArrowRight,
+  BookOpen,
   Building2,
   CalendarClock,
   CheckCircle2,
@@ -216,6 +217,12 @@ export default async function AdminPage({ params }: AdminPageProps) {
       titulo: "Especialistas",
       descripcion: "Equipo médico y horarios",
       icono: <Stethoscope className="size-5" />,
+    },
+    {
+      href: `/${clinicSlug}/admin/guia`,
+      titulo: "Centro de Ayuda",
+      descripcion: "Guía de uso y configuración",
+      icono: <BookOpen className="size-5" />,
     },
     {
       href: `/${clinicSlug}/admin/landing`,

@@ -41,6 +41,12 @@ export default async function SuperAdminLayout({
               >
                 Pagos
               </Link>
+              <Link
+                href="/super-admin/guias"
+                className="text-muted-foreground transition-colors hover:text-foreground"
+              >
+                Guías
+              </Link>
             </nav>
           </div>
           <div className="flex items-center gap-3">
