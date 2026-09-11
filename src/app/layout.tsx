@@ -16,9 +16,9 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://medisys.com.ve"),
-  title: "Medisys · Agenda Médica Inteligente y Expedientes Médicos",
+  title: "Medisys · Agenda Médica y Expedientes",
   description:
-    "Gestión médica inteligente en Venezuela: Plan Gratuito de hasta 30 reservas/mes. Agendamiento online, expedientes de pacientes, perfil público SEO y cobro a tasa BCV.",
+    "Reservas 24/7 y cobros automáticos a tasa BCV, expedientes digitales y perfil SEO para Google. Gratis hasta 30 reservas/mes.",
   keywords: [
     "agenda medica venezuela",
     "expediente medico digital",
@@ -28,9 +28,9 @@ export const metadata: Metadata = {
     "medisys",
   ],
   openGraph: {
-    title: "Medisys · Agenda Médica Inteligente y Expedientes Médicos",
+    title: "Medisys · Agenda Médica y Expedientes",
     description:
-      "Plan Gratuito de hasta 30 reservas/mes. Agenda online, expedientes de pacientes, perfil público SEO y cobro a tasa BCV.",
+      "Reservas 24/7 y cobros automáticos a tasa BCV, expedientes digitales y perfil SEO para Google. Gratis hasta 30 reservas/mes.",
     url: "https://medisys.com.ve",
     siteName: "Medisys",
     locale: "es_VE",
@@ -46,9 +46,9 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "Medisys · Agenda Médica Inteligente y Expedientes Médicos",
+    title: "Medisys · Agenda Médica y Expedientes",
     description:
-      "Plan Gratuito de hasta 30 reservas/mes. Agenda online, expedientes de pacientes, perfil público SEO y cobro a tasa BCV.",
+      "Reservas 24/7 y cobros automáticos a tasa BCV, expedientes digitales y perfil SEO para Google. Gratis hasta 30 reservas/mes.",
     images: ["/og-image.png"],
   },
 };
