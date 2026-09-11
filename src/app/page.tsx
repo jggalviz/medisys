@@ -60,7 +60,7 @@ const WHATSAPP_TRIAL_URL = `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURICom
 /** CTA unificado de la tabla de precios (freemium: pagas al llegar a 30). */
 const CTA_PLANES = "Comenzar gratis · Pagas al llegar a 30 reservas"
 
-/** CTA del Plan Gratuito (freemium): hasta 30 citas al mes, sin tarjeta. */
+/** CTA del Plan Gratuito (freemium): hasta 30 citas al mes, sin compromiso. */
 const WHATSAPP_FREE_URL = `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(
   "Hola Medisys 👋, quiero comenzar gratis con el Plan Gratuito (hasta 30 reservas al mes; pago al llegar a 30 reservas)."
 )}`
@@ -184,7 +184,7 @@ const PLANES_LANDING: readonly PlanLanding[] = [
       "Agendamiento público en 3 pasos",
       "Expediente básico del paciente",
       "Cálculo automático de cobros en USD y VES a la tasa oficial del BCV del día",
-      "Sin tarjeta de crédito",
+      "Sin compromiso",
       "Soporte por WhatsApp",
     ],
     demoHref: RESERVAR_INDEPENDIENTE_ROUTE,
@@ -328,8 +328,8 @@ function HeroSection() {
             mismo. Tus pacientes agendan desde el celular y pagan con Pago
             Móvil; la recepción valida cada comprobante en tiempo real.{" "}
             <strong className="font-semibold text-zinc-800">
-              Empieza con el Plan Gratuito (hasta 30 citas al mes), sin tarjeta
-              de crédito ni pagos por adelantado.
+              Empieza con el Plan Gratuito (hasta 30 citas al mes), sin
+              compromiso ni pagos por adelantado.
             </strong>
           </p>
 
@@ -364,14 +364,14 @@ function HeroSection() {
           </div>
 
           <p className="mt-4 text-sm text-zinc-500">
-            Plan Gratuito de hasta 30 citas/mes · Sin tarjeta de crédito ·
-            Configúralo en minutos.
+            Plan Gratuito de hasta 30 citas/mes · Sin compromiso · Configúralo
+            en minutos.
           </p>
 
           <ul className="mt-8 flex flex-wrap gap-x-6 gap-y-2 text-sm font-medium text-zinc-700">
             {[
               "Plan Gratuito: hasta 30 citas/mes",
-              "Sin tarjeta de crédito",
+              "Sin compromiso",
               "Pago Móvil + Zelle",
             ].map(
               (item) => (
@@ -653,7 +653,7 @@ function PricingSection() {
 
         <div className="mx-auto mt-8 flex w-fit items-center gap-2 rounded-full border border-emerald-200 bg-emerald-50 px-4 py-2 text-sm font-bold text-emerald-700 shadow-sm">
           <span aria-hidden="true">🎁</span>
-          PLAN GRATUITO: HASTA 30 CITAS AL MES · SIN TARJETA DE CRÉDITO
+          PLAN GRATUITO: HASTA 30 CITAS AL MES · SIN COMPROMISO
         </div>
 
         <div className="mx-auto mt-10 grid max-w-7xl gap-6 md:grid-cols-2 xl:grid-cols-4">
@@ -742,8 +742,8 @@ function PricingSection() {
 
         <p className="mx-auto mt-6 max-w-2xl text-center text-xs leading-5 text-zinc-500">
           Precios en USD. El cobro de los planes de pago se liquida en Bolívares
-          a la tasa oficial del BCV del día. El Plan Gratuito no requiere
-          tarjeta de crédito.
+          a la tasa oficial del BCV del día. El Plan Gratuito no tiene
+          compromiso.
         </p>
       </Container>
     </section>
