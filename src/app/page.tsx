@@ -1,4 +1,3 @@
-import type { Metadata } from "next"
 import Link from "next/link"
 import type { ReactNode } from "react"
 import {
@@ -28,24 +27,10 @@ import { DemoHubTrigger } from "@/components/demo/DemoHubTrigger"
 import { GuiasSection } from "@/components/landing/GuiasSection"
 import { listarGuiasPublicas } from "@/lib/guias-publicas"
 
-/* ------------------------------------------------------------------ */
-/* SEO de la landing page (ruta "/")                                   */
-/* ------------------------------------------------------------------ */
-
-export const metadata: Metadata = {
-  title:
-    "Medisys | Agenda médica automática y Pago Móvil verificado para clínicas en Venezuela",
-  description:
-    "Automatiza las citas de tu consultorio o clínica: tus pacientes reservan desde el celular y pagan con Pago Móvil. Tu recepción valida comprobante y referencia en tiempo real. Empieza gratis con hasta 30 citas al mes, sin tarjeta de crédito.",
-  alternates: { canonical: "/" },
-  openGraph: {
-    title: "Medisys | Agenda tu clínica y verifica cada Pago Móvil",
-    description:
-      "Reservas 24/7 sin descargas, validación de Pago Móvil en tiempo real y Plan Gratuito de hasta 30 citas al mes (sin tarjeta de crédito).",
-    locale: "es_VE",
-    type: "website",
-  },
-}
+/*
+ * La landing "/" hereda el `metadata` global definido en `src/app/layout.tsx`
+ * (SEO + Open Graph + Twitter Cards), garantizando una sola fuente de verdad.
+ */
 
 /**
  * ISR: el bloque de guías se refresca cada 5 minutos sin volver dinámica la
