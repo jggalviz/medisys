@@ -37,12 +37,12 @@ export const metadata: Metadata = {
   title:
     "Medisys | Agenda médica automática y Pago Móvil verificado para clínicas en Venezuela",
   description:
-    "Automatiza las citas de tu consultorio o clínica: tus pacientes reservan desde el celular y pagan con Pago Móvil. Tu recepción valida comprobante y referencia en tiempo real desde un panel.",
+    "Automatiza las citas de tu consultorio o clínica: tus pacientes reservan desde el celular y pagan con Pago Móvil. Tu recepción valida comprobante y referencia en tiempo real. Empieza con 7 días gratis, sin tarjeta ni pagos por adelantado.",
   alternates: { canonical: "/" },
   openGraph: {
     title: "Medisys | Agenda tu clínica y verifica cada Pago Móvil",
     description:
-      "Reservas 24/7 sin descargas y validación de Pago Móvil en tiempo real. Prueba la demo en vivo.",
+      "Reservas 24/7 sin descargas, validación de Pago Móvil en tiempo real y 7 días de prueba gratis (sin tarjeta ni pagos por adelantado).",
     locale: "es_VE",
     type: "website",
   },
@@ -66,6 +66,11 @@ const WHATSAPP_NUMBER = "584228101010"
 
 const WHATSAPP_URL = `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(
   "Hola Medisys 👋, vi la landing y quiero activar la plataforma en mi consultorio o clínica."
+)}`
+
+/** CTA principal de conversión: iniciar la prueba gratuita de 7 días. */
+const WHATSAPP_TRIAL_URL = `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(
+  "Hola Medisys 👋, quiero comenzar la prueba gratuita de 7 días para mi consultorio o clínica."
 )}`
 
 /**
@@ -157,9 +162,8 @@ type PlanLanding = {
   descripcion: string
   precio: string
   precioDetalle: string
-  precioTachado?: string
-  promo: string
-  multisede?: string
+  /** Resumen de perfiles/sedes incluidos en el plan. */
+  perfiles: string
   destacado?: boolean
   features: readonly string[]
   demoHref: string
@@ -167,42 +171,40 @@ type PlanLanding = {
 
 const PLANES_LANDING: readonly PlanLanding[] = [
   {
-    id: "pro",
-    badge: "PLAN INDEPENDIENTE",
-    nombre: "Plan Especialista Pro",
+    id: "individual",
+    badge: "PLAN INDIVIDUAL",
+    nombre: "Plan Individual",
     descripcion:
-      "Ideal para médicos independientes que manejan su propio consultorio y agenda personal.",
-    precio: "$15",
-    precioDetalle: "USD / mes (1er mes)",
-    precioTachado: "$30",
-    promo: "50% DE DESCUENTO el 1er mes (luego $30/mes) + 7 días gratis",
+      "Para médicos independientes que manejan su propio consultorio y agenda personal.",
+    precio: "$30",
+    precioDetalle: "USD / mes",
+    perfiles: "1 Médico · Sedes ilimitadas",
     features: [
-      "1 Especialista activo",
+      "1 Médico activo",
+      "Sedes ilimitadas",
       "Agendamiento automatizado en 3 pasos",
       "Expedientes e historial de pacientes",
       "Cálculo automático de cobros en USD y VES a la tasa oficial del BCV del día",
       "Estadísticas e ingresos unificados en USD y Bolívares",
       "Pago Móvil y Zelle habilitados en tu panel (personalizable a cualquier método de cobro que necesites)",
       "Soporte por WhatsApp",
-      "7 días de prueba gratis sin compromiso",
       "🌱 Plataforma en constante evolución: diseñamos e implementamos las nuevas funciones que tu consultorio necesite.",
     ],
     demoHref: RESERVAR_INDEPENDIENTE_ROUTE,
   },
   {
-    id: "clinica",
-    badge: "PLAN CLÍNICA",
-    nombre: "Plan Clínica / Centro Médico",
+    id: "pyme",
+    badge: "PLAN PYME",
+    nombre: "Plan PyME",
     descripcion:
-      "Diseñado para centros médicos, clínicas y consultorios con múltiples especialistas.",
-    precio: "$50",
-    precioDetalle: "USD / mes (1er mes · sede principal)",
-    precioTachado: "$100",
-    promo: "50% DE DESCUENTO el 1er mes (luego $100/mes) + 7 días gratis",
-    multisede: "$100/mes sede principal + $60/mes por sede adicional",
+      "Para consultorios y centros médicos con varios especialistas en una sola sede.",
+    precio: "$75",
+    precioDetalle: "USD / mes",
+    perfiles: "2 a 10 Médicos · 1 Sede",
     destacado: true,
     features: [
-      "Especialistas ilimitados por sede",
+      "2 a 10 médicos activos",
+      "1 sede",
       "Recepción, administración y gestión multi-doctor",
       "Flujo completo de agendamiento público en 4 pasos",
       "Personalización completa con la marca de la clínica",
@@ -210,7 +212,27 @@ const PLANES_LANDING: readonly PlanLanding[] = [
       "Reportes y estadísticas financieras multi-doctor en USD y Bolívares",
       "Pago Móvil y Zelle habilitados en tu panel (personalizable a cualquier método de cobro que necesites)",
       "Soporte prioritario por WhatsApp y correo",
+      "7 días de prueba gratis sin compromiso",
+    ],
+    demoHref: DEMO_ROUTE,
+  },
+  {
+    id: "pro",
+    badge: "PLAN PRO",
+    nombre: "Plan PRO",
+    descripcion:
+      "Para clínicas grandes, redes y grupos médicos con múltiples sedes.",
+    precio: "$140",
+    precioDetalle: "USD / mes",
+    perfiles: "10+ Médicos o Múltiples Sedes",
+    features: [
+      "10+ médicos activos",
+      "Múltiples sedes",
+      "Todo lo incluido en el plan PyME",
+      "Panel consolidado multi-sede",
       "Migración y configuración inicial sin costo",
+      "Cálculo automático de cobros en USD y VES a la tasa oficial del BCV del día",
+      "Soporte prioritario dedicado",
       "7 días de prueba gratis sin compromiso",
       "💡 Desarrollo continuo a tu medida: abiertos a escuchar e integrar nuevos módulos o mejoras para el flujo de tu clínica.",
     ],
@@ -260,7 +282,7 @@ function HeroSection() {
               <span className="absolute inline-flex size-full animate-ping rounded-full bg-emerald-400 opacity-75" />
               <span className="relative inline-flex size-2 rounded-full bg-emerald-500" />
             </span>
-            Agendar Cita de Prueba
+            Ver demo en vivo
             <ArrowRight
               className="size-3.5 transition-transform group-hover:translate-x-0.5"
               aria-hidden="true"
@@ -277,35 +299,35 @@ function HeroSection() {
           </h1>
 
           <p className="mt-6 max-w-xl text-pretty text-lg leading-8 text-zinc-600">
-            Medisys es la solución SaaS multi-tenant diseñada para optimizar la
-            agendación médica y la gestión operativa en clínicas y
-            consultorios. Permite a los pacientes autogestionar sus citas desde
-            cualquier dispositivo y procesar pagos vía Pago Móvil. Automatiza
-            la recepción, concilia referencias en tiempo real y reduce
-            drásticamente las llamadas administrativas y la saturación en sala
-            de espera.
+            Configura tu clínica en minutos y empieza a recibir reservas hoy
+            mismo. Tus pacientes agendan desde el celular y pagan con Pago
+            Móvil; la recepción valida cada comprobante en tiempo real.{" "}
+            <strong className="font-semibold text-zinc-800">
+              Empieza con 7 días gratis, sin tarjeta de crédito y sin pagos por
+              adelantado.
+            </strong>
           </p>
 
           <div className="mt-8 flex w-full flex-col gap-3 sm:w-auto sm:flex-row">
-            <Link
-              href={`/${DEMO_CLINIC_SLUG}`}
-              className="inline-flex h-12 items-center justify-center gap-2 rounded-xl bg-linear-to-r from-teal-600 to-cyan-600 px-6 text-base font-semibold text-white shadow-lg shadow-teal-600/25 transition hover:shadow-xl hover:brightness-110 active:scale-[0.99]"
-            >
-              Agendar Cita DEMO
-              <ArrowRight className="size-4" aria-hidden="true" />
-            </Link>
             <a
-              href={WHATSAPP_URL}
+              href={WHATSAPP_TRIAL_URL}
               target="_blank"
               rel="noopener noreferrer"
+              className="inline-flex h-12 items-center justify-center gap-2 rounded-xl bg-linear-to-r from-teal-600 to-cyan-600 px-6 text-base font-semibold text-white shadow-lg shadow-teal-600/25 transition hover:shadow-xl hover:brightness-110 active:scale-[0.99]"
+            >
+              Prueba 7 Días Gratis
+              <ArrowRight className="size-4" aria-hidden="true" />
+            </a>
+            <Link
+              href={DEMO_ROUTE}
               className="inline-flex h-12 items-center justify-center gap-2 rounded-xl border border-zinc-200 bg-white px-6 text-base font-semibold text-zinc-700 shadow-sm transition hover:border-zinc-300 hover:bg-zinc-50"
             >
-              <MessageCircle
-                className="size-4 text-emerald-600"
+              <CalendarCheck
+                className="size-4 text-teal-600"
                 aria-hidden="true"
               />
-              Hablar con un asesor
-            </a>
+              Ver la demo en vivo
+            </Link>
           </div>
 
           {/* Acceso central a los entornos DEMO */}
@@ -317,8 +339,8 @@ function HeroSection() {
           </div>
 
           <p className="mt-4 text-sm text-zinc-500">
-            Prueba el agendamiento público en 4 pasos o explora los paneles
-            administrativos.
+            Configuración en minutos · Sin tarjeta ni pagos por adelantado ·
+            Cancela cuando quieras.
           </p>
 
           <ul className="mt-8 flex flex-wrap gap-x-6 gap-y-2 text-sm font-medium text-zinc-700">
@@ -597,15 +619,15 @@ function PricingSection() {
         <SectionHeading
           eyebrow="Precios"
           title="Elige el plan para tu consultorio o clínica"
-          description="Dos planes claros: agenda personal para médicos independientes o gestión multi-especialista para clínicas y centros médicos."
+          description="Tres planes claros: Individual para médicos independientes, PyME para consultorios con varios especialistas y PRO para clínicas grandes o multi-sede."
         />
 
-        <div className="mx-auto mt-8 flex w-fit items-center gap-2 rounded-full border border-orange-200 bg-orange-50 px-4 py-2 text-sm font-bold text-orange-700 shadow-sm">
-          <span aria-hidden="true">🔥</span>
-          7 DÍAS GRATIS + 50% DE DESCUENTO EN TU PRIMER MES
+        <div className="mx-auto mt-8 flex w-fit items-center gap-2 rounded-full border border-emerald-200 bg-emerald-50 px-4 py-2 text-sm font-bold text-emerald-700 shadow-sm">
+          <span aria-hidden="true">🎁</span>
+          7 DÍAS GRATIS · SIN TARJETA NI PAGOS POR ADELANTADO
         </div>
 
-        <div className="mx-auto mt-10 grid max-w-5xl gap-6 md:grid-cols-2">
+        <div className="mx-auto mt-10 grid max-w-6xl gap-6 md:grid-cols-2 lg:grid-cols-3">
           {PLANES_LANDING.map((plan) => (
             <article
               key={plan.id}
@@ -632,11 +654,6 @@ function PricingSection() {
               </p>
 
               <div className="mt-5 flex items-end gap-2">
-                {plan.precioTachado && (
-                  <span className="pb-2 text-lg font-semibold text-zinc-400 line-through">
-                    {plan.precioTachado}
-                  </span>
-                )}
                 <span className="text-5xl font-extrabold tracking-tight text-zinc-900">
                   {plan.precio}
                 </span>
@@ -645,15 +662,9 @@ function PricingSection() {
                 </span>
               </div>
 
-              <p className="mt-3 w-fit rounded-full bg-emerald-500/10 px-3 py-1 text-xs font-semibold text-emerald-700">
-                {plan.promo}
+              <p className="mt-3 w-fit rounded-full bg-teal-600/10 px-3 py-1 text-xs font-semibold text-teal-700">
+                {plan.perfiles}
               </p>
-
-              {plan.multisede && (
-                <p className="mt-3 rounded-xl border border-teal-100 bg-teal-50/60 px-3 py-2 text-xs font-medium text-teal-800">
-                  Tarifa multisede: {plan.multisede}
-                </p>
-              )}
 
               <ul className="mt-5 flex-1 space-y-3">
                 {plan.features.map((feature) => (
@@ -667,29 +678,31 @@ function PricingSection() {
               </ul>
 
               <div className="mt-6 flex flex-col gap-3">
-                <Link
-                  href={plan.demoHref}
-                  className="inline-flex h-12 items-center justify-center gap-2 rounded-xl bg-linear-to-r from-teal-600 to-cyan-600 px-6 text-base font-semibold text-white shadow-lg shadow-teal-600/25 transition hover:shadow-xl hover:brightness-110 active:scale-[0.99]"
-                >
-                  Probar la demo en vivo
-                  <ArrowRight className="size-4" aria-hidden="true" />
-                </Link>
                 <a
-                  href={WHATSAPP_URL}
+                  href={WHATSAPP_TRIAL_URL}
                   target="_blank"
                   rel="noopener noreferrer"
+                  className="inline-flex h-12 items-center justify-center gap-2 rounded-xl bg-linear-to-r from-teal-600 to-cyan-600 px-6 text-base font-semibold text-white shadow-lg shadow-teal-600/25 transition hover:shadow-xl hover:brightness-110 active:scale-[0.99]"
+                >
+                  Probar 7 Días Gratis
+                  <ArrowRight className="size-4" aria-hidden="true" />
+                </a>
+                <Link
+                  href={plan.demoHref}
                   className="inline-flex h-12 items-center justify-center gap-2 rounded-xl border border-zinc-200 bg-white px-6 text-base font-semibold text-zinc-700 shadow-sm transition hover:border-zinc-300 hover:bg-zinc-50"
                 >
-                  <MessageCircle className="size-4 text-emerald-600" aria-hidden="true" />
-                  Contactar a un asesor
-                </a>
+                  <CalendarCheck className="size-4 text-teal-600" aria-hidden="true" />
+                  Ver demo en vivo
+                </Link>
               </div>
             </article>
           ))}
         </div>
 
         <p className="mx-auto mt-6 max-w-2xl text-center text-xs leading-5 text-zinc-500">
-          Precios en USD. Pagos en Bolívares calculados a la tasa oficial BCV del día.
+          Precios en USD. El cobro se liquida en Bolívares a la tasa oficial del
+          BCV del día. La prueba de 7 días no requiere tarjeta ni pagos por
+          adelantado.
         </p>
       </Container>
     </section>
