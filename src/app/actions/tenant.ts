@@ -222,6 +222,9 @@ export async function updateTenantSettings(
     const datosPago = normalizarDatosPagoMovil(data.datos_pago_movil)
     const maxSlots = normalizarLimite(data.max_slots_per_shift)
 
+    // Tema del perfil público: objeto JSONB explícito (nunca se omite).
+    const themeConfig = normalizarThemeConfig(data.theme_config)
+
     const payloadCompleto: TenantUpdate = {
       nombre,
       rif: data.rif?.trim() || null,
@@ -230,38 +233,17 @@ export async function updateTenantSettings(
       pago_movil_enabled: Boolean(data.pago_movil_enabled),
       max_slots_per_shift: maxSlots,
       datos_pago_movil: datosPago,
-      theme_config: normalizarThemeConfig(data.theme_config),
+      theme_config: themeConfig,
     }
 
     console.log("[updateTenantSettings] Payload enviado a PostgreSQL:", payloadCompleto)
 
-    const resultadoInicial = await supabase
+    const resultado = await supabase
       .from("tenants")
       .update(payloadCompleto)
       .eq("id", meta.id)
       .select("*")
       .maybeSingle()
-
-    // Tolerancia de esquema: si `theme_config` aún no existe en la BD (migración
-    // 0014 sin aplicar), se reintenta sin el tema para no bloquear el guardado.
-    let resultado = resultadoInicial
-    if (
-      resultadoInicial.error &&
-      /theme_config|PGRST204|schema cache/i.test(resultadoInicial.error.message ?? "")
-    ) {
-      console.warn(
-        "[updateTenantSettings] Reintentando sin theme_config (columna ausente):",
-        resultadoInicial.error.message
-      )
-      const payloadSinTema = { ...payloadCompleto }
-      delete payloadSinTema.theme_config
-      resultado = await supabase
-        .from("tenants")
-        .update(payloadSinTema)
-        .eq("id", meta.id)
-        .select("*")
-        .maybeSingle()
-    }
 
     if (resultado.error) {
       console.error("[updateTenantSettings] ERROR DE SUPABASE AL ACTUALIZAR:", resultado.error)
@@ -286,10 +268,13 @@ export async function updateTenantSettings(
 
     console.log("[updateTenantSettings] Guardado exitoso en PostgreSQL:", tenantActualizado)
 
-    // Revalidación completa de rutas
+    // Revalidación completa de rutas (incluye la landing pública `/[clinicSlug]`
+    // para que los colores del tema se reflejen de inmediato).
+    revalidatePath("/[clinicSlug]", "page")
+    revalidatePath(`/${meta.slug}`)
+    revalidatePath(`/${meta.slug}`, "layout")
     revalidatePath(`/${meta.slug}/admin/configuracion`, "page")
     revalidatePath(`/${meta.slug}/reservar`, "page")
-    revalidatePath(`/${meta.slug}`, "layout")
     revalidatePath("/", "layout")
 
     return { ok: true, data: { tenant: tenantActualizado } }

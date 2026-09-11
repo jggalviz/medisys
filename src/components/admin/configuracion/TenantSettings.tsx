@@ -184,14 +184,20 @@ export function TenantSettings({ tenant }: { tenant: Tenant }) {
       })
       if (resultado.ok) {
         // Actualiza el estado local con la respuesta fresca de la BD (la
-        // acción devuelve el tenant persistido). Así el formulario no se
-        // revierte por re-renders internos con la prop antigua.
+        // acción devuelve el tenant persistido, incluido `theme_config`).
+        // Así la UI queda sincronizada sin recargar la página.
         const tenantActualizado = resultado.data.tenant
         setForm(inicialDatos(tenantActualizado))
         setLogoUrl(logoMostrable(tenantActualizado.logo_url))
         // Obliga a re-ejecutar el Server Component para refrescar la prop.
         router.refresh()
-        setToast({ tipo: "ok", mensaje: "Configuración guardada ✓" })
+        setToast({
+          tipo: "ok",
+          mensaje:
+            tab === "apariencia"
+              ? "Apariencia guardada ✓ Los colores ya se aplican en tu perfil público."
+              : "Configuración guardada ✓",
+        })
       } else {
         setToast({ tipo: "error", mensaje: resultado.message })
       }
