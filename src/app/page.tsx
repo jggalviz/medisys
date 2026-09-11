@@ -91,6 +91,11 @@ const COMPANY_NAME = "Vortex Logic Microsystems"
 const COMPANY_URL = "https://vortex.com.ve"
 const SALES_EMAIL = "ventas@vortex.com.ve"
 
+/* Datos legales del dominio y su titular (footer). */
+const LEGAL_ENTITY = "Centro Iberoamericano de Artes Digitales - IBEARTS, C.A."
+const LEGAL_RIF = "J-40724077-3"
+const LEGAL_NOTICE = `vortex.com.ve pertenece a ${LEGAL_ENTITY} RIF: ${LEGAL_RIF}`
+
 /* ------------------------------------------------------------------ */
 /* Tipos y datos de las secciones                                      */
 /* ------------------------------------------------------------------ */
@@ -886,10 +891,15 @@ function SiteFooter() {
           </FooterColumn>
         </div>
 
-        <div className="mt-12 flex flex-col gap-3 border-t border-white/10 pt-6 text-xs text-zinc-500 sm:flex-row sm:items-center sm:justify-between">
-          <p>
-            © {year} {COMPANY_NAME} · Todos los derechos reservados.
-          </p>
+        <div className="mt-12 flex flex-col gap-3 border-t border-white/10 pt-6 text-xs text-zinc-500 sm:flex-row sm:items-start sm:justify-between">
+          <div className="flex flex-col gap-1">
+            <p>
+              © {year} {COMPANY_NAME} · Todos los derechos reservados.
+            </p>
+            <p className="text-[11px] leading-5 text-zinc-500/90">
+              {LEGAL_NOTICE}
+            </p>
+          </div>
           <div className="flex flex-wrap items-center gap-x-5 gap-y-2">
             <a
               href={COMPANY_URL}
