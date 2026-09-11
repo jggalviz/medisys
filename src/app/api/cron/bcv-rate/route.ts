@@ -37,19 +37,48 @@ export async function GET(request: Request) {
 
     const fecha = new Date().toISOString().slice(0, 10)
     const supabase = createAdminClient()
+    const tasaRedondeada = Math.round(resultado.tasa * 100) / 100
 
-    const { data, error } = await supabase
-      .from("bcv_rates")
-      .upsert(
-        {
-          fecha,
-          tasa: Math.round(resultado.tasa * 100) / 100,
-          fuente: resultado.detalle,
-        },
-        { onConflict: "fecha" }
-      )
-      .select("id, fecha, tasa, fetched_at, fuente")
-      .maybeSingle()
+    // El esquema remoto de `bcv_rates` puede variar (p. ej. solo `rate` +
+    // `fetched_at`, o `fecha`/`tasa`/`fuente`). Se intenta primero el esquema
+    // completo y, si falla por columnas ausentes, se cae al mínimo viable.
+    let data: Record<string, unknown> | null = null
+    let error: { message: string } | null = null
+
+    const intentos: Record<string, unknown>[] = [
+      { fecha, tasa: tasaRedondeada, fuente: resultado.detalle },
+      {
+        rate: tasaRedondeada,
+        fetched_at: new Date().toISOString(),
+        fuente: resultado.detalle,
+      },
+      { rate: tasaRedondeada, fetched_at: new Date().toISOString() },
+      { tasa: tasaRedondeada, fetched_at: new Date().toISOString() },
+    ]
+
+    // El tipado del cliente asume el esquema local; aquí se insertan payloads
+    // tolerantes al esquema real, por lo que se usa una vista tipada mínima.
+    type InserterBcv = {
+      insert: (values: Record<string, unknown>) => {
+        select: (columns?: string) => {
+          maybeSingle: () => Promise<{
+            data: Record<string, unknown> | null
+            error: { message: string } | null
+          }>
+        }
+      }
+    }
+    const tabla = supabase.from("bcv_rates") as unknown as InserterBcv
+
+    for (const payload of intentos) {
+      const respuesta = await tabla.insert(payload).select("*").maybeSingle()
+      if (!respuesta.error) {
+        data = respuesta.data
+        error = null
+        break
+      }
+      error = respuesta.error
+    }
 
     if (error) {
       console.error("[cron-bcv] Error al insertar en bcv_rates:", error)

@@ -1,6 +1,8 @@
+import { Suspense } from "react"
 import Link from "next/link"
 import { redirect } from "next/navigation"
 
+import { BcvBadge, BcvBadgeSkeleton } from "@/components/super-admin/BcvBadge"
 import { SuperAdminLogoutButton } from "@/components/super-admin/SuperAdminLogoutButton"
 import { getSuperAdmin } from "@/lib/super-admin"
 
@@ -50,8 +52,11 @@ export default async function SuperAdminLayout({
             </nav>
           </div>
           <div className="flex items-center gap-3">
+            <Suspense fallback={<BcvBadgeSkeleton />}>
+              <BcvBadge />
+            </Suspense>
             {sesion.email && (
-              <span className="hidden text-xs text-muted-foreground sm:inline">
+              <span className="hidden text-xs text-muted-foreground lg:inline">
                 {sesion.email}
               </span>
             )}

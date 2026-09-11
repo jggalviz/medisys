@@ -300,3 +300,33 @@ export async function getLatestBcvRate(supabase: Client): Promise<number> {
   return (await getLatestBcvRateDetallada(supabase)).tasa
 }
 
+/** Fecha/hora (`fetched_at`) de la última tasa guardada en `bcv_rates`. */
+export async function leerFechaBcvDb(supabase: Client): Promise<string | null> {
+  try {
+    const { data } = await supabase
+      .from("bcv_rates")
+      .select("fetched_at")
+      .order("fetched_at", { ascending: false })
+      .limit(1)
+
+    const fila = (data ?? [])[0] as { fetched_at?: unknown } | undefined
+    return typeof fila?.fetched_at === "string" ? fila.fetched_at : null
+  } catch {
+    return null
+  }
+}
+
+export type BcvResumen = BcvRateInfo & {
+  /** Última actualización registrada en BD (ISO) o `null` si no hay filas. */
+  actualizadoEn: string | null
+}
+
+/** Tasa + fuente usada + fecha de última actualización (para el badge del panel). */
+export async function getResumenTasaBcv(supabase: Client): Promise<BcvResumen> {
+  const [info, actualizadoEn] = await Promise.all([
+    getLatestBcvRateDetallada(supabase),
+    leerFechaBcvDb(supabase),
+  ])
+  return { ...info, actualizadoEn }
+}
+
