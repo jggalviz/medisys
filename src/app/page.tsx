@@ -54,17 +54,18 @@ const WHATSAPP_URL = `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent
   "Hola Medisys 👋, vi la landing y quiero activar la plataforma en mi consultorio o clínica."
 )}`
 
-/** CTA principal de conversión: iniciar la prueba gratuita de 7 días. */
-const WHATSAPP_TRIAL_URL = `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(
-  "Hola Medisys 👋, quiero comenzar la prueba gratuita de 7 días para mi consultorio o clínica."
-)}`
-
-/** CTA unificado de la tabla de precios (freemium: pagas al llegar a 30). */
+/** CTA unificado de la tabla de precios (prueba por volumen: 30 reservas). */
 const CTA_PLANES = "Comenzar gratis · Pagas al llegar a 30 reservas"
 
-/** CTA del Plan Gratuito (freemium): hasta 30 citas al mes, sin compromiso. */
-const WHATSAPP_FREE_URL = `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(
-  "Hola Medisys 👋, quiero comenzar gratis con el Plan Gratuito (hasta 30 reservas al mes; pago al llegar a 30 reservas)."
+/** CTA del Hero (misma oferta, redacción de titular). */
+const CTA_HERO = "Comienza gratis (primeras 30 reservas incluidas)"
+
+/** Todos los planes comparten la misma prueba por volumen. */
+const PRUEBA_30 = "Primeras 30 reservas GRATIS"
+
+/** Mensaje de WhatsApp para iniciar la prueba (cualquier plan). */
+const WHATSAPP_TRIAL_URL = `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(
+  "Hola Medisys 👋, quiero empezar gratis y elegir mi plan (mis primeras 30 reservas incluidas)."
 )}`
 
 /** CTA del módulo de Facturación Integrada (acceso anticipado). */
@@ -166,36 +167,18 @@ type PlanLanding = {
   descripcion: string
   precio: string
   precioDetalle: string
-  /** Precio anual equivalente (planes de pago). */
+  /** Precio anual equivalente. */
   anual?: string
   /** Resumen de perfiles/sedes incluidos en el plan. */
   perfiles: string
   destacado?: boolean
+  /** Pill de prueba por volumen (misma en los 3 planes). */
+  prueba: string
   features: readonly string[]
   demoHref: string
 }
 
 const PLANES_LANDING: readonly PlanLanding[] = [
-  {
-    id: "free",
-    badge: "PLAN GRATUITO",
-    nombre: "Plan Gratuito",
-    descripcion:
-      "Para empezar hoy mismo sin costo: ideal para probar la agenda en línea con tus primeros pacientes.",
-    precio: "$0",
-    precioDetalle: "USD / mes",
-    perfiles: "Hasta 30 reservas al mes",
-    features: [
-      "Hasta 30 reservas al mes",
-      "1 Médico",
-      "Agendamiento público en 3 pasos",
-      "Expediente básico del paciente",
-      "Cálculo automático de cobros en USD y VES a la tasa oficial del BCV del día",
-      "Sin compromiso",
-      "Soporte por WhatsApp",
-    ],
-    demoHref: RESERVAR_INDEPENDIENTE_ROUTE,
-  },
   {
     id: "individual",
     badge: "PLAN INDIVIDUAL",
@@ -206,7 +189,9 @@ const PLANES_LANDING: readonly PlanLanding[] = [
     precioDetalle: "USD / mes",
     anual: "$200/año",
     perfiles: "1 Médico · Reservas y sedes ilimitadas",
+    prueba: PRUEBA_30,
     features: [
+      "Primeras 30 reservas totalmente gratis",
       "1 Médico activo",
       "Reservas ilimitadas",
       "Sedes ilimitadas",
@@ -231,7 +216,9 @@ const PLANES_LANDING: readonly PlanLanding[] = [
     anual: "$500/año",
     perfiles: "2 a 10 Médicos · 1 Sede",
     destacado: true,
+    prueba: PRUEBA_30,
     features: [
+      "Primeras 30 reservas totalmente gratis",
       "2 a 10 médicos activos",
       "1 sede",
       "Reservas ilimitadas",
@@ -242,7 +229,6 @@ const PLANES_LANDING: readonly PlanLanding[] = [
       "Reportes y estadísticas financieras multi-doctor en USD y Bolívares",
       "Pago Móvil y Zelle habilitados en tu panel (personalizable a cualquier método de cobro que necesites)",
       "Soporte prioritario por WhatsApp y correo",
-      "7 días de prueba gratis sin compromiso",
     ],
     demoHref: DEMO_ROUTE,
   },
@@ -256,7 +242,9 @@ const PLANES_LANDING: readonly PlanLanding[] = [
     precioDetalle: "USD / mes",
     anual: "$950/año",
     perfiles: "10+ Médicos o Múltiples Sedes",
+    prueba: PRUEBA_30,
     features: [
+      "Primeras 30 reservas totalmente gratis",
       "10+ médicos activos",
       "Múltiples sedes",
       "Reservas ilimitadas",
@@ -265,7 +253,6 @@ const PLANES_LANDING: readonly PlanLanding[] = [
       "Migración y configuración inicial sin costo",
       "Cálculo automático de cobros en USD y VES a la tasa oficial del BCV del día",
       "Soporte prioritario dedicado",
-      "7 días de prueba gratis sin compromiso",
       "💡 Desarrollo continuo a tu medida: abiertos a escuchar e integrar nuevos módulos o mejoras para el flujo de tu clínica.",
     ],
     demoHref: DEMO_ROUTE,
@@ -328,7 +315,7 @@ function HeroSection() {
                 <span className="absolute inline-flex size-full animate-ping rounded-full bg-emerald-400 opacity-75" />
                 <span className="relative inline-flex size-2 rounded-full bg-emerald-500" />
               </span>
-              Plan Gratuito: hasta 30 citas/mes
+              Comienza gratis (primeras 30 reservas incluidas)
               <ArrowRight
                 className="size-3.5 transition-transform group-hover:translate-x-0.5"
                 aria-hidden="true"
@@ -350,8 +337,8 @@ function HeroSection() {
             mismo. Tus pacientes agendan desde el celular y pagan con Pago
             Móvil; la recepción valida cada comprobante en tiempo real.{" "}
             <strong className="font-semibold text-zinc-800">
-              Empieza con el Plan Gratuito (hasta 30 citas al mes), sin
-              compromiso ni pagos por adelantado.
+              Sin tarjeta de crédito. Comienzas a pagar solo al superar tus 30
+              reservas.
             </strong>
           </p>
 
@@ -360,10 +347,10 @@ function HeroSection() {
               href={WHATSAPP_TRIAL_URL}
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex h-12 items-center justify-center gap-2 rounded-xl bg-linear-to-r from-teal-600 to-cyan-600 px-6 text-base font-semibold text-white shadow-lg shadow-teal-600/25 transition hover:shadow-xl hover:brightness-110 active:scale-[0.99]"
+              className="inline-flex h-auto min-h-12 items-center justify-center gap-2 whitespace-normal rounded-xl bg-linear-to-r from-teal-600 to-cyan-600 px-6 py-3 text-center text-base font-semibold leading-snug text-white shadow-lg shadow-teal-600/25 transition hover:shadow-xl hover:brightness-110 active:scale-[0.99]"
             >
-              Prueba 7 Días Gratis
-              <ArrowRight className="size-4" aria-hidden="true" />
+              <span className="whitespace-normal text-balance">{CTA_HERO}</span>
+              <ArrowRight className="size-4 shrink-0" aria-hidden="true" />
             </a>
             <Link
               href={DEMO_ROUTE}
@@ -386,14 +373,14 @@ function HeroSection() {
           </div>
 
           <p className="mt-4 text-sm text-zinc-500">
-            Plan Gratuito de hasta 30 citas/mes · Sin compromiso · Configúralo
-            en minutos.
+            Sin tarjeta de crédito. Comienzas a pagar solo al superar tus 30
+            reservas.
           </p>
 
           <ul className="mt-8 flex flex-wrap gap-x-6 gap-y-2 text-sm font-medium text-zinc-700">
             {[
-              "Plan Gratuito: hasta 30 citas/mes",
-              "Sin compromiso",
+              "Primeras 30 reservas gratis en cualquier plan",
+              "Sin tarjeta de crédito",
               "Agenda + Expedientes + Facturación",
               "Pago Móvil + Zelle",
             ].map(
@@ -777,15 +764,15 @@ function PricingSection() {
         <SectionHeading
           eyebrow="Precios"
           title="Elige el plan para tu consultorio o clínica"
-          description="Empieza gratis y crece cuando lo necesites: Plan Gratuito de hasta 30 citas al mes, Individual para médicos independientes, PyME para consultorios con varios especialistas y PRO para clínicas multi-sede."
+          description="Tres planes y una misma prueba: empieza gratis hasta tus primeras 30 reservas en cualquiera de ellos. Individual para médicos independientes, PyME para consultorios con varios especialistas y PRO para clínicas multi-sede."
         />
 
-        <div className="mx-auto mt-8 flex w-fit items-center gap-2 rounded-full border border-emerald-200 bg-emerald-50 px-4 py-2 text-sm font-bold text-emerald-700 shadow-sm">
+        <div className="mx-auto mt-8 flex w-fit flex-wrap items-center justify-center gap-2 rounded-full border border-emerald-200 bg-emerald-50 px-4 py-2 text-center text-sm font-bold text-emerald-700 shadow-sm">
           <span aria-hidden="true">🎁</span>
-          PLAN GRATUITO: HASTA 30 CITAS AL MES · SIN COMPROMISO
+          PRIMERAS 30 RESERVAS GRATIS EN CUALQUIER PLAN · SIN TARJETA DE CRÉDITO
         </div>
 
-        <div className="mx-auto mt-10 grid max-w-7xl gap-6 md:grid-cols-2 xl:grid-cols-4">
+        <div className="mx-auto mt-10 grid max-w-5xl gap-6 md:grid-cols-3">
           {PLANES_LANDING.map((plan) => (
             <article
               key={plan.id}
@@ -802,6 +789,10 @@ function PricingSection() {
 
               <span className="inline-flex w-fit items-center rounded-full bg-teal-600/10 px-3 py-1 text-[11px] font-bold uppercase tracking-wider text-teal-700">
                 {plan.badge}
+              </span>
+
+              <span className="mt-2 inline-flex w-fit items-center gap-1.5 rounded-full border border-emerald-300/70 bg-emerald-50 px-3 py-1 text-[11px] font-bold uppercase tracking-wider text-emerald-700">
+                🎁 {plan.prueba}
               </span>
 
               <h3 className="mt-4 text-xl font-bold tracking-tight text-zinc-900">
@@ -844,7 +835,7 @@ function PricingSection() {
 
               <div className="mt-6 flex flex-col gap-3">
                 <a
-                  href={plan.id === "free" ? WHATSAPP_FREE_URL : WHATSAPP_TRIAL_URL}
+                  href={WHATSAPP_TRIAL_URL}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="inline-flex h-auto min-h-12 items-center justify-center gap-2 whitespace-normal rounded-xl bg-linear-to-r from-teal-600 to-cyan-600 px-5 py-3 text-center text-sm font-semibold leading-snug text-white shadow-lg shadow-teal-600/25 transition hover:shadow-xl hover:brightness-110 active:scale-[0.99]"
@@ -870,14 +861,119 @@ function PricingSection() {
         </div>
 
         <p className="mx-auto mt-6 max-w-2xl text-center text-xs leading-5 text-zinc-500">
-          Precios en USD. El cobro de los planes de pago se liquida en Bolívares
-          a la tasa oficial del BCV del día. El Plan Gratuito no tiene
-          compromiso.
+          Precios en USD. El cobro se liquida en Bolívares a la tasa oficial del
+          BCV del día. Sin tarjeta de crédito: comienzas a pagar al superar tus
+          30 reservas.
         </p>
       </Container>
     </section>
   )
 }
+/* ================================================================== */
+/* Preguntas frecuentes (prueba por volumen)                           */
+/* ================================================================== */
+
+const FAQ_ITEMS = [
+  {
+    pregunta: "¿Cómo funciona la prueba gratuita?",
+    respuesta:
+      "Puedes registrarte y usar cualquiera de nuestros 3 planes de forma totalmente gratuita hasta completar tus primeras 30 reservas. Al alcanzar la reserva #30, podrás realizar el pago de la suscripción correspondiente a tu plan para seguir disfrutando del servicio sin interrupciones.",
+  },
+  {
+    pregunta: "¿Qué pasa exactamente al llegar a la reserva número 30?",
+    respuesta:
+      "El sistema te solicitará el pago de la suscripción del plan que hayas elegido para que continúes operando sin interrupciones. Antes de esa reserva no pagas nada: ni mensualidad ni pagos por adelantado.",
+  },
+  {
+    pregunta: "¿Necesito tarjeta de crédito para empezar?",
+    respuesta:
+      "No. Empiezas sin tarjeta de crédito y sin pagos por adelantado. Solo pagas cuando superas tus primeras 30 reservas.",
+  },
+  {
+    pregunta: "¿Cómo se cobra la suscripción en Venezuela?",
+    respuesta:
+      "Los planes se expresan en USD y el cobro se liquida en Bolívares a la tasa oficial del BCV del día. Puedes pagar con Pago Móvil o con los métodos de cobro que tengas habilitados en tu panel.",
+  },
+  {
+    pregunta: "¿Puedo cambiar de plan más adelante?",
+    respuesta:
+      "Sí. Puedes pasar de Individual a PyME o PRO (o al contrario) según crezca tu consultorio o clínica; el cambio se aplica en tu siguiente ciclo de facturación.",
+  },
+] as const
+
+function FaqSection() {
+  return (
+    <section id="faq" className="scroll-mt-20 border-t border-zinc-100">
+      <Container className="py-16 sm:py-20">
+        <SectionHeading
+          eyebrow="Preguntas frecuentes"
+          title="Todo sobre la prueba y los planes"
+          description="Resolvemos las dudas más comunes antes de que empieces a usar Medisys."
+        />
+
+        <div className="mx-auto mt-10 flex max-w-3xl flex-col gap-3">
+          {FAQ_ITEMS.map((item) => (
+            <details
+              key={item.pregunta}
+              className="group rounded-2xl border border-zinc-200 bg-white px-5 py-4 shadow-sm"
+            >
+              <summary className="flex cursor-pointer list-none items-center justify-between gap-3 text-base font-semibold text-zinc-900">
+                {item.pregunta}
+                <span
+                  aria-hidden="true"
+                  className="text-xl leading-none text-teal-600 transition-transform group-open:rotate-45"
+                >
+                  +
+                </span>
+              </summary>
+              <p className="mt-3 text-sm leading-6 text-zinc-600">
+                {item.respuesta}
+              </p>
+            </details>
+          ))}
+        </div>
+      </Container>
+    </section>
+  )
+}
+
+/* ================================================================== */
+/* CTA final (antes del footer)                                        */
+/* ================================================================== */
+
+function CtaFinalSection() {
+  return (
+    <section className="border-t border-zinc-100 bg-linear-to-br from-teal-600 to-cyan-600">
+      <Container className="flex flex-col items-center gap-5 py-14 text-center sm:py-16">
+        <h2 className="max-w-2xl text-3xl font-extrabold tracking-tight text-white sm:text-4xl">
+          Prueba Medisys hoy mismo con tus primeras 30 reservas gratis
+        </h2>
+        <p className="max-w-xl text-base leading-7 text-teal-50">
+          Sin tarjeta de crédito y sin pagos por adelantado: eliges tu plan y
+          comienzas a pagar solo al superar tus 30 reservas.
+        </p>
+        <div className="mt-1 flex w-full flex-col gap-3 sm:w-auto sm:flex-row">
+          <a
+            href={WHATSAPP_TRIAL_URL}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex h-12 items-center justify-center gap-2 rounded-xl bg-white px-6 text-base font-semibold text-teal-700 shadow-lg shadow-teal-900/20 transition hover:bg-teal-50"
+          >
+            Comenzar gratis (primeras 30 reservas incluidas)
+            <ArrowRight className="size-4" aria-hidden="true" />
+          </a>
+          <Link
+            href="#precios"
+            className="inline-flex h-12 items-center justify-center gap-2 rounded-xl border border-white/40 px-6 text-base font-semibold text-white transition hover:bg-white/10"
+          >
+            Ver los 3 planes
+          </Link>
+        </div>
+      </Container>
+    </section>
+  )
+}
+
 /* ================================================================== */
 /* Footer                                                              */
 /* ================================================================== */
@@ -1058,6 +1154,8 @@ export default async function Home() {
         <GuiasSection guias={guias} />
         <BenefitsSection />
         <PricingSection />
+        <FaqSection />
+        <CtaFinalSection />
       </main>
       <SiteFooter />
     </div>

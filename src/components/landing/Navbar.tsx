@@ -21,6 +21,7 @@ const NAV_ITEMS = [
   { label: "Facturación", href: "#facturacion" },
   { label: "Centro de Ayuda", href: "#conocimiento" },
   { label: "Precios", href: "#precios" },
+  { label: "FAQ", href: "#faq" },
 ] as const
 
 export function Navbar() {
