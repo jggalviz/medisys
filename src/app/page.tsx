@@ -343,8 +343,8 @@ function HeroSection() {
             mismo. Tus pacientes agendan desde el celular y pagan con Pago
             Móvil; la recepción valida cada comprobante en tiempo real.{" "}
             <strong className="font-semibold text-zinc-800">
-              Sin tarjeta de crédito. Comienzas a pagar solo al superar tus 30
-              reservas.
+              Sin pagos por adelantado. Comienzas a pagar solo al superar tus
+              primeras 30 reservas.
             </strong>
           </p>
 
@@ -379,14 +379,13 @@ function HeroSection() {
           </div>
 
           <p className="mt-4 text-sm text-zinc-500">
-            Sin tarjeta de crédito. Comienzas a pagar solo al superar tus 30
-            reservas.
+            Sin pagos por adelantado · Configúralo en minutos.
           </p>
 
           <ul className="mt-8 flex flex-wrap gap-x-6 gap-y-2 text-sm font-medium text-zinc-700">
             {[
               "Primeras 30 reservas gratis en cualquier plan",
-              "Sin tarjeta de crédito",
+              "Sin pagos por adelantado",
               "Agenda + Expedientes + Facturación",
               "Pago Móvil + Zelle",
             ].map(
@@ -668,21 +667,21 @@ function StepsSection() {
             <li key={step.title} className="relative">
               {index < STEPS.length - 1 && (
                 <span
-                  className="absolute left-[calc(50%+2.75rem)] top-6 hidden h-px w-[calc(100%-5.5rem)] border-t-2 border-dashed border-teal-200 sm:block"
+                  className="absolute -right-8 top-[3.25rem] hidden w-8 border-t-2 border-dashed border-teal-200 sm:block"
                   aria-hidden="true"
                 />
               )}
-              <div className="flex h-full flex-col items-center rounded-2xl border border-zinc-200/70 bg-white px-6 py-8 text-center shadow-sm">
-                <span className="relative flex size-14 items-center justify-center rounded-2xl bg-linear-to-br from-teal-500 to-cyan-600 text-white shadow-lg shadow-teal-600/20">
+              <div className="relative flex h-full flex-col gap-4 rounded-2xl border border-zinc-200/70 bg-white p-6 pt-9 shadow-sm transition-shadow hover:shadow-lg">
+                <span className="absolute right-4 top-4 inline-flex items-center rounded-full bg-teal-50 px-3 py-1 text-xs font-bold text-teal-700">
+                  Paso {index + 1}
+                </span>
+                <span className="flex size-14 items-center justify-center rounded-2xl bg-linear-to-br from-teal-500 to-cyan-600 text-white shadow-sm shadow-teal-600/20">
                   <step.icon className="size-6" aria-hidden="true" />
                 </span>
-                <span className="mt-5 inline-flex size-6 items-center justify-center rounded-full bg-zinc-100 text-xs font-bold text-zinc-500">
-                  {index + 1}
-                </span>
-                <h3 className="mt-2 text-lg font-bold text-zinc-900">
+                <h3 className="text-lg font-bold text-zinc-900">
                   {step.title}
                 </h3>
-                <p className="mt-2 text-sm leading-6 text-zinc-600">
+                <p className="text-sm leading-6 text-zinc-600">
                   {step.description}
                 </p>
               </div>
@@ -775,7 +774,7 @@ function PricingSection() {
 
         <div className="mx-auto mt-8 flex w-fit flex-wrap items-center justify-center gap-2 rounded-full border border-emerald-200 bg-emerald-50 px-4 py-2 text-center text-sm font-bold text-emerald-700 shadow-sm">
           <span aria-hidden="true">🎁</span>
-          PRIMERAS 30 RESERVAS GRATIS EN CUALQUIER PLAN · SIN TARJETA DE CRÉDITO
+          PRIMERAS 30 RESERVAS GRATIS EN CUALQUIER PLAN · SIN PAGOS POR ADELANTADO
         </div>
 
         <div className="mx-auto mt-10 grid max-w-5xl gap-6 md:grid-cols-3">
@@ -868,8 +867,8 @@ function PricingSection() {
 
         <p className="mx-auto mt-6 max-w-2xl text-center text-xs leading-5 text-zinc-500">
           Precios en USD. El cobro se liquida en Bolívares a la tasa oficial del
-          BCV del día. Sin tarjeta de crédito: comienzas a pagar al superar tus
-          30 reservas.
+          BCV del día. Sin pagos por adelantado: comienzas a pagar únicamente al
+          superar tus primeras 30 reservas.
         </p>
       </Container>
     </section>
@@ -891,9 +890,9 @@ const FAQ_ITEMS = [
       "El sistema te solicitará el pago de la suscripción del plan que hayas elegido para que continúes operando sin interrupciones. Antes de esa reserva no pagas nada: ni mensualidad ni pagos por adelantado.",
   },
   {
-    pregunta: "¿Necesito tarjeta de crédito para empezar?",
+    pregunta: "¿Necesito pagar algo para comenzar?",
     respuesta:
-      "No. Empiezas sin tarjeta de crédito y sin pagos por adelantado. Solo pagas cuando superas tus primeras 30 reservas.",
+      "No, puedes registrarte y comenzar a agendar citas de inmediato sin realizar ningún pago por adelantado. Solo pagas cuando alcances la reserva #30.",
   },
   {
     pregunta: "¿Cómo se cobra la suscripción en Venezuela?",
@@ -955,8 +954,8 @@ function CtaFinalSection() {
           Prueba Medisys hoy mismo con tus primeras 30 reservas gratis
         </h2>
         <p className="max-w-xl text-base leading-7 text-teal-50">
-          Sin tarjeta de crédito y sin pagos por adelantado: eliges tu plan y
-          comienzas a pagar solo al superar tus 30 reservas.
+          Sin compromisos ni pagos por adelantado: eliges tu plan y comienzas a
+          pagar solo al superar tus 30 reservas.
         </p>
         <div className="mt-1 flex w-full flex-col gap-3 sm:w-auto sm:flex-row">
           <a
