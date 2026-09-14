@@ -961,6 +961,129 @@ export type DebitNoteInsert = {
 }
 
 /* ------------------------------------------------------------------ */
+/* Módulo 3 · Contabilidad, libros fiscales y cuadre de caja           */
+/* ------------------------------------------------------------------ */
+
+/** Ciclo de vida del cierre/arqueo de caja. */
+export type DailyClosingStatus = "OPEN" | "CLOSED" | "AUDITED"
+
+/** Estado de una liquidación de honorarios. */
+export type SettlementStatus = "PENDING" | "APPROVED" | "PAID"
+
+/** Fila del desglose por método de cobro dentro de un arqueo (jsonb). */
+export type ClosingMethodBreakdown = {
+  method: PaymentMethod
+  expectedUSD: number
+  expectedVES: number
+  countedUSD: number
+  countedVES: number
+  differenceUSD: number
+  differenceVES: number
+  /** Cantidad de cobros del sistema para ese método en la jornada. */
+  operaciones: number
+}
+
+export type DailyClosing = {
+  id: string
+  tenant_id: string
+  sede_id: string | null
+  closing_date: string
+  opened_by: string | null
+  closed_by: string | null
+  total_expected_usd: number
+  total_expected_ves: number
+  total_actual_usd: number
+  total_actual_ves: number
+  difference_usd: number
+  difference_ves: number
+  breakdown_by_method: ClosingMethodBreakdown[] | Record<string, unknown>
+  status: DailyClosingStatus
+  notes: string | null
+  opened_at: string
+  closed_at: string | null
+  audited_by: string | null
+  audited_at: string | null
+  created_at: string
+  updated_at: string
+}
+
+export type DailyClosingInsert = {
+  id?: string
+  tenant_id: string
+  sede_id?: string | null
+  closing_date?: string
+  opened_by?: string | null
+  closed_by?: string | null
+  total_expected_usd?: number
+  total_expected_ves?: number
+  total_actual_usd?: number
+  total_actual_ves?: number
+  difference_usd?: number
+  difference_ves?: number
+  breakdown_by_method?: ClosingMethodBreakdown[] | Record<string, unknown>
+  status?: DailyClosingStatus
+  notes?: string | null
+  opened_at?: string
+  closed_at?: string | null
+  audited_by?: string | null
+  audited_at?: string | null
+  created_at?: string
+  updated_at?: string
+}
+
+export type DailyClosingUpdate = Partial<DailyClosingInsert>
+
+export type DoctorSettlement = {
+  id: string
+  tenant_id: string
+  doctor_id: string
+  period_start: string
+  period_end: string
+  total_services_count: number
+  gross_amount_usd: number
+  commission_deducted_usd: number
+  net_payable_usd: number
+  net_payable_ves: number
+  bcv_rate_used: number | null
+  status: SettlementStatus
+  payment_reference: string | null
+  notes: string | null
+  created_by: string | null
+  approved_by: string | null
+  approved_at: string | null
+  paid_by: string | null
+  paid_at: string | null
+  created_at: string
+  updated_at: string
+}
+
+export type DoctorSettlementInsert = {
+  id?: string
+  tenant_id: string
+  doctor_id: string
+  period_start: string
+  period_end: string
+  total_services_count?: number
+  gross_amount_usd?: number
+  commission_deducted_usd?: number
+  net_payable_usd?: number
+  net_payable_ves?: number
+  bcv_rate_used?: number | null
+  status?: SettlementStatus
+  payment_reference?: string | null
+  notes?: string | null
+  created_by?: string | null
+  approved_by?: string | null
+  approved_at?: string | null
+  paid_by?: string | null
+  paid_at?: string | null
+  created_at?: string
+  updated_at?: string
+}
+
+export type DoctorSettlementUpdate = Partial<DoctorSettlementInsert>
+
+/* ------------------------------------------------------------------ */
 /* Tipado del cliente Supabase (createClient<Database>)                */
 /* ------------------------------------------------------------------ */
 
@@ -1079,6 +1202,18 @@ export type Database = {
         Row: DebitNote
         Insert: DebitNoteInsert
         Update: Partial<DebitNoteInsert>
+        Relationships: []
+      }
+      daily_closings: {
+        Row: DailyClosing
+        Insert: DailyClosingInsert
+        Update: DailyClosingUpdate
+        Relationships: []
+      }
+      doctor_settlements: {
+        Row: DoctorSettlement
+        Insert: DoctorSettlementInsert
+        Update: DoctorSettlementUpdate
         Relationships: []
       }
     }

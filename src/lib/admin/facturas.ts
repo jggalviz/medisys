@@ -460,8 +460,11 @@ export function aFacturaDTO(
 /**
  * Completa las facturas con su detalle, cobros, notas y nombres de sede y
  * paciente. Consulta por lote (una vez por tabla) para evitar N+1.
+ *
+ * Se exporta para reutilizarla en el Módulo 3 (Libro de Ventas y liquidación
+ * de honorarios), que necesitan las facturas ya hidratadas.
  */
-async function hidratarFacturas(
+export async function hidratarFacturas(
   supabase: Client,
   filas: Invoice[]
 ): Promise<FacturaDTO[]> {

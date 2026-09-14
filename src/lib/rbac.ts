@@ -49,6 +49,10 @@ export type PermisoAdmin =
   | "facturacion:leer"
   | "facturacion:emitir"
   | "facturacion:anular"
+  | "contabilidad:leer"
+  | "contabilidad:escribir"
+  | "honorarios:leer"
+  | "honorarios:escribir"
   | "consulta:atender"
 
 const PERMISOS_POR_ROL: Record<TenantUserRole, readonly PermisoAdmin[]> = {
@@ -69,6 +73,10 @@ const PERMISOS_POR_ROL: Record<TenantUserRole, readonly PermisoAdmin[]> = {
     "facturacion:leer",
     "facturacion:emitir",
     "facturacion:anular",
+    "contabilidad:leer",
+    "contabilidad:escribir",
+    "honorarios:leer",
+    "honorarios:escribir",
     "consulta:atender",
   ],
   recepcion: [
@@ -80,6 +88,8 @@ const PERMISOS_POR_ROL: Record<TenantUserRole, readonly PermisoAdmin[]> = {
     "cobros:registrar",
     "facturacion:leer",
     "facturacion:emitir",
+    "contabilidad:leer",
+    "contabilidad:escribir",
   ],
   especialista: [
     "servicios:leer",
@@ -97,6 +107,10 @@ const PERMISOS_POR_ROL: Record<TenantUserRole, readonly PermisoAdmin[]> = {
     "sedes:leer",
     "facturacion:leer",
     "facturacion:anular",
+    "contabilidad:leer",
+    "contabilidad:escribir",
+    "honorarios:leer",
+    "honorarios:escribir",
   ],
 }
 

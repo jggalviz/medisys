@@ -12,6 +12,7 @@ import {
   ClipboardList,
   Globe,
   Hourglass,
+  Landmark,
   ReceiptText,
   ShieldAlert,
   ShieldCheck,
@@ -225,6 +226,12 @@ export default async function AdminPage({ params }: AdminPageProps) {
       titulo: "Facturación y cobros",
       descripcion: "Facturas fiscales, IVA, IGTF y notas",
       icono: <ReceiptText className="size-5" />,
+    },
+    {
+      href: `/${clinicSlug}/admin/contabilidad`,
+      titulo: "Contabilidad y caja",
+      descripcion: "Libro de Ventas, arqueo y honorarios",
+      icono: <Landmark className="size-5" />,
     },
     {
       href: `/${clinicSlug}/admin/servicios`,
