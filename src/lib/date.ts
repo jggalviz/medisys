@@ -25,6 +25,21 @@ export function toISODate(date: Date): string {
   return `${y}-${m}-${d}`
 }
 
+/**
+ * Fecha 'YYYY-MM-DD' de hoy en hora de Venezuela (America/Caracas).
+ * Se calcula con `Intl` para que el resultado no dependa de la zona horaria
+ * del servidor (Vercel corre en UTC) ni del navegador.
+ */
+export function fechaHoyVenezuela(): string {
+  return new Intl.DateTimeFormat("en-CA", {
+    timeZone: "America/Caracas",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).format(new Date())
+}
+
+
 export function isValidDateISO(value: string): boolean {
   if (!DATE_RE.test(value)) return false
   const date = parseDateISO(value)

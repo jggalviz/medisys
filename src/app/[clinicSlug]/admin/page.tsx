@@ -9,6 +9,7 @@ import {
   Building2,
   CalendarClock,
   CheckCircle2,
+  ClipboardList,
   Globe,
   Hourglass,
   ShieldAlert,
@@ -217,6 +218,12 @@ export default async function AdminPage({ params }: AdminPageProps) {
       titulo: "Especialistas",
       descripcion: "Equipo médico y horarios",
       icono: <Stethoscope className="size-5" />,
+    },
+    {
+      href: `/${clinicSlug}/admin/servicios`,
+      titulo: "Servicios y honorarios",
+      descripcion: "Catálogo de precios, IVA y comisión médica",
+      icono: <ClipboardList className="size-5" />,
     },
     {
       href: `/${clinicSlug}/admin/guia`,

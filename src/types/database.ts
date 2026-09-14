@@ -170,6 +170,19 @@ export type ThemeConfig = {
   buttonTextColor: string
 }
 
+/* ------------------------------------------------------------------ */
+/* Enums del módulo de administración (fiscal / multimoneda)           */
+/* ------------------------------------------------------------------ */
+
+/** Tipo de documento fiscal venezolano (persona natural o jurídica). */
+export type TipoDocumentoFiscal = "V" | "E" | "J" | "G" | "P"
+
+/** Monedas soportadas por el motor de tasa oficial (BCV). */
+export type CurrencyCode = "USD" | "VES"
+
+/** Forma de reparto del honorario médico por servicio. */
+export type DoctorCommissionType = "PERCENTAGE" | "FIXED"
+
 export type Tenant = {
   id: string
   slug: string
@@ -181,6 +194,18 @@ export type Tenant = {
   direccion?: string | null
   /** Opcional según esquema: RIF / cédula jurídica. */
   rif?: string | null
+  /* ------------------- Módulo de Administración (0016) ------------------- */
+  /** Razón social registrada ante el SENIAT (ej. "IBEARTS, C.A."). */
+  razon_social?: string | null
+  /** Domicilio fiscal declarado ante el SENIAT. */
+  domicilio_fiscal?: string | null
+  /** Correo para el envío de facturas/notas de crédito. */
+  email_fiscal?: string | null
+  /** Imprenta autorizada por el SENIAT (formas libres). */
+  imprenta_autorizada?: string | null
+  /** Número de providencia que autoriza las formas libres. */
+  providencia_formas_libres?: string | null
+  /* ---------------------------------------------------------------------- */
   /** Switch para habilitar/pausar Pago Móvil en línea en el wizard. */
   pago_movil_enabled?: boolean | null
   /** Límite máximo de cupos por turno; null/0 = ilimitado. */
@@ -230,8 +255,19 @@ export type Profile = {
   es_titular: boolean
   /** p. ej. 'hijo/a', 'esposo/a', 'padre', 'madre' para familiares. */
   parentesco: string | null
+  /* ------------------- Directorio fiscal (0016) ------------------- */
+  /** 'V' | 'E' | 'J' | 'G' | 'P' (persona natural o jurídica). */
+  tipo_documento?: TipoDocumentoFiscal | null
+  /** Cédula o RIF sin separadores (ej. 'V12345678', 'J123456789'). */
+  documento_identidad?: string | null
+  /** Nombre o razón social a facturar. */
+  razon_social?: string | null
+  /** Dirección fiscal del cliente para la factura. */
+  direccion_fiscal?: string | null
+  /* ---------------------------------------------------------------- */
   created_at: string
 }
+
 
 export type ProfileInsert = Omit<Profile, "id" | "created_at"> & {
   id?: string
@@ -470,8 +506,18 @@ export type AppointmentUpdate = Partial<AppointmentInsert>
 /* tenant_users (staff multi-tenant)                                   */
 /* ------------------------------------------------------------------ */
 
-/** Roles del personal de una clínica. Se usa 'especialista' (no 'medico'). */
-export type TenantUserRole = "admin" | "recepcion" | "especialista"
+/**
+ * Roles del personal de una clínica.
+ * - `especialista`: rol histórico (equivale a `medico`, se conserva como alias).
+ * - `medico`: nomenclatura del módulo de administración.
+ * - `contador`: acceso de solo lectura financiera/fiscal.
+ */
+export type TenantUserRole =
+  | "admin"
+  | "recepcion"
+  | "especialista"
+  | "medico"
+  | "contador"
 
 export type TenantUser = {
   id: string
@@ -479,10 +525,17 @@ export type TenantUser = {
   /** Usuario de Supabase Auth (auth.users.id). */
   user_id: string
   role: TenantUserRole
+  /**
+   * Sedes asignadas al usuario (`tenant_users.sede_ids`).
+   * Arreglo vacío/ausente = acceso a todas las sedes del tenant.
+   * Opcional: instalaciones sin la migración 0016 no tienen la columna.
+   */
+  sede_ids?: string[] | null
   /** Precio de consulta por usuario (usado en el Plan PRO). */
   precio_consulta?: number | null
   created_at: string
 }
+
 
 export type TenantUserInsert = Omit<TenantUser, "id" | "created_at"> & {
   id?: string
@@ -520,6 +573,115 @@ export type GuidePageInsert = Omit<
 }
 
 export type GuidePageUpdate = Partial<GuidePageInsert>
+
+/* ------------------------------------------------------------------ */
+/* currency_rates (motor de tasa oficial BCV y multimoneda)            */
+/* ------------------------------------------------------------------ */
+
+/**
+ * Fila de `currency_rates` (CurrencyRate del módulo de administración).
+ * `source = 'MANUAL'` indica una sobreescritura del administrador.
+ */
+export type CurrencyRate = {
+  id: string
+  currency: CurrencyCode
+  rate: number
+  /** 'YYYY-MM-DD' de vigencia de la tasa. */
+  effective_date: string
+  /** Fuente de la tasa: 'BCV' (automática) o 'MANUAL' (admin). */
+  source: string
+  /** Si es true, la plataforma refresca la tasa desde el BCV cada día. */
+  auto_update: boolean
+  /** Usuario que registró la tasa manual (null si fue automática). */
+  created_by: string | null
+  created_at: string
+  updated_at: string
+}
+
+export type CurrencyRateInsert = Omit<
+  CurrencyRate,
+  "id" | "created_at" | "updated_at" | "created_by" | "source" | "auto_update"
+> & {
+  id?: string
+  created_at?: string
+  updated_at?: string
+  created_by?: string | null
+  source?: string
+  auto_update?: boolean
+}
+
+export type CurrencyRateUpdate = Partial<CurrencyRateInsert>
+
+/* ------------------------------------------------------------------ */
+/* sedes (estructura multi-sede del tenant)                            */
+/* ------------------------------------------------------------------ */
+
+export type Sede = {
+  id: string
+  tenant_id: string
+  nombre: string
+  direccion: string | null
+  telefono: string | null
+  /** Sede por defecto del tenant (facturación / agenda). */
+  es_principal: boolean
+  activo: boolean
+  created_at: string
+  updated_at: string
+}
+
+export type SedeInsert = Omit<Sede, "id" | "created_at" | "updated_at"> & {
+  id?: string
+  created_at?: string
+  updated_at?: string
+}
+
+export type SedeUpdate = Partial<SedeInsert>
+
+/* ------------------------------------------------------------------ */
+/* medical_services (catálogo de servicios y honorarios médicos)       */
+/* ------------------------------------------------------------------ */
+
+export type MedicalService = {
+  id: string
+  tenant_id: string
+  /** Nombre del servicio (ej. "Consulta Cardiología General"). */
+  title: string
+  /** Código interno o de procedimiento (único por tenant). */
+  code: string
+  price_usd: number
+  /** true = aplica IVA (16%); false = exento (servicios médicos directos). */
+  taxable: boolean
+  doctor_commission_type: DoctorCommissionType
+  doctor_commission_value: number
+  /** Especialista asociado (opcional). */
+  doctor_id: string | null
+  activo: boolean
+  created_at: string
+  updated_at: string
+}
+
+export type MedicalServiceInsert = Omit<
+  MedicalService,
+  | "id"
+  | "created_at"
+  | "updated_at"
+  | "taxable"
+  | "doctor_commission_type"
+  | "doctor_commission_value"
+  | "doctor_id"
+  | "activo"
+> & {
+  id?: string
+  created_at?: string
+  updated_at?: string
+  taxable?: boolean
+  doctor_commission_type?: DoctorCommissionType
+  doctor_commission_value?: number
+  doctor_id?: string | null
+  activo?: boolean
+}
+
+export type MedicalServiceUpdate = Partial<MedicalServiceInsert>
 
 /* ------------------------------------------------------------------ */
 /* Tipado del cliente Supabase (createClient<Database>)                */
@@ -586,6 +748,24 @@ export type Database = {
         Row: GuidePage
         Insert: GuidePageInsert
         Update: GuidePageUpdate
+        Relationships: []
+      }
+      currency_rates: {
+        Row: CurrencyRate
+        Insert: CurrencyRateInsert
+        Update: CurrencyRateUpdate
+        Relationships: []
+      }
+      sedes: {
+        Row: Sede
+        Insert: SedeInsert
+        Update: SedeUpdate
+        Relationships: []
+      }
+      medical_services: {
+        Row: MedicalService
+        Insert: MedicalServiceInsert
+        Update: MedicalServiceUpdate
         Relationships: []
       }
     }

@@ -6,13 +6,7 @@ import { createClient } from "@/lib/supabase/server"
 import { getStaffForSlug } from "@/lib/staff"
 import { signOutStaff } from "@/app/actions/auth"
 import { Badge } from "@/components/ui/badge"
-import type { TenantUserRole } from "@/types/database"
-
-const ETIQUETA_ROL: Record<TenantUserRole, string> = {
-  admin: "Administrador",
-  recepcion: "Recepción",
-  especialista: "Especialista",
-}
+import { ROL_LABEL } from "@/lib/rbac"
 
 type Props = {
   children: ReactNode
@@ -45,7 +39,7 @@ export default async function AdminLayout({ children, params }: Props) {
 
           <div className="flex shrink-0 items-center gap-2">
             <Badge variant="secondary" className="hidden sm:inline-flex">
-              {ETIQUETA_ROL[staff.role]}
+              {ROL_LABEL[staff.role]}
             </Badge>
             <form action={signOutStaff.bind(null, clinicSlug)}>
               <button

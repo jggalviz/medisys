@@ -3,7 +3,17 @@
  * DTOs compartidos entre las Server Actions de `src/app/actions/admin.ts`
  * y la UI de `src/app/[clinicSlug]/admin/*`.
  */
-import type { Appointment, AppointmentStatus, DatosPagoMovil, Doctor, Profile, Tenant, ThemeConfig } from "./database"
+import type {
+  Appointment,
+  AppointmentStatus,
+  CurrencyCode,
+  DatosPagoMovil,
+  Doctor,
+  DoctorCommissionType,
+  Profile,
+  Tenant,
+  ThemeConfig,
+} from "./database"
 import type { TurnoSeleccionado } from "./booking"
 
 /* -------------------- Resultado de Server Action -------------------- */
@@ -145,3 +155,117 @@ export type AdminRawAppointment = {
   comprobante_url?: string | null
   created_at: string
 }
+
+/* ==================================================================== */
+/* MÓDULO DE ADMINISTRACIÓN · Facturación, multimoneda, sedes y catálogo */
+/* ==================================================================== */
+
+/** Códigos de error compartidos por los servicios y las API del módulo. */
+export type AdminModuleErrorCode =
+  | "INVALID_INPUT"
+  | "NOT_FOUND"
+  | "CONFLICT"
+  | "FORBIDDEN"
+  | "UNAUTHENTICATED"
+  /** La migración 0016 aún no se aplicó en la base de datos. */
+  | "MIGRACION_PENDIENTE"
+  | "SERVER_ERROR"
+
+/** Incidencia de validación asociada a un campo del formulario. */
+export type CampoIssue = { campo: string; mensaje: string }
+
+/** Resultado uniforme de los servicios del módulo de administración. */
+export type AdminModuleResult<T> =
+  | { ok: true; data: T }
+  | {
+      ok: false
+      code: AdminModuleErrorCode
+      message: string
+      issues?: CampoIssue[]
+    }
+
+/* ------------------- 1. Entidad fiscal del tenant ------------------- */
+
+/** Domicilio fiscal y datos corporativos para la facturación SENIAT. */
+export type EntidadFiscal = {
+  tenantId: string
+  /** Razón social registrada ante el SENIAT (ej. "IBEARTS, C.A."). */
+  razonSocial: string
+  /** RIF en formato canónico `V-00000000-0`. */
+  rif: string
+  /** Domicilio fiscal declarado ante el SENIAT. */
+  domicilioFiscal: string
+  telefonoContacto: string | null
+  emailFiscal: string | null
+  /** Imprenta autorizada para formas libres (opcional). */
+  imprentaAutorizada: string | null
+  /** Número de providencia de las formas libres (opcional). */
+  providenciaFormasLibres: string | null
+  /** Nombre comercial del tenant (perfil público / reservas). */
+  nombreComercial: string
+  /** Slug de la clínica (rutas). */
+  clinicSlug: string
+}
+
+/* ------------------- 2. Motor de tasa BCV ------------------- */
+
+/** Origen efectivo de la tasa entregada al consumidor. */
+export type OrigenTasa = "manual" | "bcv" | "respaldo"
+
+export type TasaBcv = {
+  currency: CurrencyCode
+  rate: number
+  /** 'YYYY-MM-DD' de vigencia. */
+  effectiveDate: string
+  /** 'BCV' | 'MANUAL' | fuente externa reportada por el scraper. */
+  source: string
+  /** Switch de actualización automática diaria desde el BCV. */
+  autoUpdate: boolean
+  origen: OrigenTasa
+  /** Descripción legible de dónde salió la tasa (UI/logs). */
+  detalle: string
+  /** Fecha/hora ISO de la última persistencia conocida. */
+  actualizadoEn: string | null
+}
+
+/** Registro histórico de una tasa (auditoría del motor multimoneda). */
+export type TasaRegistro = {
+  id: string
+  currency: CurrencyCode
+  rate: number
+  /** 'YYYY-MM-DD' de vigencia. */
+  effectiveDate: string
+  source: string
+  autoUpdate: boolean
+  actualizadoEn: string | null
+}
+
+/* ------------------- 3. Sedes (multi-sede / RBAC) ------------------- */
+
+export type SedeDTO = {
+  id: string
+  tenantId: string
+  nombre: string
+  direccion: string | null
+  telefono: string | null
+  esPrincipal: boolean
+  activo: boolean
+  createdAt: string
+}
+
+/* ------------------- 4. Catálogo de servicios médicos ------------------- */
+
+export type ServicioMedicoDTO = {
+  id: string
+  tenantId: string
+  title: string
+  code: string
+  priceUSD: number
+  taxable: boolean
+  doctorCommissionType: DoctorCommissionType
+  doctorCommissionValue: number
+  doctorId: string | null
+  activo: boolean
+  createdAt: string
+}
+

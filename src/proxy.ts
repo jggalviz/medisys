@@ -14,6 +14,14 @@ import { getStaffForSlug } from "@/lib/staff"
  */
 export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl
+
+  // Las rutas `/api/**` se protegen solas (sesión + RLS dentro del Route
+  // Handler). Sin este retorno temprano, el matcher `/:clinicSlug/admin/:path*`
+  // capturaría `/api/admin/*` con `clinicSlug = "api"` y lo mandaría a login.
+  if (pathname.startsWith("/api")) {
+    return NextResponse.next()
+  }
+
   const segments = pathname.split("/").filter(Boolean)
   const clinicSlug = segments[0] ? decodeURIComponent(segments[0]) : ""
 
