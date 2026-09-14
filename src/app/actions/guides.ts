@@ -14,6 +14,7 @@ import { createClient } from "@/lib/supabase/server"
 import { createAdminClient } from "@/lib/supabase/admin"
 import { getSuperAdmin } from "@/lib/super-admin"
 import { asegurarBucketPublico, BUCKET_GUIDES } from "@/lib/supabase/storage"
+import { compararGuias } from "@/lib/guia-categorias"
 import { slugificar } from "@/lib/slug"
 
 export type GuideResult<T> =
@@ -30,13 +31,13 @@ export type GuidePageInput = {
   is_published: boolean
 }
 
+/**
+ * Orden del índice: usa el orden canónico de categorías de
+ * `@/lib/guia-categorias` (Primeros Pasos → Gestión Fiscal → Finanzas → …)
+ * y, dentro de cada categoría, el `order_index` definido por el Super Admin.
+ */
 function ordenar(paginas: GuidePage[]): GuidePage[] {
-  return [...paginas].sort((a, b) => {
-    const categoria = a.category.localeCompare(b.category, "es")
-    if (categoria !== 0) return categoria
-    if (a.order_index !== b.order_index) return a.order_index - b.order_index
-    return a.title.localeCompare(b.title, "es")
-  })
+  return [...paginas].sort(compararGuias)
 }
 
 function mapearFila(fila: Record<string, unknown>): GuidePage {

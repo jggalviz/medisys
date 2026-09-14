@@ -11,6 +11,7 @@ import { listarServicios } from "@/lib/admin/servicios"
 import { getTasaVigente } from "@/lib/currency-rates"
 import { tienePermiso } from "@/lib/rbac"
 import { ServiciosManager } from "@/components/admin/servicios/ServiciosManager"
+import { EnlaceGuia } from "@/components/admin/guia/EnlaceGuia"
 
 /**
  * Catálogo de servicios médicos y honorarios (módulo de administración).
@@ -82,6 +83,12 @@ export default async function ServiciosPage({ params }: Props) {
           Catálogo de {tenant.nombre} con precios en USD, tratamiento de IVA y
           comisión del especialista. Tasa vigente: {tasa.rate} Bs/USD.
         </p>
+
+        <div className="mt-2">
+          <EnlaceGuia slug="configuracion-fiscal-tasa-servicios">
+            Ver guía: alta de servicios, IVA y honorarios médicos
+          </EnlaceGuia>
+        </div>
 
         {!servicios.ok && (
           <p

@@ -26,6 +26,7 @@ import { tienePermiso } from "@/lib/rbac"
 import { fechaHoyVenezuela } from "@/lib/date"
 import type { LibroVentasReporte, MedicoOpcion } from "@/types/accounting"
 import { ContabilidadManager } from "@/components/admin/contabilidad/ContabilidadManager"
+import { EnlaceGuia } from "@/components/admin/guia/EnlaceGuia"
 
 /**
  * Contabilidad, libros fiscales y cuadre de caja (Módulo 3).
@@ -146,6 +147,12 @@ export default async function ContabilidadPage({ params }: Props) {
           Libro de Ventas del SENIAT, arqueo diario de caja y liquidación de
           honorarios de {tenant.nombre}.
         </p>
+
+        <div className="mt-2">
+          <EnlaceGuia slug="libro-ventas-cierre-caja-honorarios">
+            Ver guía: Libro de Ventas, cierre de caja y honorarios
+          </EnlaceGuia>
+        </div>
 
         {!reporte.ok && (
           <p

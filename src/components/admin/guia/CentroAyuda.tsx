@@ -2,15 +2,21 @@
 
 /**
  * Centro de Ayuda de la clínica (manual navegable).
- * Sidebar por categorías + buscador + contenido Markdown. Si el usuario en
- * sesión es `super_admin`, muestra un acceso flotante para editar la página.
+ * Sidebar por categorías (en orden canónico) + buscador + contenido Markdown.
+ * Destaca en un bloque los módulos fiscales (Administración, Facturación y
+ * Contabilidad) y, si el usuario es `super_admin`, permite editar la página.
  */
 import { useMemo, useState } from "react"
 import Link from "next/link"
-import { BookOpen, Pencil, Search } from "lucide-react"
+import { BookOpen, Landmark, Pencil, Receipt, Search, Settings2 } from "lucide-react"
 
 import type { GuidePage } from "@/types/database"
 import { textoPlanoMarkdown } from "@/lib/markdown"
+import {
+  CATEGORIA_FISCAL,
+  agruparPorCategoria,
+  guiasFiscales,
+} from "@/lib/guia-categorias"
 import { MarkdownView } from "@/components/guia/MarkdownView"
 import { Input } from "@/components/ui/input"
 import { cn } from "@/lib/utils"
@@ -23,6 +29,13 @@ type Props = {
   /** Slug de la página que debe abrirse por defecto. */
   slugInicial?: string
 }
+
+/** Iconos de los atajos a los módulos fiscales (orden de despliegue). */
+const ICONOS_FISCALES: React.ReactNode[] = [
+  <Settings2 key="config" className="size-4" aria-hidden="true" />,
+  <Receipt key="factura" className="size-4" aria-hidden="true" />,
+  <Landmark key="caja" className="size-4" aria-hidden="true" />,
+]
 
 export function CentroAyuda({
   paginas,
@@ -54,10 +67,12 @@ export function CentroAyuda({
   const seleccionada =
     filtradas.find((p) => p.id === seleccionId) ?? filtradas[0] ?? null
 
-  const categorias = useMemo(
-    () => Array.from(new Set(filtradas.map((p) => p.category))),
-    [filtradas]
-  )
+  /** Índice agrupado en el orden canónico de categorías. */
+  const grupos = useMemo(() => agruparPorCategoria(filtradas), [filtradas])
+
+  /** Atajos a las guías de los módulos fiscales (novedad del producto). */
+  const fiscales = useMemo(() => guiasFiscales(paginas), [paginas])
+  const buscando = consulta.trim().length > 0
 
   if (paginas.length === 0) {
     return (
@@ -73,9 +88,58 @@ export function CentroAyuda({
   }
 
   return (
-    <div className="grid gap-5 lg:grid-cols-[280px_1fr]">
-      {/* Índice lateral */}
-      <aside className="flex flex-col gap-3 lg:sticky lg:top-20 lg:self-start">
+    <div className="flex flex-col gap-5">
+      {/* Atajos a la categoría de los módulos fiscales (Administración,
+          Facturación y Contabilidad). Se ocultan mientras se busca. */}
+      {fiscales.length > 0 && !buscando && (
+        <section
+          aria-label="Guías de gestión fiscal"
+          className="rounded-2xl border border-primary/30 bg-primary/5 p-4"
+        >
+          <header className="flex items-start gap-2">
+            <span className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
+              <Landmark className="size-4" aria-hidden="true" />
+            </span>
+            <div className="flex min-w-0 flex-col">
+              <h2 className="text-sm font-semibold">
+                Nuevo · {CATEGORIA_FISCAL}
+              </h2>
+              <p className="text-xs text-muted-foreground">
+                Configura la facturación fiscal, emite facturas con IGTF, cuadra
+                la caja del día y liquida honorarios.
+              </p>
+            </div>
+          </header>
+
+          <ul className="mt-3 grid gap-2 sm:grid-cols-3">
+            {fiscales.map((pagina, indice) => (
+              <li key={pagina.id}>
+                <button
+                  type="button"
+                  onClick={() => setSeleccionId(pagina.id)}
+                  className="flex h-full w-full items-start gap-2 rounded-xl border bg-background p-3 text-left transition-colors hover:bg-muted/50"
+                >
+                  <span className="mt-0.5 shrink-0 text-primary">
+                    {ICONOS_FISCALES[indice] ?? (
+                      <BookOpen className="size-4" aria-hidden="true" />
+                    )}
+                  </span>
+                  <span className="flex min-w-0 flex-col">
+                    <span className="text-sm font-medium">{pagina.title}</span>
+                    <span className="line-clamp-2 text-xs text-muted-foreground">
+                      {textoPlanoMarkdown(pagina.content_markdown).slice(0, 96)}…
+                    </span>
+                  </span>
+                </button>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
+
+      <div className="grid gap-5 lg:grid-cols-[280px_1fr]">
+        {/* Índice lateral */}
+        <aside className="flex flex-col gap-3 lg:sticky lg:top-20 lg:self-start">
         <label className="flex items-center gap-2 rounded-xl border bg-background px-3 py-2">
           <Search className="size-4 shrink-0 text-muted-foreground" />
           <Input
@@ -88,35 +152,32 @@ export function CentroAyuda({
         </label>
 
         <nav className="flex max-h-[65vh] flex-col gap-3 overflow-y-auto pr-1">
-          {categorias.map((categoria) => (
-            <div key={categoria} className="flex flex-col gap-1">
+          {grupos.map((grupo) => (
+            <div key={grupo.categoria} className="flex flex-col gap-1">
               <span className="px-1 text-[11px] font-bold uppercase tracking-wide text-muted-foreground">
-                {categoria}
+                {grupo.categoria}
               </span>
               <ul className="flex flex-col">
-                {filtradas
-                  .filter((p) => p.category === categoria)
-                  .sort((a, b) => a.order_index - b.order_index)
-                  .map((pagina) => {
-                    const activa = seleccionada?.id === pagina.id
-                    return (
-                      <li key={pagina.id}>
-                        <button
-                          type="button"
-                          onClick={() => setSeleccionId(pagina.id)}
-                          aria-current={activa ? "page" : undefined}
-                          className={cn(
-                            "w-full rounded-lg px-3 py-2 text-left text-sm transition-colors",
-                            activa
-                              ? "bg-primary/10 font-semibold text-primary"
-                              : "text-muted-foreground hover:bg-muted/60 hover:text-foreground"
-                          )}
-                        >
-                          {pagina.title}
-                        </button>
-                      </li>
-                    )
-                  })}
+                {grupo.paginas.map((pagina) => {
+                  const activa = seleccionada?.id === pagina.id
+                  return (
+                    <li key={pagina.id}>
+                      <button
+                        type="button"
+                        onClick={() => setSeleccionId(pagina.id)}
+                        aria-current={activa ? "page" : undefined}
+                        className={cn(
+                          "w-full rounded-lg px-3 py-2 text-left text-sm transition-colors",
+                          activa
+                            ? "bg-primary/10 font-semibold text-primary"
+                            : "text-muted-foreground hover:bg-muted/60 hover:text-foreground"
+                        )}
+                      >
+                        {pagina.title}
+                      </button>
+                    </li>
+                  )
+                })}
               </ul>
             </div>
           ))}
@@ -162,6 +223,7 @@ export function CentroAyuda({
           </p>
         )}
       </section>
+      </div>
 
       {/* Acceso flotante de Super Admin (modo inspección) */}
       {canEdit && seleccionada && (

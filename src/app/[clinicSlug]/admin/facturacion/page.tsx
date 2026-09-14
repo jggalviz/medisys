@@ -14,6 +14,7 @@ import { listarFacturas } from "@/lib/admin/facturas"
 import { getTasaVigente } from "@/lib/currency-rates"
 import { tienePermiso } from "@/lib/rbac"
 import { FacturacionManager } from "@/components/admin/facturacion/FacturacionManager"
+import { EnlaceGuia } from "@/components/admin/guia/EnlaceGuia"
 
 /**
  * Facturación y cobros (Módulo 2).
@@ -105,6 +106,12 @@ export default async function FacturacionPage({ params }: Props) {
           desglose de IVA, IGTF del 3% en divisas y doble despliegue USD/VES a la
           tasa BCV vigente ({tasa.rate} Bs/USD · {tasa.detalle}).
         </p>
+
+        <div className="mt-2">
+          <EnlaceGuia slug="facturacion-e-igtf">
+            ¿Cómo emitir facturas y aplicar el IGTF? Ver guía
+          </EnlaceGuia>
+        </div>
 
         {!facturas.ok && (
           <p

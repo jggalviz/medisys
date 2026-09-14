@@ -15,6 +15,7 @@ import { TenantSettings } from "@/components/admin/configuracion/TenantSettings"
 import { EntidadFiscalCard } from "@/components/admin/configuracion/EntidadFiscalCard"
 import { TasaBcvCard } from "@/components/admin/configuracion/TasaBcvCard"
 import { SedesManager } from "@/components/admin/configuracion/SedesManager"
+import { EnlaceGuia } from "@/components/admin/guia/EnlaceGuia"
 
 /**
  * Evita el renderizado estático/cacheo: esta página lee la sesión del admin
@@ -97,6 +98,12 @@ export default async function ConfiguracionPage({ params }: Props) {
           Administra la información fiscal, la multimoneda y la operación de{" "}
           {tenant.nombre}.
         </p>
+
+        <div className="mt-2">
+          <EnlaceGuia slug="configuracion-fiscal-tasa-servicios">
+            Ver guía: entidad fiscal, tasa BCV y sedes
+          </EnlaceGuia>
+        </div>
 
         {fiscal.ok ? (
           <EntidadFiscalCard
