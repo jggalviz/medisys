@@ -6,15 +6,16 @@ import {
   Banknote,
   Bell,
   Building2,
+  Calculator,
   CalendarCheck,
   CalendarClock,
   Check,
   LayoutDashboard,
   MessageCircle,
-  Rocket,
+  Receipt,
   ShieldCheck,
   Smartphone,
-  Zap,
+  Sparkles,
 } from "lucide-react"
 import type { LucideIcon } from "lucide-react"
 
@@ -68,10 +69,17 @@ const WHATSAPP_TRIAL_URL = `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURICom
   "Hola Medisys 👋, quiero empezar gratis y elegir mi plan (mis primeras 30 reservas incluidas)."
 )}`
 
-/** CTA del módulo de Facturación Integrada (acceso anticipado). */
-const WHATSAPP_FACTURACION_URL = `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(
-  "Hola Medisys 👋, quiero acceso anticipado al módulo de Facturación Integrada (Agenda + Expedientes + Facturación)."
-)}`
+/**
+ * CTA del banner "Suite Fiscal y Administrativa" (3 módulos operativos).
+ *
+ * Destino del registro/onboarding vigente: el canal de ventas donde se activa
+ * la cuenta y arranca la prueba de 30 reservas. Si más adelante se publica una
+ * ruta propia de registro, solo hay que cambiar esta constante.
+ */
+const ONBOARDING_URL = WHATSAPP_TRIAL_URL
+
+/** Texto del botón principal del banner de la suite. */
+const CTA_SUITE = "Comenzar con 30 reservas gratis"
 
 /**
  * Ruta de la demo de reservas (centralizada en `src/lib/demo.ts`):
@@ -299,17 +307,16 @@ function HeroSection() {
 
       <Container className="grid items-center gap-14 py-14 sm:py-20 lg:grid-cols-12 lg:gap-10 lg:py-24">
         <div className="max-w-2xl lg:col-span-6">
-          {/* Announcement badge: nuevo módulo de Facturación Integrada */}
+          {/* Announcement badge: suite fiscal y administrativa operativa */}
           <a
             href="#facturacion"
-            className="mb-4 inline-flex flex-wrap items-center gap-2 rounded-full border border-teal-200/80 bg-teal-50/80 px-3.5 py-1.5 text-[11px] font-bold uppercase tracking-wide text-teal-900 shadow-sm backdrop-blur transition-colors hover:border-teal-300 hover:bg-teal-50 sm:text-xs dark:border-teal-500/40 dark:bg-teal-950/30 dark:text-teal-100"
+            className="mb-4 inline-flex flex-wrap items-center gap-2 rounded-full border border-emerald-300 bg-emerald-50 px-3.5 py-1.5 text-[11px] font-bold uppercase tracking-wide text-emerald-800 shadow-sm backdrop-blur transition-colors hover:border-emerald-400 hover:bg-emerald-100 sm:text-xs dark:border-emerald-500/40 dark:bg-emerald-950/30 dark:text-emerald-100"
           >
-            <Zap
-              className="size-3.5 shrink-0 text-amber-500"
+            <Sparkles
+              className="size-3.5 shrink-0 text-emerald-500"
               aria-hidden="true"
             />
-            Próximamente: Módulo de Facturación Integrada · Tras la nueva
-            normativa del SENIAT
+            Disponible ahora: Administración + Facturación + Contabilidad
           </a>
 
           <div>
@@ -547,29 +554,58 @@ function SectionHeading({
 }
 
 /* ================================================================== */
-/* Sección Facturación Integrada (próximamente)                        */
+/* Sección Suite Fiscal y Administrativa (3 módulos ya operativos)     */
 /* ================================================================== */
 
-const PUNTOS_FACTURACION = [
-  {
-    emoji: "🧾",
-    titulo: "Facturación sin trabas",
-    texto:
-      "Emisión directa adaptada a las normativas tributarias vigentes sin intermediarios complejos.",
-  },
-  {
-    emoji: "🔗",
-    titulo: "Sincronización Total",
-    texto:
-      "Factura generada automáticamente al confirmar la reserva de la cita médica.",
-  },
-  {
-    emoji: "🇻🇪",
-    titulo: "Cumplimiento Tributario",
-    texto:
-      "Cálculos exactos en Bolívares y USD con integración a la tasa oficial BCV.",
-  },
+/** Alcance funcional de la suite (chips del pie del banner). */
+const ALCANCE_SUITE = [
+  "Agenda 24/7",
+  "Facturación SENIAT",
+  "Contabilidad & Caja",
+  "Tasa BCV",
 ] as const
+
+type ModuloSuite = {
+  icon: LucideIcon
+  /** Nombre comercial del módulo (pill superior de la tarjeta). */
+  modulo: string
+  titulo: string
+  descripcion: string
+  /** Clases del contenedor del ícono (acento por módulo). */
+  iconClassName: string
+  /** Clases del pill que identifica el módulo. */
+  chipClassName: string
+}
+
+const MODULOS_SUITE: readonly ModuloSuite[] = [
+  {
+    icon: Building2,
+    modulo: "Módulo de Administración",
+    titulo: "Gestión & Multimoneda BCV",
+    descripcion:
+      "Control multi-sede, catálogo de servicios con comisiones médicas y actualización automática diaria de la tasa oficial del BCV.",
+    iconClassName: "bg-teal-400/15 text-teal-300 ring-teal-400/30",
+    chipClassName: "border-teal-300/40 bg-teal-400/10 text-teal-200",
+  },
+  {
+    icon: Receipt,
+    modulo: "Módulo de Facturación e IGTF",
+    titulo: "Facturación SENIAT e IGTF (3%)",
+    descripcion:
+      "Emisión de facturas fiscales en Formas Libres, notas de crédito/débito y cálculo automático de IGTF en divisas o Pago Móvil.",
+    iconClassName: "bg-cyan-400/15 text-cyan-300 ring-cyan-400/30",
+    chipClassName: "border-cyan-300/40 bg-cyan-400/10 text-cyan-200",
+  },
+  {
+    icon: Calculator,
+    modulo: "Módulo Contable y Arqueo",
+    titulo: "Libro de Ventas & Cierre de Caja",
+    descripcion:
+      "Generación directa del Libro de Ventas mensual (exportable a CSV), arqueo diario por recepción y liquidación automática a médicos.",
+    iconClassName: "bg-emerald-400/15 text-emerald-300 ring-emerald-400/30",
+    chipClassName: "border-emerald-300/40 bg-emerald-400/10 text-emerald-200",
+  },
+]
 
 function FacturacionSection() {
   return (
@@ -587,61 +623,82 @@ function FacturacionSection() {
 
           <div className="relative flex flex-col gap-8">
             <div className="flex flex-col gap-4">
-              <span className="inline-flex w-fit items-center gap-2 rounded-full border border-amber-300/40 bg-amber-400/10 px-3 py-1 text-[11px] font-bold uppercase tracking-wide text-amber-300">
-                <Rocket className="size-3.5" aria-hidden="true" />
-                Próximamente · En desarrollo
+              <span className="inline-flex w-fit items-center gap-2 rounded-full border border-emerald-300/40 bg-emerald-400/15 px-3.5 py-1.5 text-[11px] font-bold uppercase tracking-wide text-emerald-200 ring-1 ring-inset ring-emerald-400/20">
+                <Sparkles
+                  className="size-3.5 shrink-0 text-emerald-300"
+                  aria-hidden="true"
+                />
+                Disponible ahora · Suite fiscal y administrativa 2026
               </span>
               <h2 className="max-w-3xl text-3xl font-extrabold leading-tight tracking-tight text-white sm:text-4xl">
-                El nuevo pilar de Medisys: Agenda + Facturación Integrada
+                El ecosistema médico integral adaptado a la realidad venezolana
               </h2>
               <p className="max-w-3xl text-base leading-7 text-zinc-300">
-                Aprovecha la derogación de la homologación de sistemas del
-                SENIAT. Estamos construyendo el módulo de facturación médica sin
-                complicaciones para que emitas tus comprobantes fiscales y
-                gestiones tus cobros desde la misma plataforma.
+                Agenda inteligente, facturación SENIAT, tasa BCV en tiempo real,
+                IGTF (3%) y cuadre de caja diario. Todo lo que tu consultorio o
+                clínica necesita para operar sin complicaciones en una sola
+                plataforma.
               </p>
             </div>
 
-            <ul className="grid gap-4 sm:grid-cols-3">
-              {PUNTOS_FACTURACION.map((punto) => (
+            <ul className="grid gap-4 md:grid-cols-3">
+              {MODULOS_SUITE.map((modulo) => (
                 <li
-                  key={punto.titulo}
-                  className="flex h-full flex-col gap-2 rounded-2xl border border-white/10 bg-white/5 p-5"
+                  key={modulo.titulo}
+                  className="flex h-full flex-col gap-4 rounded-2xl border border-white/10 bg-white/5 p-5"
                 >
-                  <span className="text-2xl" aria-hidden="true">
-                    {punto.emoji}
+                  <span
+                    className={cn(
+                      "flex size-11 shrink-0 items-center justify-center rounded-xl ring-1 ring-inset",
+                      modulo.iconClassName
+                    )}
+                  >
+                    <modulo.icon className="size-5" aria-hidden="true" />
                   </span>
-                  <h3 className="text-base font-bold text-white">
-                    {punto.titulo}
-                  </h3>
-                  <p className="text-sm leading-6 text-zinc-300">{punto.texto}</p>
+                  <div className="flex flex-col gap-2">
+                    <span
+                      className={cn(
+                        "w-fit rounded-full border px-2.5 py-0.5 text-[11px] font-semibold uppercase tracking-wide",
+                        modulo.chipClassName
+                      )}
+                    >
+                      {modulo.modulo}
+                    </span>
+                    <h3 className="text-lg font-bold leading-snug text-white">
+                      {modulo.titulo}
+                    </h3>
+                    <p className="text-sm leading-6 text-zinc-300">
+                      {modulo.descripcion}
+                    </p>
+                  </div>
                 </li>
               ))}
             </ul>
 
             <div className="flex flex-col gap-4 rounded-2xl border border-teal-400/25 bg-teal-400/5 p-5 sm:flex-row sm:items-center sm:justify-between">
-              <div className="flex flex-col gap-2">
+              <div className="flex flex-col gap-3">
                 <div className="flex flex-wrap items-center gap-2">
-                  {["Agenda", "Expedientes", "Facturación"].map((pilar) => (
+                  {ALCANCE_SUITE.map((item) => (
                     <span
-                      key={pilar}
+                      key={item}
                       className="rounded-full border border-teal-300/40 bg-teal-400/10 px-3 py-1 text-xs font-semibold text-teal-200"
                     >
-                      {pilar}
+                      {item}
                     </span>
                   ))}
                 </div>
                 <span className="text-sm font-semibold text-white">
-                  El ecosistema completo de tu clínica en una sola plataforma.
+                  La solución administrativa más completa para profesionales y
+                  clínicas en Venezuela.
                 </span>
               </div>
               <a
-                href={WHATSAPP_FACTURACION_URL}
+                href={ONBOARDING_URL}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="inline-flex h-11 shrink-0 items-center justify-center gap-2 rounded-xl bg-linear-to-r from-teal-500 to-cyan-500 px-5 text-sm font-semibold text-white shadow-lg shadow-teal-900/30 transition hover:brightness-110"
               >
-                Quiero acceso anticipado
+                {CTA_SUITE}
                 <ArrowRight className="size-4" aria-hidden="true" />
               </a>
             </div>
