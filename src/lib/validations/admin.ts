@@ -14,17 +14,10 @@
  * (`safeParse` / `parse` / `issues`), sin agregar dependencias: si más adelante
  * se adopta Zod, los consumidores (`/api/admin/*` y componentes) no cambian.
  */
-import type { CampoIssue } from "@/types/admin"
-import type {
-  CurrencyCode,
-  DoctorCommissionType,
-  TenantUserRole,
-  TipoDocumentoFiscal,
-} from "@/types/database"
+import type { CurrencyCode, DoctorCommissionType, TenantUserRole, TipoDocumentoFiscal } from "@/types/database"
 import { ROLES_SOPORTADOS } from "@/lib/rbac"
 import {
   EMAIL_REGEX,
-  FECHA_ISO_REGEX,
   TELEFONO_VE_REGEX,
   TIPOS_COMISION,
   TIPOS_DOCUMENTO,
@@ -32,192 +25,27 @@ import {
   normalizarDocumentoIdentidad,
   normalizarRif,
 } from "@/lib/fiscal-ve"
-import { fechaHoyVenezuela, isValidDateISO } from "@/lib/date"
+import type { Contexto } from "./core"
+import {
+  booleano,
+  comoObjeto,
+  comoTexto,
+  crearEsquema,
+  decimalRequerido,
+  enumerado,
+  error,
+  fechaRequerida,
+  textoOpcional,
+  textoRequerido,
+} from "./core"
 
 /* ------------------------------------------------------------------ */
 /* Contrato del validador (compatible con Zod)                         */
 /* ------------------------------------------------------------------ */
-
-export type ErrorValidacion = { message: string; issues: CampoIssue[] }
-
-export type ResultadoValidacion<T> =
-  | { success: true; data: T }
-  | { success: false; error: ErrorValidacion }
-
-export type Validador<T> = (entrada: unknown) => ResultadoValidacion<T>
-
-/** Error lanzado por `parse()` cuando la entrada no es válida. */
-export class ErrorValidacionFormulario extends Error {
-  readonly issues: CampoIssue[]
-
-  constructor(error: ErrorValidacion) {
-    super(error.message)
-    this.name = "ErrorValidacionFormulario"
-    this.issues = error.issues
-  }
-}
-
-/** Esquema tipado: envuelve un validador puro con la API de Zod. */
-export class Esquema<T> {
-  private readonly validador: Validador<T>
-
-  constructor(validador: Validador<T>) {
-    this.validador = validador
-  }
-
-  safeParse(entrada: unknown): ResultadoValidacion<T> {
-    return this.validador(entrada)
-  }
-
-  /** Igual que `safeParse` pero lanza `ErrorValidacionFormulario`. */
-  parse(entrada: unknown): T {
-    const resultado = this.validador(entrada)
-    if (!resultado.success) throw new ErrorValidacionFormulario(resultado.error)
-    return resultado.data
-  }
-}
-
-export function crearEsquema<T>(validador: Validador<T>): Esquema<T> {
-  return new Esquema(validador)
-}
-
-/* ------------------------------------------------------------------ */
-/* Utilidades internas de validación                                    */
-/* ------------------------------------------------------------------ */
-
-type Contexto = { issues: CampoIssue[] }
-
-function error(ctx: Contexto): ErrorValidacion {
-  return {
-    message: ctx.issues[0]?.mensaje ?? "Datos inválidos.",
-    issues: ctx.issues,
-  }
-}
-
-function comoObjeto(entrada: unknown): Record<string, unknown> {
-  return entrada && typeof entrada === "object" && !Array.isArray(entrada)
-    ? (entrada as Record<string, unknown>)
-    : {}
-}
-
-function comoTexto(valor: unknown): string {
-  if (typeof valor === "string") return valor
-  if (typeof valor === "number" && Number.isFinite(valor)) return String(valor)
-  return ""
-}
-
-/** Texto obligatorio: recorta, colapsa espacios y valida longitud. */
-function textoRequerido(
-  ctx: Contexto,
-  campo: string,
-  etiqueta: string,
-  valor: unknown,
-  limites: { min?: number; max?: number } = {}
-): string {
-  const { min = 1, max = 200 } = limites
-  const limpio = comoTexto(valor).trim().replace(/\s+/g, " ")
-  if (limpio.length < min) {
-    ctx.issues.push({
-      campo,
-      mensaje: `${etiqueta} es obligatorio (mínimo ${min} caracteres).`,
-    })
-  } else if (limpio.length > max) {
-    ctx.issues.push({
-      campo,
-      mensaje: `${etiqueta} no puede superar ${max} caracteres.`,
-    })
-  }
-  return limpio
-}
-
-/** Texto opcional: vacío/null → `null`. */
-function textoOpcional(
-  ctx: Contexto,
-  campo: string,
-  etiqueta: string,
-  valor: unknown,
-  limites: { max?: number } = {}
-): string | null {
-  const { max = 200 } = limites
-  const limpio = comoTexto(valor).trim().replace(/\s+/g, " ")
-  if (!limpio) return null
-  if (limpio.length > max) {
-    ctx.issues.push({
-      campo,
-      mensaje: `${etiqueta} no puede superar ${max} caracteres.`,
-    })
-  }
-  return limpio
-}
-
-/** Número decimal obligatorio (acepta "36,50" y "36.50"). */
-function decimalRequerido(
-  ctx: Contexto,
-  campo: string,
-  etiqueta: string,
-  valor: unknown,
-  limites: { min?: number; max?: number; decimales?: number } = {}
-): number {
-  const { min = 0, max = 1_000_000, decimales = 2 } = limites
-  const numero = Number(comoTexto(valor).replace(",", ".").trim())
-  if (!Number.isFinite(numero)) {
-    ctx.issues.push({ campo, mensaje: `${etiqueta} debe ser un número válido.` })
-    return 0
-  }
-  if (numero < min || numero > max) {
-    ctx.issues.push({
-      campo,
-      mensaje: `${etiqueta} debe estar entre ${min} y ${max}.`,
-    })
-    return min
-  }
-  const factor = 10 ** decimales
-  return Math.round(numero * factor) / factor
-}
-
-function booleano(valor: unknown, porDefecto: boolean): boolean {
-  if (typeof valor === "boolean") return valor
-  if (valor === "true" || valor === 1 || valor === "1") return true
-  if (valor === "false" || valor === 0 || valor === "0") return false
-  return porDefecto
-}
-
-function enumerado<T extends string>(
-  ctx: Contexto,
-  campo: string,
-  etiqueta: string,
-  valor: unknown,
-  permitidos: readonly T[],
-  porDefecto: T | null
-): T {
-  const limpio = comoTexto(valor).trim().toUpperCase()
-  const encontrado = permitidos.find((item) => item === limpio)
-  if (encontrado) return encontrado
-  if (porDefecto !== null) return porDefecto
-  ctx.issues.push({
-    campo,
-    mensaje: `${etiqueta} debe ser uno de: ${permitidos.join(", ")}.`,
-  })
-  return permitidos[0]
-}
-
-/** Fecha 'YYYY-MM-DD' obligatoria (usa hoy en Venezuela si viene vacía). */
-function fechaRequerida(
-  ctx: Contexto,
-  campo: string,
-  etiqueta: string,
-  valor: unknown
-): string {
-  const limpio = comoTexto(valor).trim()
-  if (!limpio) return fechaHoyVenezuela()
-  if (!FECHA_ISO_REGEX.test(limpio) || !isValidDateISO(limpio)) {
-    ctx.issues.push({
-      campo,
-      mensaje: `${etiqueta} debe ser una fecha válida (YYYY-MM-DD).`,
-    })
-  }
-  return limpio
-}
+/* Las primitivas viven en `./core` (compartidas con el módulo de
+ * facturación). Se re-exportan aquí para no romper a los consumidores. */
+export type { ErrorValidacion, ResultadoValidacion, Validador } from "./core"
+export { crearEsquema, ErrorValidacionFormulario, Esquema } from "./core"
 
 /* ------------------------------------------------------------------ */
 /* 1. Entidad fiscal del tenant                                        */

@@ -684,6 +684,283 @@ export type MedicalServiceInsert = Omit<
 export type MedicalServiceUpdate = Partial<MedicalServiceInsert>
 
 /* ------------------------------------------------------------------ */
+/* Módulo 2 · Facturación y cobros (Venezuela / SENIAT)                */
+/* ------------------------------------------------------------------ */
+
+/** Ciclo de vida de una factura. */
+export type InvoiceStatus =
+  | "DRAFT"
+  | "ISSUED"
+  | "PAID"
+  | "CANCELLED"
+  | "REFUNDED"
+
+/** Estado de cobro derivado de los pagos verificados. */
+export type InvoicePaymentStatus = "PENDING" | "PARTIAL" | "PAID"
+
+/** Métodos de cobro soportados por la caja venezolana. */
+export type PaymentMethod =
+  | "PAGO_MOVIL"
+  | "ZELLE"
+  | "TRANSFERENCIA_VES"
+  | "EFECTIVO_USD"
+  | "EFECTIVO_VES"
+  | "PUNTO_DE_VENTA"
+
+/** Verificación de un cobro por la recepción. */
+export type PaymentStatus =
+  | "PENDING_VERIFICATION"
+  | "VERIFIED"
+  | "REJECTED"
+
+/** Tipos de documento con numeración fiscal propia. */
+export type FiscalDocType = "INVOICE" | "CREDIT_NOTE" | "DEBIT_NOTE"
+
+/** Snapshot fiscal del cliente guardado en la factura (jsonb). */
+export type InvoiceFiscalProfile = {
+  tipoDocumento: TipoDocumentoFiscal
+  /** Cédula/RIF normalizado (ej. `V-12345678` / `J-40123456-7`). */
+  documentoIdentidad: string
+  razonSocial: string
+  direccionFiscal: string
+  email?: string | null
+  telefono?: string | null
+  /** Nombre del paciente al momento de la venta (solo informativo). */
+  pacienteNombre?: string | null
+}
+
+/* ------------------- fiscal_counters (punteros) ------------------- */
+
+export type FiscalCounter = {
+  id: string
+  tenant_id: string
+  /** null = serie única de la clínica (sin separar por sede). */
+  sede_id: string | null
+  doc_type: FiscalDocType
+  series: string
+  next_invoice_number: number
+  next_control_number: number
+  invoice_prefix: string
+  control_prefix: string
+  created_at: string
+  updated_at: string
+}
+
+export type FiscalCounterInsert = {
+  id?: string
+  tenant_id: string
+  sede_id?: string | null
+  doc_type?: FiscalDocType
+  series?: string
+  next_invoice_number?: number
+  next_control_number?: number
+  invoice_prefix?: string
+  control_prefix?: string
+  created_at?: string
+  updated_at?: string
+}
+
+export type FiscalCounterUpdate = Partial<FiscalCounterInsert>
+
+/* --------------------------- invoices --------------------------- */
+
+export type Invoice = {
+  id: string
+  tenant_id: string
+  sede_id: string | null
+  /** Correlativo SENIAT (null mientras es borrador). */
+  invoice_number: string | null
+  /** N° de control de formas libres (null mientras es borrador). */
+  control_number: string | null
+  patient_id: string | null
+  appointment_id: string | null
+  fiscal_profile: InvoiceFiscalProfile | Record<string, unknown>
+  subtotal_usd: number
+  subtotal_ves: number
+  vat_amount_usd: number
+  vat_amount_ves: number
+  igtf_amount_usd: number
+  igtf_amount_ves: number
+  total_usd: number
+  total_ves: number
+  bcv_rate_used: number
+  status: InvoiceStatus
+  payment_status: InvoicePaymentStatus
+  notes: string | null
+  created_by: string | null
+  issued_at: string | null
+  cancelled_at: string | null
+  created_at: string
+  updated_at: string
+}
+
+export type InvoiceInsert = {
+  id?: string
+  tenant_id: string
+  bcv_rate_used: number
+  sede_id?: string | null
+  invoice_number?: string | null
+  control_number?: string | null
+  patient_id?: string | null
+  appointment_id?: string | null
+  fiscal_profile?: InvoiceFiscalProfile | Record<string, unknown>
+  subtotal_usd?: number
+  subtotal_ves?: number
+  vat_amount_usd?: number
+  vat_amount_ves?: number
+  igtf_amount_usd?: number
+  igtf_amount_ves?: number
+  total_usd?: number
+  total_ves?: number
+  status?: InvoiceStatus
+  payment_status?: InvoicePaymentStatus
+  notes?: string | null
+  created_by?: string | null
+  issued_at?: string | null
+  cancelled_at?: string | null
+  created_at?: string
+  updated_at?: string
+}
+
+export type InvoiceUpdate = Partial<InvoiceInsert>
+
+/* ------------------------- invoice_items ------------------------- */
+
+export type InvoiceItem = {
+  id: string
+  invoice_id: string
+  tenant_id: string
+  service_id: string | null
+  description: string
+  quantity: number
+  unit_price_usd: number
+  unit_price_ves: number
+  taxable: boolean
+  doctor_id: string | null
+  doctor_commission_amount: number
+  created_at: string
+}
+
+export type InvoiceItemInsert = {
+  id?: string
+  invoice_id: string
+  tenant_id: string
+  description: string
+  service_id?: string | null
+  quantity?: number
+  unit_price_usd?: number
+  unit_price_ves?: number
+  taxable?: boolean
+  doctor_id?: string | null
+  doctor_commission_amount?: number
+  created_at?: string
+}
+
+export type InvoiceItemUpdate = Partial<InvoiceItemInsert>
+
+/* ---------------------------- payments ---------------------------- */
+
+export type Payment = {
+  id: string
+  invoice_id: string
+  tenant_id: string
+  sede_id: string | null
+  method: PaymentMethod
+  amount_usd: number
+  amount_ves: number
+  reference_number: string | null
+  applies_igtf: boolean
+  igtf_amount: number
+  igtf_amount_ves: number
+  status: PaymentStatus
+  notes: string | null
+  verified_by: string | null
+  verified_at: string | null
+  created_by: string | null
+  created_at: string
+  updated_at: string
+}
+
+export type PaymentInsert = {
+  id?: string
+  invoice_id: string
+  tenant_id: string
+  method: PaymentMethod
+  sede_id?: string | null
+  amount_usd?: number
+  amount_ves?: number
+  reference_number?: string | null
+  applies_igtf?: boolean
+  igtf_amount?: number
+  igtf_amount_ves?: number
+  status?: PaymentStatus
+  notes?: string | null
+  verified_by?: string | null
+  verified_at?: string | null
+  created_by?: string | null
+  created_at?: string
+  updated_at?: string
+}
+
+export type PaymentUpdate = Partial<PaymentInsert>
+
+/* ------------------ credit_notes / debit_notes ------------------ */
+
+export type CreditNote = {
+  id: string
+  tenant_id: string
+  invoice_id: string
+  note_number: string | null
+  control_number: string | null
+  amount_usd: number
+  amount_ves: number
+  motivo: string
+  reembolsada: boolean
+  issued_by: string | null
+  created_at: string
+}
+
+export type CreditNoteInsert = {
+  id?: string
+  tenant_id: string
+  invoice_id: string
+  note_number?: string | null
+  control_number?: string | null
+  amount_usd?: number
+  amount_ves?: number
+  motivo: string
+  reembolsada?: boolean
+  issued_by?: string | null
+  created_at?: string
+}
+
+export type DebitNote = {
+  id: string
+  tenant_id: string
+  invoice_id: string
+  note_number: string | null
+  control_number: string | null
+  amount_usd: number
+  amount_ves: number
+  motivo: string
+  issued_by: string | null
+  created_at: string
+}
+
+export type DebitNoteInsert = {
+  id?: string
+  tenant_id: string
+  invoice_id: string
+  note_number?: string | null
+  control_number?: string | null
+  amount_usd?: number
+  amount_ves?: number
+  motivo: string
+  issued_by?: string | null
+  created_at?: string
+}
+
+/* ------------------------------------------------------------------ */
 /* Tipado del cliente Supabase (createClient<Database>)                */
 /* ------------------------------------------------------------------ */
 
@@ -766,6 +1043,42 @@ export type Database = {
         Row: MedicalService
         Insert: MedicalServiceInsert
         Update: MedicalServiceUpdate
+        Relationships: []
+      }
+      fiscal_counters: {
+        Row: FiscalCounter
+        Insert: FiscalCounterInsert
+        Update: FiscalCounterUpdate
+        Relationships: []
+      }
+      invoices: {
+        Row: Invoice
+        Insert: InvoiceInsert
+        Update: InvoiceUpdate
+        Relationships: []
+      }
+      invoice_items: {
+        Row: InvoiceItem
+        Insert: InvoiceItemInsert
+        Update: InvoiceItemUpdate
+        Relationships: []
+      }
+      payments: {
+        Row: Payment
+        Insert: PaymentInsert
+        Update: PaymentUpdate
+        Relationships: []
+      }
+      credit_notes: {
+        Row: CreditNote
+        Insert: CreditNoteInsert
+        Update: Partial<CreditNoteInsert>
+        Relationships: []
+      }
+      debit_notes: {
+        Row: DebitNote
+        Insert: DebitNoteInsert
+        Update: Partial<DebitNoteInsert>
         Relationships: []
       }
     }

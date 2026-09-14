@@ -12,6 +12,7 @@ import {
   ClipboardList,
   Globe,
   Hourglass,
+  ReceiptText,
   ShieldAlert,
   ShieldCheck,
   Stethoscope,
@@ -218,6 +219,12 @@ export default async function AdminPage({ params }: AdminPageProps) {
       titulo: "Especialistas",
       descripcion: "Equipo médico y horarios",
       icono: <Stethoscope className="size-5" />,
+    },
+    {
+      href: `/${clinicSlug}/admin/facturacion`,
+      titulo: "Facturación y cobros",
+      descripcion: "Facturas fiscales, IVA, IGTF y notas",
+      icono: <ReceiptText className="size-5" />,
     },
     {
       href: `/${clinicSlug}/admin/servicios`,

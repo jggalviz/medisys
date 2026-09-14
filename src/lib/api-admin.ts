@@ -1,3 +1,5 @@
+"use client"
+
 /**
  * MEDISYS · Cliente HTTP del módulo de administración (seguro en cliente)
  * ======================================================================
@@ -8,8 +10,6 @@
  * navegador (cookies), así el panel nunca toca credenciales de servicio.
  */
 import type {
-  AdminModuleErrorCode,
-  CampoIssue,
   EntidadFiscal,
   SedeDTO,
   ServicioMedicoDTO,
@@ -22,16 +22,10 @@ import type {
   SedeInput,
   TasaBcvInput,
 } from "@/lib/validations/admin"
+import { consulta, pedir, type RespuestaApi } from "@/lib/api-cliente"
 
-/** Respuesta normalizada de las API del módulo. */
-export type RespuestaApi<T> =
-  | { ok: true; data: T }
-  | {
-      ok: false
-      code: AdminModuleErrorCode
-      message: string
-      issues?: CampoIssue[]
-    }
+/** Re-export del contrato de respuesta (compatibilidad con el Módulo 1). */
+export type { RespuestaApi }
 
 export type AjustesAdministracion = {
   clinic: {
@@ -50,47 +44,6 @@ export type AjustesAdministracion = {
 }
 
 const BASE = "/api/admin"
-
-async function pedir<T>(url: string, init?: RequestInit): Promise<RespuestaApi<T>> {
-  try {
-    const respuesta = await fetch(url, {
-      ...init,
-      cache: "no-store",
-      headers: {
-        "Content-Type": "application/json",
-        ...(init?.headers ?? {}),
-      },
-    })
-
-    const cuerpo = (await respuesta.json().catch(() => null)) as
-      | RespuestaApi<T>
-      | null
-
-    if (!cuerpo) {
-      return {
-        ok: false,
-        code: "SERVER_ERROR",
-        message: `El servidor respondió ${respuesta.status} sin datos legibles.`,
-      }
-    }
-
-    return cuerpo
-  } catch (cause) {
-    return {
-      ok: false,
-      code: "SERVER_ERROR",
-      message:
-        cause instanceof Error
-          ? cause.message
-          : "No se pudo contactar al servidor. Revisa tu conexión.",
-    }
-  }
-}
-
-function consulta(clinicSlug: string, extra: Record<string, string> = {}) {
-  const params = new URLSearchParams({ clinicSlug, ...extra })
-  return params.toString()
-}
 
 /* ----------------------------- Ajustes ----------------------------- */
 
