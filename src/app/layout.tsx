@@ -18,7 +18,7 @@ export const metadata: Metadata = {
   metadataBase: new URL("https://medisys.com.ve"),
   title: "Medisys · Agenda Médica y Expedientes",
   description:
-    "Reservas 24/7 y cobros automáticos a tasa BCV, expedientes digitales y perfil SEO para Google. Gratis en tus primeras 30 reservas.",
+    "Reservas 24/7 y cobros automáticos a tasa BCV, expedientes digitales y perfil SEO para Google. Gratis en tus primeras 15 reservas.",
   keywords: [
     "agenda medica venezuela",
     "expediente medico digital",
@@ -30,7 +30,7 @@ export const metadata: Metadata = {
   openGraph: {
     title: "Medisys · Agenda Médica y Expedientes",
     description:
-      "Reservas 24/7 y cobros automáticos a tasa BCV, expedientes digitales y perfil SEO para Google. Gratis en tus primeras 30 reservas.",
+      "Reservas 24/7 y cobros automáticos a tasa BCV, expedientes digitales y perfil SEO para Google. Gratis en tus primeras 15 reservas.",
     url: "https://medisys.com.ve",
     siteName: "Medisys",
     locale: "es_VE",
@@ -48,7 +48,7 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: "Medisys · Agenda Médica y Expedientes",
     description:
-      "Reservas 24/7 y cobros automáticos a tasa BCV, expedientes digitales y perfil SEO para Google. Gratis en tus primeras 30 reservas.",
+      "Reservas 24/7 y cobros automáticos a tasa BCV, expedientes digitales y perfil SEO para Google. Gratis en tus primeras 15 reservas.",
     images: ["/og-image.png"],
   },
 };

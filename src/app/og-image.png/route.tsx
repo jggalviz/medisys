@@ -81,7 +81,7 @@ export function GET() {
         {/* Chips */}
         <div style={{ display: "flex", gap: "14px", flexWrap: "wrap" }}>
           {[
-            "Primeras 30 reservas GRATIS",
+            "Primeras 15 reservas GRATIS",
             "Pago Móvil verificado",
             "Tasa oficial BCV",
             "Venezuela 🇻🇪",

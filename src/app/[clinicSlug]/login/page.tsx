@@ -4,7 +4,7 @@ import Link from "next/link"
 
 import { LoginForm } from "@/components/auth/LoginForm"
 import { getTenantBySlug } from "@/app/actions/tenant"
-import { DEMO_CLINIC_SLUG } from "@/lib/demo"
+import { esTenantDemo } from "@/lib/demo"
 import { logoMostrable } from "@/lib/branding"
 
 type LoginPageProps = {
@@ -46,7 +46,9 @@ export default async function LoginPage({ params }: LoginPageProps) {
         clinicSlug={tenant.slug}
         tenantNombre={tenant.nombre}
         tenantLogoUrl={logoMostrable(tenant.logo_url)}
-        esDemo={tenant.slug === DEMO_CLINIC_SLUG}
+        // Tenants DEMO (clínica multi-especialista y consultorio individual
+        // del Plan Pro): muestran el callout de credenciales y autocompletado.
+        esDemo={esTenantDemo(tenant.slug)}
       />
     </main>
   )
