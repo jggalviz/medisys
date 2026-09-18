@@ -291,7 +291,7 @@ export default async function AdminPage({ params }: AdminPageProps) {
       {membresia.debeAvisar && (
         <BannerMembresia
           clinicSlug={clinicSlug}
-          planLabel={nombrePlan(tenant.plan_type)}
+          planLabel={nombrePlan(tenant.plan_type, tenant.max_especialistas)}
           venceAt={tenant.suscripcion_vence_at ?? null}
           dias={membresia.dias}
           vencida={membresia.vencida}

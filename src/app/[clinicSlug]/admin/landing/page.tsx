@@ -9,6 +9,7 @@ import { getStaffForSlug } from "@/lib/staff"
 import { getTenantBySlug } from "@/app/actions/tenant"
 import { LandingManager } from "@/components/admin/landing/LandingManager"
 import { normalizarLandingConfig } from "@/lib/landing"
+import { normalizarPlan } from "@/lib/suscripcion"
 import { getLatestBcvRate } from "@/lib/bcv"
 
 /** Lee la sesión del admin y la landing actual en cada petición. */
@@ -84,7 +85,7 @@ export default async function LandingPageAdmin({ params }: Props) {
           tenantId={tenant.id}
           clinicSlug={clinicSlug}
           nombre={tenant.nombre}
-          planType={tenant.plan_type ?? null}
+          planType={normalizarPlan(tenant.plan_type, tenant.max_especialistas)}
           precioConsultaBase={precioConsultaBase}
           tasaBCV={tasaBCV}
           inicial={{

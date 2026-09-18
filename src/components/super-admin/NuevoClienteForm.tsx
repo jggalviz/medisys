@@ -1,31 +1,45 @@
 "use client"
 
-/** Formulario de onboarding: crea Auth + tenant + membresía + doctor (PRO). */
+/** Formulario de onboarding: crea Auth + tenant + membresía + doctor (Individual). */
 import { useState, useTransition } from "react"
 import { useRouter } from "next/navigation"
 import { Building2, Check, LoaderCircle, Stethoscope } from "lucide-react"
 
 import { createClientTenant } from "@/app/actions/super-admin-onboarding"
+import {
+  LIMITE_ESPECIALISTAS_PLAN,
+  ajustarMaxEspecialistas,
+  nombrePlan,
+  precioPlanUSD,
+} from "@/lib/suscripcion"
 import type { PlanTenant } from "@/types/database"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { cn } from "@/lib/utils"
 
-const PLANES: { id: PlanTenant; titulo: string; precio: string; detalle: string }[] = [
+/** Precio/cupo comerciales por plan (misma fuente que la landing). */
+const PLANES: { id: PlanTenant; detalle: string }[] = [
   {
-    id: "PRO",
-    titulo: "Plan Especialista Pro",
-    precio: "$30/mes",
+    id: "INDIVIDUAL",
     detalle: "1 especialista · agendamiento en 3 pasos",
   },
   {
-    id: "CLINICA",
-    titulo: "Plan Clínica",
-    precio: "$100/mes",
-    detalle: "Multi-especialista · recepción y gestión",
+    id: "PYME",
+    detalle: "2 a 10 especialistas · 1 sede",
+  },
+  {
+    id: "PRO",
+    detalle: "10+ especialistas o múltiples sedes",
   },
 ]
+
+/** Cupo de especialistas sugerido al elegir cada plan. */
+const CUPO_INICIAL: Record<PlanTenant, number> = {
+  INDIVIDUAL: LIMITE_ESPECIALISTAS_PLAN.INDIVIDUAL.min,
+  PYME: 5,
+  PRO: LIMITE_ESPECIALISTAS_PLAN.PRO.min,
+}
 
 function slugificar(valor: string): string {
   return valor
@@ -38,7 +52,7 @@ function slugificar(valor: string): string {
 
 export function NuevoClienteForm() {
   const router = useRouter()
-  const [plan, setPlan] = useState<PlanTenant>("CLINICA")
+  const [plan, setPlan] = useState<PlanTenant>("PYME")
   const [nombre, setNombre] = useState("")
   const [slug, setSlug] = useState("")
   const [email, setEmail] = useState("")
@@ -46,7 +60,9 @@ export function NuevoClienteForm() {
   const [telefono, setTelefono] = useState("")
   const [rif, setRif] = useState("")
   const [direccion, setDireccion] = useState("")
-  const [maxEspecialistas, setMaxEspecialistas] = useState("3")
+  const [maxEspecialistas, setMaxEspecialistas] = useState(
+    String(CUPO_INICIAL.PYME)
+  )
   const [doctorNombre, setDoctorNombre] = useState("")
   const [especialidad, setEspecialidad] = useState("")
   const [doctorCedula, setDoctorCedula] = useState("")
@@ -72,10 +88,12 @@ export function NuevoClienteForm() {
         telefono,
         rif,
         direccion,
-        maxEspecialistas:
-          plan === "PRO" ? 1 : Number(maxEspecialistas.replace(/\D/g, "")) || 1,
+        maxEspecialistas: ajustarMaxEspecialistas(
+          plan,
+          Number(maxEspecialistas.replace(/\D/g, ""))
+        ),
         doctor:
-          plan === "PRO"
+          plan === "INDIVIDUAL"
             ? {
                 nombre: doctorNombre,
                 especialidad,
@@ -102,19 +120,22 @@ export function NuevoClienteForm() {
       <header className="flex flex-col gap-1">
         <h1 className="text-lg font-bold tracking-tight">Nuevo cliente</h1>
         <p className="text-sm text-muted-foreground">
-          Alta completa: usuario admin, clínica, membresía y especialista (Plan PRO).
+          Alta completa: usuario admin, clínica, membresía y especialista (Plan Individual).
         </p>
       </header>
 
       {/* Selección de plan */}
-      <section className="grid gap-3 sm:grid-cols-2">
+      <section className="grid gap-3 sm:grid-cols-3">
         {PLANES.map((opcion) => {
           const activo = plan === opcion.id
           return (
             <button
               key={opcion.id}
               type="button"
-              onClick={() => setPlan(opcion.id)}
+              onClick={() => {
+                setPlan(opcion.id)
+                setMaxEspecialistas(String(CUPO_INICIAL[opcion.id]))
+              }}
               aria-pressed={activo}
               className={cn(
                 "flex items-start gap-3 rounded-2xl border bg-card p-4 text-left transition-all",
@@ -122,15 +143,17 @@ export function NuevoClienteForm() {
               )}
             >
               <span className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
-                {opcion.id === "PRO" ? (
+                {opcion.id === "INDIVIDUAL" ? (
                   <Stethoscope className="size-5" />
                 ) : (
                   <Building2 className="size-5" />
                 )}
               </span>
               <span className="flex flex-1 flex-col">
-                <span className="font-semibold">{opcion.titulo}</span>
-                <span className="text-sm font-bold text-teal-700">{opcion.precio}</span>
+                <span className="font-semibold">{nombrePlan(opcion.id)}</span>
+                <span className="text-sm font-bold text-teal-700">
+                  ${precioPlanUSD(opcion.id)}/mes
+                </span>
                 <span className="text-xs text-muted-foreground">{opcion.detalle}</span>
               </span>
               {activo && <Check className="size-4 text-primary" />}
@@ -175,7 +198,7 @@ export function NuevoClienteForm() {
           <Label htmlFor="nc-direccion">Dirección</Label>
           <Input id="nc-direccion" value={direccion} onChange={(e) => setDireccion(e.target.value)} />
         </div>
-        {plan === "CLINICA" && (
+        {plan !== "INDIVIDUAL" && (
           <div className="flex flex-col gap-1.5">
             <Label htmlFor="nc-max">Máximo de especialistas</Label>
             <Input
@@ -183,6 +206,7 @@ export function NuevoClienteForm() {
               value={maxEspecialistas}
               onChange={(e) => setMaxEspecialistas(e.target.value)}
               inputMode="numeric"
+              placeholder={plan === "PYME" ? "entre 1 y 10" : "mínimo 11"}
             />
           </div>
         )}
@@ -213,8 +237,8 @@ export function NuevoClienteForm() {
         </div>
       </section>
 
-      {/* Especialista (solo PRO) */}
-      {plan === "PRO" && (
+      {/* Especialista (solo Plan Individual) */}
+      {plan === "INDIVIDUAL" && (
         <section className="grid gap-3 rounded-2xl border border-emerald-200 bg-emerald-50/50 p-4 sm:grid-cols-2">
           <div className="flex flex-col gap-1.5 sm:col-span-2">
             <Label htmlFor="nc-doctor">Nombre del especialista *</Label>

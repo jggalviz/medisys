@@ -345,6 +345,7 @@ export function BookingWizard({ tenant }: Props) {
             clinicSlug={tenant.slug}
             selectedDoctor={doctor}
             planType={tenant.plan_type}
+            maxEspecialistas={tenant.max_especialistas}
             onContinue={(next) => {
               setDoctor(next)
               setNotice(null)

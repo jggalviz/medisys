@@ -9,6 +9,7 @@
  */
 import { createAdminClient } from "@/lib/supabase/admin"
 import { getSuperAdmin } from "@/lib/super-admin"
+import { normalizarPlan } from "@/lib/suscripcion"
 import { logoMostrable } from "@/lib/branding"
 import type { AppointmentStatus, PlanTenant } from "@/types/database"
 import type { SuperAdminResult } from "@/app/actions/super-admin"
@@ -132,15 +133,20 @@ export async function getClienteDetalle(
       estado: texto(c.estado) || "pendiente",
     }))
 
+    const planType = normalizarPlan(
+      tenant.plan_type,
+      Number(tenant.max_especialistas)
+    )
+
     return {
       ok: true,
       data: {
         id: texto(tenant.id),
         nombre: texto(tenant.nombre) || "Clínica sin nombre",
         slug: texto(tenant.slug),
-        planType: tenant.plan_type === "PRO" ? "PRO" : "CLINICA",
+        planType,
         maxEspecialistas:
-          tenant.plan_type === "PRO" ? 1 : numero(tenant.max_especialistas) || 5,
+          planType === "INDIVIDUAL" ? 1 : numero(tenant.max_especialistas) || 5,
         isActive: tenant.is_active !== false,
         telefono: tenant.telefono == null ? null : texto(tenant.telefono),
         rif: tenant.rif == null ? null : texto(tenant.rif),

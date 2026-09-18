@@ -136,7 +136,7 @@ function texto(valor: unknown): string {
  * Credenciales DEMO dinámicas del tenant: la cédula y el teléfono del primer
  * especialista activo (rol 'especialista') o del primer perfil registrado
  * (rol 'paciente'). Sirve para autocompletar el acceso del portal sin datos
- * estáticos — funciona igual para Plan PRO o Plan Clínica.
+ * estáticos — funciona igual para el Plan Individual o los planes PyME/PRO.
  */
 export async function getCredencialesDemoPortal(
   tenantId: string,

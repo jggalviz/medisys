@@ -5,12 +5,13 @@
  *
  * `createClientTenant` da de alta en un solo flujo:
  *  1. Usuario administrador/médico en Supabase Auth.
- *  2. Fila en `tenants` (plan PRO → max_especialistas = 1).
+ *  2. Fila en `tenants` (plan INDIVIDUAL → max_especialistas = 1).
  *  3. Membresía en `tenant_users` con rol 'admin'.
- *  4. Si el plan es PRO, el registro en `doctors`.
+ *  4. Si el plan es INDIVIDUAL, el registro en `doctors`.
  */
 import { createAdminClient } from "@/lib/supabase/admin"
 import { getSuperAdmin } from "@/lib/super-admin"
+import { ajustarMaxEspecialistas } from "@/lib/suscripcion"
 import type { PlanTenant } from "@/types/database"
 
 export type CreateClientTenantInput = {
@@ -23,7 +24,7 @@ export type CreateClientTenantInput = {
   rif?: string | null
   direccion?: string | null
   maxEspecialistas?: number | null
-  /** Datos del único médico (obligatorios si plan === 'PRO'). */
+  /** Datos del único médico (obligatorios si plan === 'INDIVIDUAL'). */
   doctor?: {
     nombre: string
     especialidad: string
@@ -66,7 +67,7 @@ export async function createClientTenant(
   const slug = limpiarSlug(input.slug || input.nombre || "")
   const email = input.email?.trim().toLowerCase()
   const password = input.password
-  const esPro = input.plan === "PRO"
+  const esIndividual = input.plan === "INDIVIDUAL"
 
   if (!nombre) return { ok: false, message: "El nombre de la clínica es obligatorio." }
   if (!slug || !SLUG_RE.test(slug)) {
@@ -78,14 +79,18 @@ export async function createClientTenant(
       message: "Indica un correo válido y una contraseña de al menos 6 caracteres.",
     }
   }
-  if (esPro && !input.doctor?.nombre?.trim()) {
-    return { ok: false, message: "El Plan PRO requiere los datos del especialista." }
+  if (esIndividual && !input.doctor?.nombre?.trim()) {
+    return {
+      ok: false,
+      message: "El Plan Individual requiere los datos del especialista.",
+    }
   }
 
   const supabase = createAdminClient()
-  const maxEspecialistas = esPro
-    ? 1
-    : Math.max(1, Math.floor(Number(input.maxEspecialistas) || 1))
+  const maxEspecialistas = ajustarMaxEspecialistas(
+    input.plan,
+    input.maxEspecialistas
+  )
 
   // Slug único
   const { data: existente } = await supabase
@@ -148,7 +153,7 @@ export async function createClientTenant(
     tenant_id: tenant.id,
     user_id: userId,
     role: "admin",
-    precio_consulta: esPro
+    precio_consulta: esIndividual
       ? Math.max(0, Number(input.doctor?.precioConsulta) || 0)
       : null,
   })
@@ -157,8 +162,8 @@ export async function createClientTenant(
     return { ok: false, message: `No se pudo asignar el rol admin: ${errMember.message}` }
   }
 
-  // 4) Doctor automático para Plan PRO
-  if (esPro && input.doctor) {
+  // 4) Doctor automático para Plan Individual
+  if (esIndividual && input.doctor) {
     const partes = partesNombre(input.doctor.nombre)
     const { error: errDoctor } = await supabase.from("doctors").insert({
       tenant_id: tenant.id,

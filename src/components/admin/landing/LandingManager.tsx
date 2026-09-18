@@ -31,6 +31,7 @@ import type {
 } from "@/types/database"
 import { LANDING_LIMITES, METODOS_PAGO } from "@/lib/landing"
 import { formatBs, formatUSD } from "@/lib/format"
+import { nombrePlan } from "@/lib/suscripcion"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -225,7 +226,7 @@ export function LandingManager({
           </h2>
           {planType && (
             <span className="rounded-full bg-primary/10 px-2 py-0.5 text-[11px] font-semibold text-primary">
-              {planType === "PRO" ? "Plan PRO" : "Plan Clínica"}
+              {nombrePlan(planType)}
             </span>
           )}
         </div>

@@ -77,7 +77,9 @@ export default async function ClienteDetallePage({ params }: Props) {
                   "rounded-full px-2 py-0.5 font-semibold",
                   cliente.planType === "PRO"
                     ? "bg-emerald-500/15 text-emerald-700 dark:text-emerald-400"
-                    : "bg-primary/10 text-primary"
+                    : cliente.planType === "PYME"
+                      ? "bg-sky-500/15 text-sky-700 dark:text-sky-400"
+                      : "bg-primary/10 text-primary"
                 )}
               >
                 {nombrePlan(cliente.planType)}

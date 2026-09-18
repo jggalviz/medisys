@@ -25,6 +25,7 @@ import type { DoctorSchedule, DoctorWithTenant } from "@/types/booking"
 import { getDoctorsByTenant } from "@/app/actions/booking"
 import { imagenMostrable } from "@/lib/branding"
 import { doctorNombre, formatUSD, iniciales } from "@/lib/format"
+import { esPlanIndividual } from "@/lib/suscripcion"
 import { Button } from "@/components/ui/button"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { Skeleton } from "@/components/ui/skeleton"
@@ -33,8 +34,10 @@ import { cn } from "@/lib/utils"
 type Props = {
   clinicSlug: string
   selectedDoctor?: Doctor | null
-  /** Plan del tenant: 'independiente' salta la selección de especialista. */
+  /** Plan del tenant: INDIVIDUAL salta la selección de especialista. */
   planType?: PlanTenant | null
+  /** Cupo del plan (desambigua valores heredados de `plan_type`). */
+  maxEspecialistas?: number | null
   onContinue: (doctor: Doctor) => void
 }
 
@@ -186,6 +189,7 @@ export function StepDoctorSelect({
   clinicSlug,
   selectedDoctor,
   planType,
+  maxEspecialistas,
   onContinue,
 }: Props) {
   const [attempt, setAttempt] = useState(0)
@@ -196,8 +200,11 @@ export function StepDoctorSelect({
   const [activeEsp, setActiveEsp] = useState<string | null>(
     selectedDoctor?.especialidad ?? null
   )
-  /** Evita disparar más de una vez la asignación automática (Plan Pro). */
+  /** Evita disparar más de una vez la asignación automática (Plan Individual). */
   const autoRef = useRef(false)
+
+  /** Plan INDIVIDUAL: se salta el selector y el especialista se asigna solo. */
+  const planIndividual = esPlanIndividual(planType, maxEspecialistas)
 
   useEffect(() => {
     let active = true
@@ -216,14 +223,14 @@ export function StepDoctorSelect({
     }
   }, [clinicSlug, attempt])
 
-  // Plan Médico Pro ('independiente'): asigna el único especialista y avanza.
+  // Plan Individual: asigna el único especialista y avanza.
   useEffect(() => {
-    if (planType !== "PRO") return
+    if (!planIndividual) return
     if (load.status !== "ok" || load.doctors.length !== 1) return
     if (autoRef.current) return
     autoRef.current = true
     onContinue(load.doctors[0])
-  }, [planType, load, onContinue])
+  }, [planIndividual, load, onContinue])
 
   const loading = load.status === "loading"
   const loadError = load.status === "error" ? load.message : null
@@ -267,9 +274,9 @@ export function StepDoctorSelect({
   const pluralEspecialistas = (cantidad: number) =>
     `${cantidad} ${cantidad === 1 ? "especialista" : "especialistas"}`
 
-  // Plan Médico Pro: sin selector. Se muestra un aviso mientras el único
+  // Plan Individual: sin selector. Se muestra un aviso mientras el único
   // especialista se asigna automáticamente y se avanza al horario.
-  if (planType === "PRO") {
+  if (planIndividual) {
     return (
       <div className="flex flex-col gap-5">
         <header>

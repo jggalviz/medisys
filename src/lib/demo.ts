@@ -14,8 +14,8 @@ export const DEMO_INDEPENDENT_SLUG = "medico-pro-demo"
  * Ambos comparten las mismas credenciales de staff (`DEMO_CREDENCIALES`), por
  * lo que su login (`/[clinicSlug]/login`) muestra el callout con los datos de
  * prueba y el botón de autocompletado:
- *  - `clinica-demo`    → Plan Clínica (multi-especialista).
- *  - `medico-pro-demo` → Consultorio individual (Plan Pro).
+ *  - `clinica-demo`    → clínica multi-especialista (tier PRO por cupo).
+ *  - `medico-pro-demo` → consultorio de un solo especialista (Plan Individual).
  */
 export const DEMO_TENANT_SLUGS = [
   DEMO_CLINIC_SLUG,
@@ -50,7 +50,7 @@ export const DEMO_CREDENCIALES = {
   password: "demo123456",
 } as const
 
-/** Credenciales del especialista demo del Plan Clínica. */
+/** Credenciales del especialista demo del tenant multi-especialista. */
 export const DEMO_ESPECIALISTA = {
   cedula: "12345678",
   telefono: "04121234567",

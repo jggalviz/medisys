@@ -18,6 +18,7 @@ import { getLatestBcvRate } from "@/lib/bcv"
 import {
   datosPagoMovilSaas,
   nombrePlan,
+  normalizarPlan,
   precioPlanUSD,
 } from "@/lib/suscripcion"
 
@@ -94,7 +95,7 @@ export async function getInfoRenovacion(
       .maybeSingle()
     if (!tenant) return { ok: false, message: "Clínica no encontrada." }
 
-    const planType: PlanTenant = tenant.plan_type === "PRO" ? "PRO" : "CLINICA"
+    const planType = normalizarPlan(tenant.plan_type, tenant.max_especialistas)
     const precioUsd = precioPlanUSD(planType)
     const tasaBCV = await getLatestBcvRate(supabase)
 
@@ -172,7 +173,7 @@ export async function registrarPagoSuscripcion(
 
     const { data: tenant } = await supabase
       .from("tenants")
-      .select("plan_type")
+      .select("plan_type, max_especialistas")
       .eq("id", tenantId)
       .maybeSingle()
     if (!tenant) return { ok: false, message: "Clínica no encontrada." }
@@ -190,7 +191,7 @@ export async function registrarPagoSuscripcion(
       }
     }
 
-    const planType: PlanTenant = tenant.plan_type === "PRO" ? "PRO" : "CLINICA"
+    const planType = normalizarPlan(tenant.plan_type, tenant.max_especialistas)
     const precioUsd = precioPlanUSD(planType)
     const tasaBCV = await getLatestBcvRate(supabase)
     const montoVes = redondear2(precioUsd * tasaBCV)

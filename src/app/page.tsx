@@ -55,31 +55,31 @@ const WHATSAPP_URL = `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent
   "Hola Medisys 👋, vi la landing y quiero activar la plataforma en mi consultorio o clínica."
 )}`
 
-/** CTA unificado de la tabla de precios (prueba por volumen: 15 reservas). */
-const CTA_PLANES = "Comenzar gratis · Pagas al llegar a 15 reservas"
+/** CTA unificado de la tabla de precios (prueba por volumen: 10 reservas). */
+const CTA_PLANES = "Comenzar gratis · Pagas al llegar a 10 reservas"
 
 /** CTA del Hero (misma oferta, redacción de titular). */
-const CTA_HERO = "Comienza gratis (primeras 15 reservas incluidas)"
+const CTA_HERO = "Comienza gratis (primeras 10 reservas incluidas)"
 
 /** Todos los planes comparten la misma prueba por volumen. */
-const PRUEBA_15 = "Primeras 15 reservas GRATIS"
+const PRUEBA_10 = "Primeras 10 reservas GRATIS"
 
 /** Mensaje de WhatsApp para iniciar la prueba (cualquier plan). */
 const WHATSAPP_TRIAL_URL = `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(
-  "Hola Medisys 👋, quiero empezar gratis y elegir mi plan (mis primeras 15 reservas incluidas)."
+  "Hola Medisys 👋, quiero empezar gratis y elegir mi plan (mis primeras 10 reservas incluidas)."
 )}`
 
 /**
  * CTA del banner "Suite Fiscal y Administrativa" (3 módulos operativos).
  *
  * Destino del registro/onboarding vigente: el canal de ventas donde se activa
- * la cuenta y arranca la prueba de 15 reservas. Si más adelante se publica una
+ * la cuenta y arranca la prueba de 10 reservas. Si más adelante se publica una
  * ruta propia de registro, solo hay que cambiar esta constante.
  */
 const ONBOARDING_URL = WHATSAPP_TRIAL_URL
 
 /** Texto del botón principal del banner de la suite. */
-const CTA_SUITE = "Comenzar con 15 reservas gratis"
+const CTA_SUITE = "Comenzar con 10 reservas gratis"
 
 /**
  * Ruta de la demo de reservas (centralizada en `src/lib/demo.ts`):
@@ -193,13 +193,13 @@ const PLANES_LANDING: readonly PlanLanding[] = [
     nombre: "Plan Individual",
     descripcion:
       "Para médicos independientes que manejan su propio consultorio y agenda personal.",
-    precio: "$20",
+    precio: "$10",
     precioDetalle: "USD / mes",
-    anual: "$200/año",
+    anual: "$100/año",
     perfiles: "1 Médico · Reservas y sedes ilimitadas",
-    prueba: PRUEBA_15,
+    prueba: PRUEBA_10,
     features: [
-      "Primeras 15 reservas totalmente gratis",
+      "Primeras 10 reservas totalmente gratis",
       "1 Médico activo",
       "Reservas ilimitadas",
       "Sedes ilimitadas",
@@ -221,14 +221,14 @@ const PLANES_LANDING: readonly PlanLanding[] = [
     nombre: "Plan PyME",
     descripcion:
       "Para consultorios y centros médicos con varios especialistas en una sola sede.",
-    precio: "$50",
+    precio: "$40",
     precioDetalle: "USD / mes",
-    anual: "$500/año",
+    anual: "$400/año",
     perfiles: "2 a 10 Médicos · 1 Sede",
     destacado: true,
-    prueba: PRUEBA_15,
+    prueba: PRUEBA_10,
     features: [
-      "Primeras 15 reservas totalmente gratis",
+      "Primeras 10 reservas totalmente gratis",
       "2 a 10 médicos activos",
       "1 sede",
       "Reservas ilimitadas",
@@ -250,13 +250,13 @@ const PLANES_LANDING: readonly PlanLanding[] = [
     nombre: "Plan PRO",
     descripcion:
       "Para clínicas grandes, redes y grupos médicos con múltiples sedes.",
-    precio: "$95",
+    precio: "$80",
     precioDetalle: "USD / mes",
-    anual: "$950/año",
+    anual: "$800/año",
     perfiles: "10+ Médicos o Múltiples Sedes",
-    prueba: PRUEBA_15,
+    prueba: PRUEBA_10,
     features: [
-      "Primeras 15 reservas totalmente gratis",
+      "Primeras 10 reservas totalmente gratis",
       "10+ médicos activos",
       "Múltiples sedes",
       "Reservas ilimitadas",
@@ -328,7 +328,7 @@ function HeroSection() {
                 <span className="absolute inline-flex size-full animate-ping rounded-full bg-emerald-400 opacity-75" />
                 <span className="relative inline-flex size-2 rounded-full bg-emerald-500" />
               </span>
-              Comienza gratis (primeras 15 reservas incluidas)
+              {CTA_HERO}
               <ArrowRight
                 className="size-3.5 transition-transform group-hover:translate-x-0.5"
                 aria-hidden="true"
@@ -351,7 +351,7 @@ function HeroSection() {
             Móvil; la recepción valida cada comprobante en tiempo real.{" "}
             <strong className="font-semibold text-zinc-800">
               Sin pagos por adelantado. Comienzas a pagar solo al superar tus
-              primeras 15 reservas.
+              primeras 10 reservas.
             </strong>
           </p>
 
@@ -391,7 +391,7 @@ function HeroSection() {
 
           <ul className="mt-8 flex flex-wrap gap-x-6 gap-y-2 text-sm font-medium text-zinc-700">
             {[
-              "Primeras 15 reservas gratis en cualquier plan",
+              "Primeras 10 reservas gratis en cualquier plan",
               "Sin pagos por adelantado",
               "Agenda + Expedientes + Facturación",
               "Pago Móvil + Zelle",
@@ -826,12 +826,12 @@ function PricingSection() {
         <SectionHeading
           eyebrow="Precios"
           title="Elige el plan para tu consultorio o clínica"
-          description="Tres planes y una misma prueba: empieza gratis hasta tus primeras 15 reservas en cualquiera de ellos. Individual para médicos independientes, PyME para consultorios con varios especialistas y PRO para clínicas multi-sede."
+          description="Tres planes y una misma prueba: empieza gratis hasta tus primeras 10 reservas en cualquiera de ellos. Individual para médicos independientes, PyME para consultorios con varios especialistas y PRO para clínicas multi-sede."
         />
 
         <div className="mx-auto mt-8 flex w-fit flex-wrap items-center justify-center gap-2 rounded-full border border-emerald-200 bg-emerald-50 px-4 py-2 text-center text-sm font-bold text-emerald-700 shadow-sm">
           <span aria-hidden="true">🎁</span>
-          PRIMERAS 15 RESERVAS GRATIS EN CUALQUIER PLAN · SIN PAGOS POR ADELANTADO
+          PRIMERAS 10 RESERVAS GRATIS EN CUALQUIER PLAN · SIN PAGOS POR ADELANTADO
         </div>
 
         <div className="mx-auto mt-10 grid max-w-5xl gap-6 md:grid-cols-3">
@@ -875,7 +875,7 @@ function PricingSection() {
                 </div>
                 {plan.anual && (
                   <span className="text-xs font-semibold text-teal-700">
-                    o {plan.anual} pagando al año
+                    o {plan.anual} pagando al año · ahorras 2 meses
                   </span>
                 )}
               </div>
@@ -925,7 +925,7 @@ function PricingSection() {
         <p className="mx-auto mt-6 max-w-2xl text-center text-xs leading-5 text-zinc-500">
           Precios en USD. El cobro se liquida en Bolívares a la tasa oficial del
           BCV del día. Sin pagos por adelantado: comienzas a pagar únicamente al
-          superar tus primeras 15 reservas.
+          superar tus primeras 10 reservas.
         </p>
       </Container>
     </section>
@@ -939,17 +939,17 @@ const FAQ_ITEMS = [
   {
     pregunta: "¿Cómo funciona la prueba gratuita?",
     respuesta:
-      "Puedes registrarte y usar cualquiera de nuestros 3 planes de forma totalmente gratuita hasta completar tus primeras 15 reservas. Al alcanzar la reserva #15, podrás realizar el pago de la suscripción correspondiente a tu plan para seguir disfrutando del servicio sin interrupciones.",
+      "Puedes registrarte y usar cualquiera de nuestros 3 planes de forma totalmente gratuita hasta completar tus primeras 10 reservas. Al alcanzar la reserva #10, podrás realizar el pago de la suscripción correspondiente a tu plan para seguir disfrutando del servicio sin interrupciones.",
   },
   {
-    pregunta: "¿Qué pasa exactamente al llegar a la reserva número 15?",
+    pregunta: "¿Qué pasa exactamente al llegar a la reserva número 10?",
     respuesta:
       "El sistema te solicitará el pago de la suscripción del plan que hayas elegido para que continúes operando sin interrupciones. Antes de esa reserva no pagas nada: ni mensualidad ni pagos por adelantado.",
   },
   {
     pregunta: "¿Necesito pagar algo para comenzar?",
     respuesta:
-      "No, puedes registrarte y comenzar a agendar citas de inmediato sin realizar ningún pago por adelantado. Solo pagas cuando alcances la reserva #15.",
+      "No, puedes registrarte y comenzar a agendar citas de inmediato sin realizar ningún pago por adelantado. Solo pagas cuando alcances la reserva #10.",
   },
   {
     pregunta: "¿Cómo se cobra la suscripción en Venezuela?",
@@ -1008,11 +1008,11 @@ function CtaFinalSection() {
     <section className="border-t border-zinc-100 bg-linear-to-br from-teal-600 to-cyan-600">
       <Container className="flex flex-col items-center gap-5 py-14 text-center sm:py-16">
         <h2 className="max-w-2xl text-3xl font-extrabold tracking-tight text-white sm:text-4xl">
-          Prueba Medisys hoy mismo con tus primeras 15 reservas gratis
+          Prueba Medisys hoy mismo con tus primeras 10 reservas gratis
         </h2>
         <p className="max-w-xl text-base leading-7 text-teal-50">
           Sin compromisos ni pagos por adelantado: eliges tu plan y comienzas a
-          pagar solo al superar tus 15 reservas.
+          pagar solo al superar tus 10 reservas.
         </p>
         <div className="mt-1 flex w-full flex-col gap-3 sm:w-auto sm:flex-row">
           <a
@@ -1021,7 +1021,7 @@ function CtaFinalSection() {
             rel="noopener noreferrer"
             className="inline-flex h-12 items-center justify-center gap-2 rounded-xl bg-white px-6 text-base font-semibold text-teal-700 shadow-lg shadow-teal-900/20 transition hover:bg-teal-50"
           >
-            Comenzar gratis (primeras 15 reservas incluidas)
+            {CTA_HERO}
             <ArrowRight className="size-4" aria-hidden="true" />
           </a>
           <Link

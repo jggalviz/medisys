@@ -14,7 +14,7 @@ import { revalidatePath } from "next/cache"
 
 import { createAdminClient } from "@/lib/supabase/admin"
 import { getSuperAdmin } from "@/lib/super-admin"
-import { DIAS_RENOVACION } from "@/lib/suscripcion"
+import { DIAS_RENOVACION, normalizarPlan } from "@/lib/suscripcion"
 import type { PlanTenant } from "@/types/database"
 
 export type SuscripcionAdminResult<T> =
@@ -78,16 +78,22 @@ export async function getPagosSuscripcionPendientes(): Promise<
       new Set(filas.map((f) => texto(f.tenant_id)).filter(Boolean))
     )
 
-    const tenants = new Map<string, { nombre: string; slug: string }>()
+    const tenants = new Map<
+      string,
+      { nombre: string; slug: string; planType: PlanTenant }
+    >()
     if (tenantIds.length > 0) {
       const { data: clinicas } = await supabase
         .from("tenants")
-        .select("id, nombre, slug")
+        .select("id, nombre, slug, plan_type, max_especialistas")
         .in("id", tenantIds)
       for (const c of (clinicas ?? []) as unknown as PagoRow[]) {
         tenants.set(texto(c.id), {
           nombre: texto(c.nombre) || "Clínica sin nombre",
           slug: texto(c.slug),
+          // El plan vigente del tenant manda sobre el valor histórico guardado
+          // en el reporte de pago.
+          planType: normalizarPlan(c.plan_type, c.max_especialistas),
         })
       }
     }
@@ -100,7 +106,7 @@ export async function getPagosSuscripcionPendientes(): Promise<
         tenantId,
         tenantNombre: info?.nombre ?? "Clínica eliminada",
         tenantSlug: info?.slug ?? "",
-        planType: f.plan_type === "PRO" ? "PRO" : "CLINICA",
+        planType: tenants.get(tenantId)?.planType ?? normalizarPlan(f.plan_type),
         montoUsd: numero(f.monto_usd),
         montoVes: numero(f.monto_ves),
         tasaBcv: numero(f.tasa_bcv),

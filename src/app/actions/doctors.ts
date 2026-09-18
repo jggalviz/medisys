@@ -18,6 +18,7 @@ import type {
   TurnoHabitualEspecialista,
 } from "@/types/database"
 import { createClient } from "@/lib/supabase/server"
+import { normalizarPlan } from "@/lib/suscripcion"
 
 export type EspecialistaInput = {
   nombre: string
@@ -256,7 +257,8 @@ export async function createEspecialista(
       .maybeSingle()
 
     const planRol = tenantPlan as unknown as Record<string, unknown> | null
-    const esIndependiente = planRol?.plan_type === "PRO"
+    const plan = normalizarPlan(planRol?.plan_type, Number(planRol?.max_especialistas))
+    const esIndependiente = plan === "INDIVIDUAL"
     const maxPlanRaw = Number(planRol?.max_especialistas)
     const maxEspecialistas = esIndependiente
       ? 1
@@ -274,7 +276,7 @@ export async function createEspecialista(
       return {
         ok: false,
         message: esIndependiente
-          ? "Tu plan Independiente solo permite 1 especialista. Actualiza a Plan Clínica para agregar más."
+          ? "Tu Plan Individual solo permite 1 especialista. Actualiza al Plan PyME o PRO para agregar más."
           : `Tu plan permite un máximo de ${maxEspecialistas} especialistas. Actualiza tu plan para agregar más.`,
       }
     }

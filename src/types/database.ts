@@ -105,8 +105,15 @@ export type DatosPagoMovil = {
   instrucciones: string | null
 }
 
-/** Planes comerciales del tenant (definen límites y flujo de reserva). */
-export type PlanTenant = "PRO" | "CLINICA"
+/**
+ * Planes comerciales del tenant (definen precio, cupo de especialistas y flujo
+ * de reserva):
+ *  - `INDIVIDUAL` → 1 especialista (asignación automática en el wizard).
+ *  - `PYME`       → 2 a 10 especialistas.
+ *  - `PRO`        → 10+ especialistas o múltiples sedes.
+ * Precios y cupos en `src/lib/suscripcion.ts` (migración 0020).
+ */
+export type PlanTenant = "INDIVIDUAL" | "PYME" | "PRO"
 
 /* ------------------------ Landing Page del tenant ------------------------ */
 
@@ -210,7 +217,7 @@ export type Tenant = {
   pago_movil_enabled?: boolean | null
   /** Límite máximo de cupos por turno; null/0 = ilimitado. */
   max_slots_per_shift?: number | null
-  /** Plan comercial: Clínica (N) o Médico Pro (1). Opcional por migración. */
+  /** Plan comercial: Individual (1), PyME (2-10) o PRO (10+ / multi-sede). */
   plan_type?: PlanTenant | null
   /** Máximo de especialistas permitidos según el plan. */
   max_especialistas?: number | null
@@ -415,6 +422,7 @@ export type SubscriptionPaymentStatus = "PENDIENTE" | "APROBADO" | "RECHAZADO"
 export type SaasSubscriptionPayment = {
   id: string
   tenant_id: string
+  /** Plan facturado: INDIVIDUAL · PYME · PRO (ver migración 0020). */
   plan_type: PlanTenant
   monto_usd: number
   monto_ves: number

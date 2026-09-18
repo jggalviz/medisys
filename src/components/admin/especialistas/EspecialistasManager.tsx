@@ -27,6 +27,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { formatUSD } from "@/lib/format"
+import { esPlanIndividual } from "@/lib/suscripcion"
 import { cn } from "@/lib/utils"
 
 const DIAS_LABEL = ["Lun", "Mar", "Mié", "Jue", "Vie", "Sáb"]
@@ -119,8 +120,8 @@ export function EspecialistasManager({
     )
   }, [items, query])
 
-  /** Reglas del plan del tenant (Clínica N vs Médico Pro 1). */
-  const esIndependiente = planType === "PRO"
+  /** Reglas del plan del tenant (Individual 1 · PyME/PRO N). */
+  const esIndependiente = esPlanIndividual(planType, maxEspecialistas)
   const cupoPlan = esIndependiente
     ? 1
     : typeof maxEspecialistas === "number" && maxEspecialistas > 0
@@ -267,12 +268,12 @@ export function EspecialistasManager({
           role="status"
           className="flex flex-col gap-2 rounded-2xl border border-amber-300/60 bg-amber-50 p-4 text-sm text-amber-900 dark:border-amber-400/30 dark:bg-amber-400/10 dark:text-amber-200"
         >
-          <p className="font-semibold">Plan Médico Pro · 1 especialista</p>
+          <p className="font-semibold">Plan Individual · 1 especialista</p>
           <p className="text-amber-800/90 dark:text-amber-200/80">
-            Tu plan Independiente solo permite 1 especialista y el
-            agendamiento se asigna automáticamente. Actualiza a{" "}
-            <strong>Plan Clínica</strong> para agregar más médicos y habilitar
-            el selector de especialistas.
+            Tu Plan Individual solo permite 1 especialista y el agendamiento se
+            asigna automáticamente. Actualiza al <strong>Plan PyME</strong> o al{" "}
+            <strong>Plan PRO</strong> para agregar más médicos y habilitar el
+            selector de especialistas.
           </p>
         </div>
       )}

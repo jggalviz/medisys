@@ -10,6 +10,7 @@ import {
   type PagoSuscripcionPendiente,
 } from "@/app/actions/super-admin-suscripcion"
 import { formatBs, formatUSD } from "@/lib/format"
+import { nombrePlan } from "@/lib/suscripcion"
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
 
@@ -92,7 +93,7 @@ export function PagosSuscripcion({ pagos }: Props) {
                 <div className="flex min-w-0 flex-col gap-0.5">
                   <span className="font-semibold">{pago.tenantNombre}</span>
                   <span className="font-mono text-xs text-muted-foreground">
-                    /{pago.tenantSlug} · {pago.planType}
+                    /{pago.tenantSlug} · {nombrePlan(pago.planType)}
                   </span>
                 </div>
                 <span
@@ -100,7 +101,9 @@ export function PagosSuscripcion({ pagos }: Props) {
                     "rounded-full px-2 py-0.5 text-[11px] font-semibold",
                     pago.planType === "PRO"
                       ? "bg-emerald-500/15 text-emerald-700 dark:text-emerald-400"
-                      : "bg-primary/10 text-primary"
+                      : pago.planType === "PYME"
+                        ? "bg-sky-500/15 text-sky-700 dark:text-sky-400"
+                        : "bg-primary/10 text-primary"
                   )}
                 >
                   {formatUSD(pago.montoUsd)} · {formatBs(pago.montoVes)}
