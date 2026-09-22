@@ -9,7 +9,7 @@
  */
 import { createAdminClient } from "@/lib/supabase/admin"
 import { getSuperAdmin } from "@/lib/super-admin"
-import { normalizarPlan } from "@/lib/suscripcion"
+import { cupoInicialRegistro, normalizarPlan } from "@/lib/suscripcion"
 import { logoMostrable } from "@/lib/branding"
 import type { AppointmentStatus, PlanTenant } from "@/types/database"
 import type { SuperAdminResult } from "@/app/actions/super-admin"
@@ -146,7 +146,9 @@ export async function getClienteDetalle(
         slug: texto(tenant.slug),
         planType,
         maxEspecialistas:
-          planType === "INDIVIDUAL" ? 1 : numero(tenant.max_especialistas) || 5,
+          planType === "INDIVIDUAL"
+            ? 1
+            : numero(tenant.max_especialistas) || cupoInicialRegistro(planType),
         isActive: tenant.is_active !== false,
         telefono: tenant.telefono == null ? null : texto(tenant.telefono),
         rif: tenant.rif == null ? null : texto(tenant.rif),

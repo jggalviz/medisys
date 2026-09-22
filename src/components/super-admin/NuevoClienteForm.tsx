@@ -37,7 +37,7 @@ const PLANES: { id: PlanTenant; detalle: string }[] = [
 /** Cupo de especialistas sugerido al elegir cada plan. */
 const CUPO_INICIAL: Record<PlanTenant, number> = {
   INDIVIDUAL: LIMITE_ESPECIALISTAS_PLAN.INDIVIDUAL.min,
-  PYME: 5,
+  PYME: LIMITE_ESPECIALISTAS_PLAN.PYME.max ?? LIMITE_ESPECIALISTAS_PLAN.PYME.min,
   PRO: LIMITE_ESPECIALISTAS_PLAN.PRO.min,
 }
 
@@ -206,7 +206,7 @@ export function NuevoClienteForm() {
               value={maxEspecialistas}
               onChange={(e) => setMaxEspecialistas(e.target.value)}
               inputMode="numeric"
-              placeholder={plan === "PYME" ? "entre 1 y 10" : "mínimo 11"}
+              placeholder={plan === "PYME" ? "entre 2 y 10" : "mínimo 11"}
             />
           </div>
         )}

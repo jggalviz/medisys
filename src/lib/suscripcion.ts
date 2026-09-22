@@ -52,7 +52,8 @@ export const LIMITE_ESPECIALISTAS_PLAN: Record<
   { min: number; max: number | null }
 > = {
   INDIVIDUAL: { min: 1, max: 1 },
-  PYME: { min: 1, max: 10 },
+  // PyME: de 2 a 10 especialistas (mismo rango que anuncia la landing).
+  PYME: { min: 2, max: 10 },
   PRO: { min: 11, max: null },
 }
 
@@ -149,8 +150,9 @@ export function ajustarMaxEspecialistas(
 /**
  * Cupo inicial de especialistas asignado al crear una cuenta desde el registro
  * público (`/registro`), según el plan elegido por el usuario:
- *   INDIVIDUAL → 1   (fijo; el plan es de un solo especialista)
- *   PYME       → 5   ("Hasta 5 especialistas" en la tarjeta del registro)
+ *   INDIVIDUAL → 1  (fijo; el plan es de un solo especialista)
+ *   PYME       → 10 ("De 2 a 10 especialistas" en la tarjeta del registro:
+ *                    la cuenta arranca con el tope máximo del plan)
  *   PRO        → 999 (el plan PRO no tiene tope: 999 es el valor convencional
  *                    de "ilimitado" fijado por la migración 0020)
  *
@@ -159,7 +161,11 @@ export function ajustarMaxEspecialistas(
  */
 export const CUPO_INICIAL_REGISTRO: Record<PlanTenant, number> = {
   INDIVIDUAL: LIMITE_ESPECIALISTAS_PLAN.INDIVIDUAL.min,
-  PYME: 5,
+  // Tope del plan PyME (10); si algún día pasara a "sin tope", se usaría el
+  // mínimo del rango para no dejar la cuenta sin cupo.
+  PYME:
+    LIMITE_ESPECIALISTAS_PLAN.PYME.max ??
+    LIMITE_ESPECIALISTAS_PLAN.PYME.min,
   PRO: 999,
 }
 

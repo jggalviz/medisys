@@ -101,7 +101,8 @@ export function SuperAdminDashboard({ snapshot }: Props) {
     if (busyId) return
     const valor = Number((maxDraft[tenant.id] ?? "").replace(/\D/g, ""))
     if (!Number.isFinite(valor) || valor < 1) {
-      setAviso("Indica un número de especialistas válido (mínimo 1).")
+      // El rango exacto (PyME 2 a 10 · PRO 11+) lo valida la Server Action.
+      setAviso("Indica un número de especialistas válido.")
       return
     }
     setBusyId(tenant.id)

@@ -322,6 +322,7 @@ scripts in `scripts/`).
 | `0019` | Seed of the fiscal knowledge-base guides (Venezuelan modules) |
 | `0020` | Plan normalisation to `INDIVIDUAL` · `PYME` · `PRO` |
 | `0021` | Public sign-up: `tenants.reservas_consumidas` / `reservas_gratis_limite` (free-trial counter) + trigger counting every `appointments` insert per tenant |
+| `0022` | PyME tier: `max_especialistas` default 10 and PyME quotas normalised into the 2–10 range (no 5 → 10 rewrite of existing clients) |
 
 ### Repository layout
 

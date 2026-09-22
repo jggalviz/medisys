@@ -22,7 +22,7 @@ import { cn } from "@/lib/utils"
 type TextoPlan = {
   /** Nombre corto mostrado en la tarjeta. */
   nombre: string
-  /** Capacidad del plan ("1 Médico / Especialista", "Hasta 5 Especialistas"…). */
+  /** Capacidad del plan ("1 Médico / Especialista", "De 2 a 10 Especialistas"…). */
   detalle: string
   /** Explicación de para quién es el plan (popup de información). */
   info: string
@@ -39,7 +39,7 @@ const TEXTOS: Record<PlanTenant, TextoPlan> = {
   },
   PYME: {
     nombre: "PyME",
-    detalle: "Hasta 5 Especialistas",
+    detalle: "De 2 a 10 Especialistas",
     info: "Ideal para pequeños centros médicos, estéticas o consultorios compartidos con recepción o asistente.",
     badge: "Recomendado",
   },

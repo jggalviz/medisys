@@ -18,7 +18,7 @@ import type {
   TurnoHabitualEspecialista,
 } from "@/types/database"
 import { createClient } from "@/lib/supabase/server"
-import { normalizarPlan } from "@/lib/suscripcion"
+import { normalizarPlan, cupoInicialRegistro } from "@/lib/suscripcion"
 
 export type EspecialistaInput = {
   nombre: string
@@ -260,11 +260,13 @@ export async function createEspecialista(
     const plan = normalizarPlan(planRol?.plan_type, Number(planRol?.max_especialistas))
     const esIndependiente = plan === "INDIVIDUAL"
     const maxPlanRaw = Number(planRol?.max_especialistas)
+    // Sin cupo registrado se usa el inicial del plan (Individual 1 · PyME 10 ·
+    // PRO sin tope), nunca un número fijo que contradiga al plan.
     const maxEspecialistas = esIndependiente
       ? 1
       : Number.isFinite(maxPlanRaw) && maxPlanRaw > 0
         ? Math.floor(maxPlanRaw)
-        : 5
+        : cupoInicialRegistro(plan)
 
     const { count: totalDoctores, error: errCount } = await supabase
       .from("doctors")

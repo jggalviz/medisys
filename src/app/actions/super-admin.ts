@@ -13,6 +13,7 @@ import {
   LIMITE_ESPECIALISTAS_PLAN,
   PLANES_TENANT,
   ajustarMaxEspecialistas,
+  cupoInicialRegistro,
   normalizarPlan,
   rangoEspecialistasPlan,
 } from "@/lib/suscripcion"
@@ -100,7 +101,9 @@ export async function getSuperAdminSnapshot(): Promise<
         slug: texto(fila.slug),
         plan_type: plan,
         max_especialistas:
-          plan === "INDIVIDUAL" ? 1 : numero(fila.max_especialistas, 5),
+          plan === "INDIVIDUAL"
+            ? 1
+            : numero(fila.max_especialistas, cupoInicialRegistro(plan)),
         is_active: fila.is_active !== false,
         telefono: fila.telefono == null ? null : texto(fila.telefono),
         created_at: texto(fila.created_at),
