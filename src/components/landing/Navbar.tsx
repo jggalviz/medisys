@@ -53,6 +53,12 @@ export function Navbar() {
 
         {/* Acciones demo (desktop/tablet) */}
         <div className="hidden items-center gap-2.5 md:flex">
+          <Link
+            href="/registro"
+            className="inline-flex h-10 items-center justify-center gap-2 rounded-lg border border-teal-600/30 bg-teal-50 px-4 text-sm font-semibold text-teal-700 transition-colors hover:bg-teal-100"
+          >
+            Crear cuenta gratis
+          </Link>
           <button
             type="button"
             onClick={openDemoHub}
@@ -100,6 +106,14 @@ export function Navbar() {
 
             <span className="my-2 border-t border-dashed border-zinc-200" />
 
+            <Link
+              href="/registro"
+              onClick={() => setOpen(false)}
+              className="mt-1 flex h-12 w-full items-center justify-start gap-2 rounded-xl border border-teal-600/30 bg-teal-50 px-4 text-base font-semibold text-teal-700 transition-colors hover:bg-teal-100"
+            >
+              Crear cuenta gratis
+            </Link>
+
             <button
               type="button"
               onClick={openDemoHub}
@@ -109,6 +123,7 @@ export function Navbar() {
               <span aria-hidden="true">🧪</span>
               Ver Demos de la Plataforma
             </button>
+
           </nav>
         </div>
       )}

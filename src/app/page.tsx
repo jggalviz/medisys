@@ -72,11 +72,13 @@ const WHATSAPP_TRIAL_URL = `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURICom
 /**
  * CTA del banner "Suite Fiscal y Administrativa" (3 módulos operativos).
  *
- * Destino del registro/onboarding vigente: el canal de ventas donde se activa
- * la cuenta y arranca la prueba de 10 reservas. Si más adelante se publica una
- * ruta propia de registro, solo hay que cambiar esta constante.
+ * Destino del registro/onboarding vigente: la ruta pública de registro
+ * (`/registro`), donde el profesional crea su cuenta y arranca la prueba de 10
+ * reservas sin intervención comercial. Para volver al canal de WhatsApp basta
+ * con apuntar esta constante a `WHATSAPP_TRIAL_URL`.
  */
-const ONBOARDING_URL = WHATSAPP_TRIAL_URL
+const ONBOARDING_URL = "/registro"
+
 
 /** Texto del botón principal del banner de la suite. */
 const CTA_SUITE = "Comenzar con 10 reservas gratis"
@@ -692,15 +694,13 @@ function FacturacionSection() {
                   clínicas en Venezuela.
                 </span>
               </div>
-              <a
+              <Link
                 href={ONBOARDING_URL}
-                target="_blank"
-                rel="noopener noreferrer"
                 className="inline-flex h-11 shrink-0 items-center justify-center gap-2 rounded-xl bg-linear-to-r from-teal-500 to-cyan-500 px-5 text-sm font-semibold text-white shadow-lg shadow-teal-900/30 transition hover:brightness-110"
               >
                 {CTA_SUITE}
                 <ArrowRight className="size-4" aria-hidden="true" />
-              </a>
+              </Link>
             </div>
           </div>
         </div>

@@ -50,6 +50,16 @@ export default async function LoginPage({ params }: LoginPageProps) {
         // del Plan Pro): muestran el callout de credenciales y autocompletado.
         esDemo={esTenantDemo(tenant.slug)}
       />
+
+      <p className="flex flex-wrap items-center justify-center gap-1 text-sm text-muted-foreground">
+        ¿Aún no tienes cuenta?
+        <Link
+          href="/registro"
+          className="font-semibold text-primary hover:underline"
+        >
+          Créala gratis con 10 reservas incluidas
+        </Link>
+      </p>
     </main>
   )
 }

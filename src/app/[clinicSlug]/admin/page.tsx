@@ -27,8 +27,10 @@ import { getDashboardKpis } from "@/app/actions/dashboard"
 import { getDailyAppointments } from "@/app/actions/admin"
 import { getTenantBySlug } from "@/app/actions/tenant"
 import { TarjetaRecaudacion } from "@/components/admin/dashboard/TarjetaRecaudacion"
+import { BienvenidaRegistro } from "@/components/admin/dashboard/BienvenidaRegistro"
 import { BannerMembresia } from "@/components/admin/suscripcion/BannerMembresia"
 import { evaluarMembresia, nombrePlan } from "@/lib/suscripcion"
+import { consumoPrueba } from "@/lib/trial"
 import { createClient } from "@/lib/supabase/server"
 import { getStaffForSlug } from "@/lib/staff"
 import { toISODate } from "@/lib/date"
@@ -36,6 +38,8 @@ import { cn } from "@/lib/utils"
 
 type AdminPageProps = {
   params: Promise<{ clinicSlug: string }>
+  /** `?bienvenida=1` lo añade el registro público tras crear la cuenta. */
+  searchParams: Promise<{ bienvenida?: string }>
 }
 
 export const metadata: Metadata = {
@@ -128,7 +132,7 @@ function horaDe(fechaHora: string): string {
 /* Página (server component, sin estado local)                         */
 /* ------------------------------------------------------------------ */
 
-export default async function AdminPage({ params }: AdminPageProps) {
+export default async function AdminPage({ params, searchParams }: AdminPageProps) {
   const { clinicSlug } = await params
 
   const tenant = await getTenantBySlug(clinicSlug)
@@ -261,6 +265,9 @@ export default async function AdminPage({ params }: AdminPageProps) {
 
   const membresia = evaluarMembresia(tenant.suscripcion_vence_at)
 
+  const { bienvenida } = await searchParams
+  const mostrarBienvenida = bienvenida === "1"
+
   return (
     <main className="mx-auto flex min-h-dvh w-full max-w-5xl flex-col gap-6 px-4 py-6 sm:px-6">
       {/* Encabezado */}
@@ -287,6 +294,16 @@ export default async function AdminPage({ params }: AdminPageProps) {
           Abrir recepción
         </Link>
       </header>
+
+      {mostrarBienvenida && (
+        <BienvenidaRegistro
+          clinicSlug={clinicSlug}
+          consumo={consumoPrueba(
+            tenant.reservas_consumidas,
+            tenant.reservas_gratis_limite
+          )}
+        />
+      )}
 
       {membresia.debeAvisar && (
         <BannerMembresia

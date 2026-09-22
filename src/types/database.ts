@@ -223,6 +223,12 @@ export type Tenant = {
   max_especialistas?: number | null
   /** Fecha/hora de vencimiento de la membresía (suscripción del SaaS). */
   suscripcion_vence_at?: string | null
+  /* ------------- Prueba gratuita por volumen (0021) ------------- */
+  /** Reservas creadas desde el alta (prueba gratuita). Inicia en 0. */
+  reservas_consumidas?: number | null
+  /** Reservas incluidas sin pago en la prueba (10 por defecto). */
+  reservas_gratis_limite?: number | null
+  /* -------------------------------------------------------------- */
   /** Switch de la Landing Page pública (/{slug}). */
   landing_enabled?: boolean | null
   /** Contenido editable de la Landing Page. */

@@ -146,6 +146,38 @@ export function ajustarMaxEspecialistas(
   return limite.max === null ? conMinimo : Math.min(limite.max, conMinimo)
 }
 
+/**
+ * Cupo inicial de especialistas asignado al crear una cuenta desde el registro
+ * público (`/registro`), según el plan elegido por el usuario:
+ *   INDIVIDUAL → 1   (fijo; el plan es de un solo especialista)
+ *   PYME       → 5   ("Hasta 5 especialistas" en la tarjeta del registro)
+ *   PRO        → 999 (el plan PRO no tiene tope: 999 es el valor convencional
+ *                    de "ilimitado" fijado por la migración 0020)
+ *
+ * Vive aquí (y no en el formulario) para no duplicar el mapa de rangos: el
+ * Super Admin puede ajustarlo luego desde `/super-admin/clientes/[id]`.
+ */
+export const CUPO_INICIAL_REGISTRO: Record<PlanTenant, number> = {
+  INDIVIDUAL: LIMITE_ESPECIALISTAS_PLAN.INDIVIDUAL.min,
+  PYME: 5,
+  PRO: 999,
+}
+
+/** Cupo inicial del registro ya normalizado al rango válido del plan. */
+export function cupoInicialRegistro(plan: PlanTenant): number {
+  return ajustarMaxEspecialistas(plan, CUPO_INICIAL_REGISTRO[plan])
+}
+
+/**
+ * ¿El valor corresponde a uno de los planes comerciales vigentes?
+ * Se usa para validar el plan recibido por la Server Action de registro y para
+ * leer `tenants.plan_type` con tolerancia a valores heredados.
+ */
+export function esPlanTenant(valor: unknown): valor is PlanTenant {
+  const limpio = String(valor ?? "").trim().toUpperCase()
+  return (PLANES_TENANT as readonly string[]).includes(limpio)
+}
+
 /** Descripción del cupo permitido por plan (mensajes de validación). */
 export function rangoEspecialistasPlan(plan: PlanTenant): string {
   const { min, max } = LIMITE_ESPECIALISTAS_PLAN[plan]

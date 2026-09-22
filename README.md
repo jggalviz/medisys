@@ -232,6 +232,12 @@ closing, doctor settlements)**.
 **B · Reception validation (staff)**
 
 ```text
+/registro            ─▶ registrarConsultorio() (Server Action, service_role):
+   plan selector (radio-cards: INDIVIDUAL · PYME · PRO)
+   Auth user (bcrypt) + tenants (unique slug, plan_type, max_especialistas
+   = cupoInicialRegistro(plan)) + tenant_users 'admin' + first doctors row
+   reservas_consumidas = 0 · signInWithPassword() → session cookie → /[slug]/admin?bienvenida=1
+   (same screen has the "Iniciar sesión" tab → signInStaffGlobal(), no clinic slug required)
 /[clinicSlug]/login  ─▶ Supabase Auth (password) ─▶ tenant_users membership check
 /[clinicSlug]/admin/pagos
   pending payments list ─▶ reception compares reference + receipt vs. bank movement
@@ -285,7 +291,7 @@ currency_rates           admin UI can force a MANUAL rate; the engine prefers it
 
 | Table | Purpose |
 | --- | --- |
-| `tenants` | Clinic/consultation: slug, branding, contact, fiscal entity, plan, landing & theme config, subscription expiry |
+| `tenants` | Clinic/consultation: slug, branding, contact, fiscal entity, plan, landing & theme config, subscription expiry, free-trial booking counter (`reservas_consumidas`) |
 | `tenant_users` | Staff membership per tenant: role (`admin` / `recepcion` / `especialista` / `medico` / `contador`) + assigned `sede_ids` |
 | `profiles` | Patients: holders, dependants and minors, plus fiscal identity per patient |
 | `doctors` · `schedules` | Specialists (specialty, photo, price, active flag) and their weekly availability |
@@ -315,6 +321,7 @@ scripts in `scripts/`).
 | `0018` | **Module 3**: `daily_closings`, `doctor_settlements`, `puede_contabilizar` + RLS |
 | `0019` | Seed of the fiscal knowledge-base guides (Venezuelan modules) |
 | `0020` | Plan normalisation to `INDIVIDUAL` · `PYME` · `PRO` |
+| `0021` | Public sign-up: `tenants.reservas_consumidas` / `reservas_gratis_limite` (free-trial counter) + trigger counting every `appointments` insert per tenant |
 
 ### Repository layout
 
@@ -336,16 +343,19 @@ medisys/
 │  │  │  └─ paciente/                 # patient portal (login, expediente)
 │  │  ├─ super-admin/                 # dashboard, nuevo-cliente, pagos, guias, clientes/[id]
 │  │  ├─ guias/                       # public help centre (index + [slug])
+│  │  ├─ registro/page.tsx            # public sign-up + staff sign-in (?modo=login), same toggle
 │  │  ├─ og-image.png/route.tsx       # dynamic Open Graph image (next/og)
 │  │  ├─ login/page.tsx               # platform (super-admin) login
 │  │  ├─ actions/                     # Server Actions: booking, admin, doctors, tenant, guides,
 │  │  │                               # portal-auth + specialist/patient portals,
-│  │  │                               # super-admin onboarding/subscription, dashboard, auth
+│  │  │                               # super-admin onboarding/subscription, dashboard,
+│  │  │                               # auth (staff sign-in) + registro (public sign-up)
 │  │  └─ api/
 │  │     ├─ admin/                    # settings, bcv-rate, sedes, services, invoices,
 │  │     │                            # closings, settlements, reports/sales-book
 │  │     └─ cron/bcv-rate/route.ts    # daily BCV rate job (Authorization: Bearer CRON_SECRET)
-│  ├─ components/                     # ui/* primitives + booking/*, admin/*, super-admin/*,
+│  ├─ components/                     # ui/* primitives (incl. info-popover) + auth/* (login,
+│  │                                  # register, plan selector), booking/*, admin/*, super-admin/*,
 │  │                                  # portales/*, landing/*, demo/*, guia/*
 │  ├─ context/DemoHubContext.tsx      # demo navigation shared state
 │  ├─ lib/
@@ -353,11 +363,13 @@ medisys/
 │  │  ├─ admin/                       # facturas, contabilidad, libro-ventas, fiscal,
 │  │  │                               # servicios, sedes, pacientes, sesion
 │  │  ├─ validations/                 # admin · billing · accounting · core (Zod-compatible)
+│  │  │                               # + registro (public sign-up)
 │  │  ├─ bcv.ts · currency-rates.ts   # rate cascade + multi-currency engine
 │  │  ├─ fiscal-ve.ts · billing-ve.ts · accounting-ve.ts   # Venezuelan fiscal rules
 │  │  ├─ rbac.ts · staff.ts · super-admin.ts · suscripcion.ts
 │  │  ├─ landing.ts · theme.ts · guias-publicas.ts · markdown.ts · bancos.ts
 │  │  ├─ date.ts · format.ts · branding.ts · slug.ts · whatsapp.ts · demo.ts
+│  │  ├─ trial.ts · telefono.ts · especialidades.ts · site.ts   # public sign-up helpers
 │  │  └─ api-admin.ts · api-facturacion.ts · api-contabilidad.ts · api-cliente.ts
 │  ├─ types/                          # database.ts (schema) + admin · billing · accounting · booking DTOs
 │  └─ proxy.ts                        # Next.js 16 Proxy (route guard for admin/super-admin)
