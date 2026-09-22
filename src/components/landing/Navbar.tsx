@@ -1,19 +1,20 @@
 "use client"
 
 /**
- * Navbar de la landing con accesos directos a las dos demos:
- *  - "Demo Reservas" 🏥 → /[demoSlug]/reservar
- *  - "Demo Escritorio" 🖥️ → /[demoSlug]/admin
+ * Navbar principal de la landing.
  *
- * Desktop: botones diferenciados (outline vs primario con badge).
- * Mobile: menú hamburguesa con ambas opciones e íconos.
+ * Además de la navegación por anclas y del menú móvil, delega las acciones de
+ * la derecha en `HeaderAuthActions`, que resuelve la sesión del visitante:
+ *  - **Invitado** → "Iniciar sesión", "Crear cuenta gratis" y "Entornos DEMO".
+ *  - **Autenticado** → "Ir a mi Escritorio" (destino según el rol) y menú de
+ *    usuario con nombre, rol, perfil, configuración y cierre de sesión.
  */
 import { useState } from "react"
 import Link from "next/link"
 import { Menu, X } from "lucide-react"
 
 import { Brand } from "./Brand"
-import { useDemoHub } from "@/context/DemoHubContext"
+import { HeaderAuthActions } from "./HeaderAuthActions"
 
 const NAV_ITEMS = [
   { label: "Beneficios", href: "#beneficios" },
@@ -26,7 +27,6 @@ const NAV_ITEMS = [
 
 export function Navbar() {
   const [open, setOpen] = useState(false)
-  const { openDemoHub } = useDemoHub()
 
   return (
     <header className="sticky top-0 z-40 border-b border-zinc-200/70 bg-white/85 backdrop-blur-md">
@@ -51,24 +51,8 @@ export function Navbar() {
           ))}
         </nav>
 
-        {/* Acciones demo (desktop/tablet) */}
-        <div className="hidden items-center gap-2.5 md:flex">
-          <Link
-            href="/registro"
-            className="inline-flex h-10 items-center justify-center gap-2 rounded-lg border border-teal-600/30 bg-teal-50 px-4 text-sm font-semibold text-teal-700 transition-colors hover:bg-teal-100"
-          >
-            Crear cuenta gratis
-          </Link>
-          <button
-            type="button"
-            onClick={openDemoHub}
-            aria-haspopup="dialog"
-            className="inline-flex h-10 items-center justify-center gap-2 rounded-lg bg-zinc-900 px-4 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-zinc-700"
-          >
-            <span aria-hidden="true">🧪</span>
-            Entornos DEMO
-          </button>
-        </div>
+        {/* Acciones de sesión (desktop/tablet): invitado o autenticado */}
+        <HeaderAuthActions variante="escritorio" />
 
         {/* Hamburguesa (mobile) */}
         <button
@@ -106,23 +90,11 @@ export function Navbar() {
 
             <span className="my-2 border-t border-dashed border-zinc-200" />
 
-            <Link
-              href="/registro"
-              onClick={() => setOpen(false)}
-              className="mt-1 flex h-12 w-full items-center justify-start gap-2 rounded-xl border border-teal-600/30 bg-teal-50 px-4 text-base font-semibold text-teal-700 transition-colors hover:bg-teal-100"
-            >
-              Crear cuenta gratis
-            </Link>
-
-            <button
-              type="button"
-              onClick={openDemoHub}
-              aria-haspopup="dialog"
-              className="mt-1 flex h-12 w-full items-center justify-start gap-2 rounded-xl bg-zinc-900 px-4 text-base font-semibold text-white transition-colors hover:bg-zinc-700"
-            >
-              <span aria-hidden="true">🧪</span>
-              Ver Demos de la Plataforma
-            </button>
+            {/* Acciones de sesión (móvil): invitado o autenticado */}
+            <HeaderAuthActions
+              variante="movil"
+              onNavegar={() => setOpen(false)}
+            />
 
           </nav>
         </div>

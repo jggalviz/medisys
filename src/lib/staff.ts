@@ -30,6 +30,28 @@ export type StaffSession = {
 
 type Membresia = { role: TenantUserRole; sedeIds: string[] }
 
+/**
+ * Sesión de staff resuelta sin conocer el slug del consultorio
+ * (ver `getStaffSessionGlobal`).
+ */
+export type StaffSessionGlobal = {
+  userId: string
+  email: string | null
+  role: TenantUserRole
+  tenantId: string
+  tenantSlug: string
+  tenantNombre: string
+}
+
+/** Prioridad de roles al elegir la clínica "por defecto" de un usuario. */
+const ORDEN_ROL_DEFECTO: Record<string, number> = {
+  admin: 0,
+  recepcion: 1,
+  contador: 2,
+  especialista: 3,
+  medico: 4,
+}
+
 /** Normaliza `sede_ids`: descarta valores no textuales y duplicados. */
 function normalizarSedeIds(valor: unknown): string[] {
   if (!Array.isArray(valor)) return []
@@ -164,3 +186,74 @@ export async function getStaffForTenant(
     return null
   }
 }
+
+/**
+ * Sesión de staff resuelta SIN conocer el slug: busca las membresías del
+ * usuario autenticado y elige la clínica "por defecto".
+ *
+ * Criterio de elección (idéntico al del login global `signInStaffGlobal`):
+ *   1. clínicas activas antes que inactivas,
+ *   2. rol `admin` antes que el resto,
+ *   3. la cuenta más antigua.
+ *
+ * Lo usan el login global (`/registro?modo=login`) y el header de la landing
+ * (`getSesionHeader`), que necesita saber a qué panel enviar al usuario sin
+ * pedirle el slug del consultorio.
+ */
+export async function getStaffSessionGlobal(
+  supabase: SupabaseClient<Database>
+): Promise<StaffSessionGlobal | null> {
+  try {
+    const {
+      data: { user },
+      error: userError,
+    } = await supabase.auth.getUser()
+    if (userError || !user) return null
+
+    const { data: membresias, error: errorMembresias } = await supabase
+      .from("tenant_users")
+      .select("role, tenant_id")
+      .eq("user_id", user.id)
+    if (errorMembresias || !membresias || membresias.length === 0) return null
+
+    const ids = Array.from(new Set(membresias.map((m) => m.tenant_id)))
+    const { data: tenants, error: errorTenants } = await supabase
+      .from("tenants")
+      .select("id, slug, nombre, is_active, created_at")
+      .in("id", ids)
+    if (errorTenants || !tenants || tenants.length === 0) return null
+
+    const candidatas = tenants
+      .map((tenant) => {
+        const membresia = membresias.find((m) => m.tenant_id === tenant.id)
+        return {
+          tenantId: tenant.id,
+          tenantSlug: tenant.slug,
+          tenantNombre: tenant.nombre,
+          role: (membresia?.role ?? "especialista") as TenantUserRole,
+          activa: tenant.is_active !== false,
+          creada: String(tenant.created_at ?? ""),
+        }
+      })
+      .sort(
+        (a, b) =>
+          Number(b.activa) - Number(a.activa) ||
+          (ORDEN_ROL_DEFECTO[a.role] ?? 9) - (ORDEN_ROL_DEFECTO[b.role] ?? 9) ||
+          a.creada.localeCompare(b.creada)
+      )
+
+    const elegida = candidatas[0]
+    return {
+      userId: user.id,
+      email: user.email ?? null,
+      role: elegida.role,
+      tenantId: elegida.tenantId,
+      tenantSlug: elegida.tenantSlug,
+      tenantNombre: elegida.tenantNombre,
+    }
+  } catch {
+    // Fallo de red/RLS → sin sesión de staff (nunca romper el render).
+    return null
+  }
+}
+

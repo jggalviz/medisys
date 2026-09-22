@@ -247,6 +247,21 @@ closing, doctor settlements)**.
   cash desk  ─▶ payment registered in VES at the BCV rate of the day
 ```
 
+**B2 · Landing header (session aware)**
+
+```text
+GET /api/sesion  ─▶ getSesionHeader() (server only, never cached):
+   sb-*-auth-token  → user_metadata.role = 'super_admin' → /super-admin/dashboard
+                    → else getStaffSessionGlobal()      → /[slug]/admin | contabilidad | recepcion
+   portal_session   → specialist                      → /[slug]/especialista/dashboard
+                    → patient                         → /[slug]/paciente/expediente
+   no session cookies → { autenticado: false } (fast path, no Supabase call)
+HeaderAuthActions (client) consumes it once per page load and swaps a
+size-matched skeleton for the guest CTAs or the "Ir a mi Escritorio" + avatar
+menu (name, role, Mi Perfil, Configuración, Cerrar sesión → Server Action).
+The landing stays static (ISR): the authenticated UI is a client-side hole.
+```
+
 **C · Fiscal invoicing & accounting (Modules 2 + 3)**
 
 ```text
