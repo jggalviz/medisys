@@ -357,19 +357,20 @@ function HeroSection() {
             </strong>
           </p>
 
-          <div className="mt-8 flex w-full flex-col gap-3 sm:w-auto sm:flex-row">
+          {/* CTAs del hero: separación fluida en horizontal y vertical */}
+          <div className="mt-8 flex flex-wrap items-center gap-4">
             <a
               href={WHATSAPP_TRIAL_URL}
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex h-auto min-h-12 items-center justify-center gap-2 whitespace-normal rounded-xl bg-linear-to-r from-teal-600 to-cyan-600 px-6 py-3 text-center text-base font-semibold leading-snug text-white shadow-lg shadow-teal-600/25 transition hover:shadow-xl hover:brightness-110 active:scale-[0.99]"
+              className="inline-flex h-auto min-h-12 w-full items-center justify-center gap-2 whitespace-normal rounded-xl bg-linear-to-r from-teal-600 to-cyan-600 px-6 py-3 text-center text-base font-semibold leading-snug text-white shadow-lg shadow-teal-600/25 transition hover:shadow-xl hover:brightness-110 active:scale-[0.99] sm:w-auto"
             >
               <span className="whitespace-normal text-balance">{CTA_HERO}</span>
               <ArrowRight className="size-4 shrink-0" aria-hidden="true" />
             </a>
             <Link
               href={DEMO_ROUTE}
-              className="inline-flex h-12 items-center justify-center gap-2 rounded-xl border border-zinc-200 bg-white px-6 text-base font-semibold text-zinc-700 shadow-sm transition hover:border-zinc-300 hover:bg-zinc-50"
+              className="inline-flex h-12 w-full items-center justify-center gap-2 rounded-xl border border-zinc-200 bg-white px-6 py-2 text-base font-semibold text-zinc-700 shadow-sm transition hover:border-zinc-300 hover:bg-zinc-50 sm:w-auto"
             >
               <CalendarCheck
                 className="size-4 text-teal-600"
@@ -379,11 +380,11 @@ function HeroSection() {
             </Link>
           </div>
 
-          {/* Acceso central a los entornos DEMO */}
-          <div className="mt-3">
+          {/* Acceso central a los entornos DEMO (desacoplado del bloque de CTAs) */}
+          <div className="mt-4">
             <DemoHubTrigger
               label="Explorar Todos los Portales DEMO"
-              className="border border-zinc-200 bg-white/90 text-zinc-800 shadow-sm hover:bg-white"
+              className="w-full justify-center border border-zinc-200 bg-white/90 text-zinc-800 shadow-sm hover:bg-white sm:w-auto"
             />
           </div>
 
@@ -1066,7 +1067,7 @@ function SiteFooter() {
   return (
     <footer className="bg-zinc-950 text-zinc-400">
       <Container className="py-14">
-        <div className="grid gap-10 md:grid-cols-2 lg:grid-cols-[1.4fr_0.8fr_0.9fr_1fr]">
+        <div className="grid gap-10 md:grid-cols-2 lg:grid-cols-[1.3fr_0.7fr_0.8fr_0.8fr_1fr]">
           {/* Marca */}
           <div>
             <Brand inverted />
@@ -1109,6 +1110,25 @@ function SiteFooter() {
               <a href="#precios" className={footerLinkClassName}>
                 Precios
               </a>
+            </li>
+          </FooterColumn>
+
+          {/* Recursos (enlaces secundarios que salieron de la barra principal) */}
+          <FooterColumn title="Recursos">
+            <li>
+              <a href="#facturacion" className={footerLinkClassName}>
+                Facturación
+              </a>
+            </li>
+            <li>
+              <a href="#conocimiento" className={footerLinkClassName}>
+                Centro de Ayuda
+              </a>
+            </li>
+            <li>
+              <Link href="/guias" className={footerLinkClassName}>
+                Guías completas
+              </Link>
             </li>
           </FooterColumn>
 

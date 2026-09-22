@@ -28,21 +28,33 @@ import { invalidarSesionHeader, pedirSesionHeader } from "@/lib/sesion-cliente"
 import { cn } from "@/lib/utils"
 import type { SesionHeader } from "@/lib/destinos-sesion"
 
+/*
+ * Estilos de botón: `px-4 py-2` normalizado para que el texto respire y los
+ * iconos queden alineados (todos comparten `h-10` + `gap-2`).
+ */
+
 /** Botón principal (verde institucional `#00a896` / `#028090`). */
 const BOTON_PRIMARIO =
-  "inline-flex h-10 items-center justify-center gap-2 rounded-lg bg-linear-to-r from-[#00a896] to-[#028090] px-4 text-sm font-semibold text-white shadow-sm shadow-[#028090]/25 transition hover:brightness-105"
+  "inline-flex h-10 items-center justify-center gap-2 rounded-lg bg-linear-to-r from-[#00a896] to-[#028090] px-4 py-2 text-sm font-semibold leading-none whitespace-nowrap text-white shadow-sm shadow-[#028090]/25 transition hover:brightness-105"
 
 /** Botón secundario / enlace de sesión. */
 const BOTON_NEUTRO =
-  "inline-flex h-10 items-center justify-center gap-2 rounded-lg border border-zinc-200 bg-white px-4 text-sm font-semibold text-zinc-700 transition-colors hover:border-zinc-300 hover:bg-zinc-50"
+  "inline-flex h-10 items-center justify-center gap-2 rounded-lg border border-zinc-200 bg-white px-4 py-2 text-sm font-semibold leading-none whitespace-nowrap text-zinc-700 transition-colors hover:border-zinc-300 hover:bg-zinc-50"
 
 /** Botón del hub de demos. */
 const BOTON_DEMO =
-  "inline-flex h-10 items-center justify-center gap-2 rounded-lg bg-zinc-900 px-4 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-zinc-700"
+  "inline-flex h-10 items-center justify-center gap-2 rounded-lg bg-zinc-900 px-4 py-2 text-sm font-semibold leading-none whitespace-nowrap text-white shadow-sm transition-colors hover:bg-zinc-700"
+
+/**
+ * Variante compacta del botón de demos para laptops pequeñas (lg–xl): solo el
+ * icono, para que la barra nunca desborde. Se expande a partir de `xl`.
+ */
+const BOTON_DEMO_COMPACTO =
+  "inline-flex size-10 shrink-0 items-center justify-center rounded-lg bg-zinc-900 text-base leading-none text-white shadow-sm transition-colors hover:bg-zinc-700 xl:hidden"
 
 /** Base de los botones del menú móvil (ancho completo y más altos). */
 const BOTON_MOVIL =
-  "flex h-12 w-full items-center justify-center gap-2 rounded-xl text-base font-semibold"
+  "flex h-12 w-full items-center justify-center gap-2 rounded-xl px-4 py-2 text-base font-semibold leading-none"
 
 type Props = {
   /** `escritorio` → barra superior; `movil` → bloque del menú hamburguesa. */
@@ -110,11 +122,29 @@ export function HeaderAuthActions({
           openDemoHub()
         }}
         aria-haspopup="dialog"
-        className={esMovil ? cn(BOTON_MOVIL, "bg-zinc-900 text-white") : BOTON_DEMO}
+        className={
+          esMovil
+            ? cn(BOTON_MOVIL, "bg-zinc-900 text-white")
+            : cn(BOTON_DEMO, "hidden xl:inline-flex")
+        }
       >
         <FlaskConical className="size-4" aria-hidden="true" />
         Entornos DEMO
       </button>
+
+      {/* En laptops pequeñas (lg–xl) el título largo no cabe: botón compacto */}
+      {!esMovil && (
+        <button
+          type="button"
+          onClick={openDemoHub}
+          aria-haspopup="dialog"
+          aria-label="Entornos DEMO"
+          title="Explorar los entornos DEMO"
+          className={BOTON_DEMO_COMPACTO}
+        >
+          <span aria-hidden="true">🧪</span>
+        </button>
+      )}
     </>
   )
 
@@ -210,16 +240,17 @@ export function HeaderAuthActions({
   // así que no hay parpadeo ni salto de layout.
   if (verificando) {
     return esMovil ? (
-      <div className="flex flex-col gap-1" aria-hidden="true">
+      <div className="flex flex-col gap-2" aria-hidden="true">
         <span className="h-12 w-full animate-pulse rounded-xl bg-zinc-100" />
         <span className="h-12 w-full animate-pulse rounded-xl bg-zinc-100" />
         <span className="h-12 w-full animate-pulse rounded-xl bg-zinc-100" />
       </div>
     ) : (
-      <div className="hidden items-center gap-2.5 md:flex" aria-hidden="true">
+      <div className="hidden items-center gap-3 lg:flex" aria-hidden="true">
         <span className="h-10 w-28 animate-pulse rounded-lg bg-zinc-100" />
         <span className="h-10 w-40 animate-pulse rounded-lg bg-zinc-100" />
-        <span className="h-10 w-32 animate-pulse rounded-lg bg-zinc-100" />
+        {/* Coincide con el botón DEMO: compacto en lg y con etiqueta en xl */}
+        <span className="h-10 w-10 animate-pulse rounded-lg bg-zinc-100 xl:w-40" />
       </div>
     )
   }
@@ -227,8 +258,8 @@ export function HeaderAuthActions({
   const contenido = sesion ? bloqueAutenticado : invitado
 
   return esMovil ? (
-    <div className="flex flex-col gap-1">{contenido}</div>
+    <div className="flex flex-col gap-2">{contenido}</div>
   ) : (
-    <div className="hidden items-center gap-2.5 md:flex">{contenido}</div>
+    <div className="hidden items-center gap-3 lg:flex">{contenido}</div>
   )
 }
