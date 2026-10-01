@@ -1126,6 +1126,11 @@ function SiteFooter() {
               </a>
             </li>
             <li>
+              <Link href="/proceso-saas" className={footerLinkClassName}>
+                Proceso y arquitectura
+              </Link>
+            </li>
+            <li>
               <Link href="/guias" className={footerLinkClassName}>
                 Guías completas
               </Link>

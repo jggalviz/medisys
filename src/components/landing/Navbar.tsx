@@ -5,8 +5,8 @@
  *
  * Layout pensado para no saturarse en laptops pequeñas (1024–1440 px):
  *  - **4 enlaces principales** (Beneficios · Cómo funciona · Precios · FAQ).
- *  - Los enlaces secundarios (Facturación, Centro de Ayuda) viven en el footer
- *    y se agrupan bajo "Recursos" en el menú móvil.
+ *  - Los enlaces secundarios (Proceso y arquitectura, Facturación y Centro de
+ *    Ayuda) viven en el footer y se agrupan bajo "Recursos" en el menú móvil.
  *  - El menú de hamburguesa aparece antes (`lg:hidden`): en tablets y laptops
  *    pequeñas todo el contenido viaja en el menú desplegable, así los botones
  *    nunca colapsan ni se salen del viewport.
@@ -36,6 +36,7 @@ const NAV_ITEMS = [
  * Se muestran agrupados como "Recursos" en el menú móvil y en el footer.
  */
 const NAV_RECURSOS = [
+  { label: "Proceso y arquitectura", href: "/proceso-saas" },
   { label: "Facturación", href: "#facturacion" },
   { label: "Centro de Ayuda", href: "#conocimiento" },
 ] as const
@@ -112,14 +113,14 @@ export function Navbar() {
               Recursos
             </span>
             {NAV_RECURSOS.map((item) => (
-              <a
+              <Link
                 key={item.href}
                 href={item.href}
                 onClick={() => setOpen(false)}
                 className={ENLACE_MOVIL}
               >
                 {item.label}
-              </a>
+              </Link>
             ))}
 
             <span className="my-3 border-t border-dashed border-zinc-200" />
